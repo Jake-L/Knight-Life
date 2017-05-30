@@ -3,6 +3,10 @@ var animate = window.requestAnimationFrame ||
   window.mozRequestAnimationFrame ||
   function(callback) { window.setTimeout(callback, 1000/60) };
 
+// play background music	
+var audio = new Audio("audio//track1.mp3");
+audio.play();
+
 var canvas = document.createElement('canvas');
 var width = window.innerWidth - 20;
 var height = window.innerHeight - 20;
@@ -36,6 +40,13 @@ var step = function()
 
 var update = function() 
 {
+	//restart background music at the end of the song
+	if (audio.currentTime + (8/60) > audio.duration)
+	{
+		audio.currentTime = 0;
+	}
+	
+	//update player object
   player.update();
 };
 
@@ -115,6 +126,7 @@ Player.prototype.update = function()
   for(var key in keysDown) 
 	{
     var value = Number(key);
+		
     if(value == left_key) 
 		{ 
       this.entity.move(-1 * graphics_scaling, 0);
