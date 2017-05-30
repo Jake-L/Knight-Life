@@ -39,6 +39,9 @@ var update = function()
   player.update();
 };
 
+//create the player
+var player = new Player();
+
 //initialize an entity
 function Entity(x, y, width, height) 
 {
@@ -74,9 +77,6 @@ Player.prototype.render = function()
   this.entity.render();
 };
 
-//create the player
-var player = new Player();
-
 //display graphics
 var render = function() 
 {
@@ -88,21 +88,33 @@ var render = function()
 //event listeners for the keyboard
 var keysDown = {};
 
-window.addEventListener("keydown", function(event) {
-  keysDown[event.keyCode] = true;
-});
+window.addEventListener("keypress", function(event) 
+{
+	console.log("KeyPress keyCode" + event.keyCode);
+}
+);
 
-window.addEventListener("keyup", function(event) {
+window.addEventListener("keydown", function(event) 
+{
+  keysDown[event.keyCode] = true;
+	console.log("KeyDown keyCode" + event.keyCode);
+}
+);
+
+window.addEventListener("keyup", function(event) 
+{
   delete keysDown[event.keyCode];
-});
+	console.log("KeyUp keyCode" + event.keyCode);
+}
+);
 
 Player.prototype.update = function() 
 {
-	//move the player based on user input
+	// move the player based on user input
+	// loops through every key currently pressed and performs an action
   for(var key in keysDown) 
 	{
     var value = Number(key);
-		
     if(value == left_key) 
 		{ 
       this.entity.move(-1 * graphics_scaling, 0);
@@ -118,20 +130,14 @@ Player.prototype.update = function()
 		else if (value == down_key)
 		{
 			this.entity.move(0,graphics_scaling)
-		}
+		}		
 		else if (value == jump_key)
 		{
-			console.log("Jump button pressed. z-position: " + this.entity.z + " z-speed: " + this.entity.z_speed);
 			if (this.entity.z == 0 && this.entity.z_speed == 0) //can only jump if standing on the ground
 			{
-				console.log("Jump performed");
 				this.entity.z_speed = 10;
 			}
 		}
-		else
-		{
-      this.entity.move(0, 0);
-    }
   }
 	
 	// apply gravity if the player is jumping
@@ -152,35 +158,52 @@ Entity.prototype.gravity = function()
 		this.z = 0;
 		this.z_speed = 0;
 	}
+	
+	if (this.x_speed != 0) //apply the speed and decrease it
+	{
+		this.x += this.x_speed;
+		this.x_speed = (Math.abs(this.x_speed) - 0.5) * (this.x_speed / Math.abs(this.x_speed));
+	}
+	
+	if (this.y_speed != 0) //apply the speed and decrease it
+	{
+		this.y += this.y_speed;
+		this.y_speed = (Math.abs(this.y_speed) - 0.5) * (this.y_speed / Math.abs(this.y_speed));
+	}
 }
 
 Entity.prototype.move = function(x, y) 
 {
-  this.x += x;
-  this.y += y;
-  this.x_speed = x;
-  this.y_speed = y;
-	
-	// check if the character has exceeded any boundries
-  if(this.x <= 0) // at the left edge
+	// check if the character moves along the x-axis
+  if(this.x + x <= 0) // at the left edge
 	{ 
     this.x = 0;
     this.x_speed = 0;
   } 
-	else if (this.x + this.width >= width) // at the right edge
+	else if (this.x + this.width + x >= width) // at the right edge
 	{ 
     this.x = width - this.width;
     this.x_speed = 0;
   }
-	if (this.y <= 0) // at the top edge
+	else
+	{
+		this.x += x;
+	}
+	
+  //check if the character moves along the y-axis
+	if (this.y + y <= 0) // at the top edge
 	{
 		this.y = 0;
 		this.y_speed = 0;
 	}
-	else if (this.y + this.height >= height) // at the bottom edge
+	else if (this.y + this.height + y >= height) // at the bottom edge
 	{
 		this.y = height - this.height;
 		this.y_speed = 0;
+	}
+	else
+	{
+		this.y += y;
 	}
 }
 
