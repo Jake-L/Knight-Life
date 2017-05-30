@@ -11,59 +11,81 @@ canvas.height = height;
 var context = canvas.getContext('2d');
 context.imageSmoothingEnabled = false;
 
+console.log("Width: " + width + " Height: " + height);
+
 //key mappings
 var left_key = 37;
 var up_key = 38;
 var right_key = 39;
 var down_key = 40;
-var graphics_scaling = Math.ceil(Math.min(width,height)/500);
+var jump_key = 32;
+var graphics_scaling = Math.ceil(height/250);
 
-window.onload = function() {
+window.onload = function() 
+{
   document.body.appendChild(canvas);
   animate(step);
 };
 
-var step = function() {
+var step = function() 
+{
   update();
   render();
   animate(step);
 };
 
-function Entity(x, y, width, height) {
+var update = function() 
+{
+  player.update();
+};
+
+//initialize an entity
+function Entity(x, y, width, height) 
+{
   this.x = x;
   this.y = y;
+	this.z = 0;
   this.x_speed = 0;
   this.y_speed = 0;
+	this.z_speed = 0;
 	this.width;
 	this.height;
 	this.sprite = new Image();
 	this.sprite.src = "img//playerDown0.png";
 }
 
-Entity.prototype.render = function() {
-	//context.fillStyle = "#808080";
-  //context.fillRect(this.x, this.y, this.width, this.height);
+//display the entity
+Entity.prototype.render = function() 
+{
 	this.width = this.sprite.width * graphics_scaling;
 	this.height = this.sprite.height * graphics_scaling;
-  context.drawImage(this.sprite, this.x, this.y, this.sprite.width * graphics_scaling, this.sprite.height * graphics_scaling);
+  context.drawImage(this.sprite, this.x, this.y - this.z, this.sprite.width * graphics_scaling, this.sprite.height * graphics_scaling);
 };
 
-function Player() {
+//initialize the player
+function Player() 
+{
    this.entity = new Entity(width / 2, height / 2, graphics_scaling * 4, graphics_scaling * 4);
 }
 
-Player.prototype.render = function() {
+//display the player
+Player.prototype.render = function() 
+{
   this.entity.render();
 };
 
+//create the player
 var player = new Player();
 
-var render = function() {
+//display graphics
+var render = function() 
+{
   context.fillStyle = "#ADD8E6";
   context.fillRect(0, 0, width, height);
   player.render();
 };
 
+//event listeners for the keyboard
 var keysDown = {};
 
 window.addEventListener("keydown", function(event) {
@@ -97,12 +119,40 @@ Player.prototype.update = function()
 		{
 			this.entity.move(0,graphics_scaling)
 		}
+		else if (value == jump_key)
+		{
+			console.log("Jump button pressed. z-position: " + this.entity.z + " z-speed: " + this.entity.z_speed);
+			if (this.entity.z == 0 && this.entity.z_speed == 0) //can only jump if standing on the ground
+			{
+				console.log("Jump performed");
+				this.entity.z_speed = 10;
+			}
+		}
 		else
 		{
       this.entity.move(0, 0);
     }
   }
+	
+	// apply gravity if the player is jumping
+	if (this.entity.z > 0 || this.entity.z_speed > 0)
+	{
+		this.entity.gravity();
+	}
 };
+
+// gravity physics
+Entity.prototype.gravity = function()
+{
+	this.z += this.z_speed;
+	this.z_speed -= 0.5;
+	
+	if (this.z + this.z_speed <= 0) //if on the ground, no gravity
+	{
+		this.z = 0;
+		this.z_speed = 0;
+	}
+}
 
 Entity.prototype.move = function(x, y) 
 {
@@ -111,6 +161,7 @@ Entity.prototype.move = function(x, y)
   this.x_speed = x;
   this.y_speed = y;
 	
+	// check if the character has exceeded any boundries
   if(this.x <= 0) // at the left edge
 	{ 
     this.x = 0;
@@ -133,9 +184,6 @@ Entity.prototype.move = function(x, y)
 	}
 }
 
-var update = function() 
-{
-  player.update();
-};
+
 
 
