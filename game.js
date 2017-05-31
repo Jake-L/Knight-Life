@@ -1,20 +1,22 @@
-var animate = window.requestAnimationFrame ||
-  window.webkitRequestAnimationFrame ||
-  window.mozRequestAnimationFrame ||
-  function(callback) { window.setTimeout(callback, 1000/60) };
-
-
 // play background music	
 var audio = new Audio("audio//track1.mp3");
 audio.play();
 
+// create the graphics canvas
 var canvas = document.createElement('canvas');
 var width = window.innerWidth - 20;
 var height = window.innerHeight - 20;
 canvas.width = width;
 canvas.height = height;
+var graphics_scaling = Math.ceil(height/250);
+
+// create the player's graphics and add a shadow
 var context = canvas.getContext('2d');
 context.imageSmoothingEnabled = false;
+context.shadowColor = "rgba(80, 80, 80, .4)";
+context.shadowBlur = 15;
+context.shadowOffsetX = graphics_scaling * 3;
+context.shadowOffsetY = graphics_scaling * 2;
 
 //key mappings
 var left_key = 37;
@@ -22,32 +24,53 @@ var up_key = 38;
 var right_key = 39;
 var down_key = 40;
 var jump_key = 70;
-var graphics_scaling = Math.ceil(height/250);
 
-context.shadowColor = "rgba(80, 80, 80, .4)";
-context.shadowBlur = 15;
-context.shadowOffsetX = graphics_scaling * 3;
-context.shadowOffsetY = graphics_scaling * 2;
+var frameTime = 0;
+var startTime = 0;
+;
 
 window.onload = function() 
 {
   document.body.appendChild(canvas);
-  animate(step);
+	frameTime = new Date().getTime();
+	startTime = frameTime;
+	step();
+//  animate(step);
 };
 
+var ucounter = 0;
+var rcounter = 0;
+	
 var step = function() 
 {
-  update();
+	if (new Date().getTime() > frameTime)
+	{
+		update();
+		frameTime += 16.6;
+		ucounter += 1;
+	}
+	
   render();
-  animate(step);
+	rcounter += 1;
+	
+	console.log("Render FPS: " + Math.round(rcounter / ((new Date().getTime() - startTime)/1000)) + " Update FPS: " + Math.round(ucounter / ((new Date().getTime() - startTime)/1000)));
+
+	setTimeout(step, 1);
 };
 
+// run the main functions that must be updated based on time events
+// when the tab is inactive assume this function runs at 1 fps
 var update = function() 
 {
 	//restart background music at the end of the song
 	if (audio.currentTime + (8/60) > audio.duration)
 	{
 		audio.currentTime = 0;
+		
+		if (audio.ended == true)
+		{
+			audio.play();
+		}
 	}
 	
 	//update player object
