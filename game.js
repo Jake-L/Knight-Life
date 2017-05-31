@@ -61,11 +61,13 @@ var update = function()
 var player = new Player();
 
 //initialize an entity
-function Entity(x, y, width, height) 
+function Entity(x, y) 
 {
-  this.x = x;
-  this.y = y;
-	this.z = 0;
+  this.x = x; // X is the center of the sprite (in-game measurement units)
+  this.y = y; // Y is the bottom of the sprite (in-game measurement units)
+	this.z = 0; // Z is the sprite's height off the ground (in-game measurement units)
+	this.draw_x = 0; // the x position for displaying the image (graphics scaled units)
+	this.draw_y = 0; // the y position for displaying the image (graphics scaled units)
   this.x_speed = 0;
   this.y_speed = 0;
 	this.z_speed = 0;
@@ -78,15 +80,18 @@ function Entity(x, y, width, height)
 //display the entity
 Entity.prototype.render = function() 
 {
-	this.width = this.sprite.width * graphics_scaling;
-	this.height = this.sprite.height * graphics_scaling;
-  context.drawImage(this.sprite, this.x, this.y - this.z, this.sprite.width * graphics_scaling, this.sprite.height * graphics_scaling);
+	this.width = (this.sprite.width + (this.y * 0.1));
+	this.height = (this.sprite.height + (this.y * 0.1));
+	console.log("y: " + this.y * 0.1 + " height: " + this.height);
+	this.draw_x = (this.x - (this.width/2)) * graphics_scaling;
+	this.draw_y = (this.y - this.height - (this.z * (this.height / this.sprite.height) * 0.2)) * graphics_scaling;
+  context.drawImage(this.sprite, this.draw_x, this.draw_y, this.width * graphics_scaling, this.height * graphics_scaling);
 };
 
 //initialize the player
 function Player() 
 {
-   this.entity = new Entity(width / 2, height / 2, graphics_scaling * 4, graphics_scaling * 4);
+   this.entity = new Entity(100,100);
 }
 
 //display the player
@@ -136,19 +141,19 @@ Player.prototype.update = function()
 		
     if(value == left_key) 
 		{ 
-      this.entity.move(-1 * graphics_scaling, 0);
+      this.entity.move(-1, 0);
     } 
 		else if (value == right_key) 
 		{
-      this.entity.move(graphics_scaling, 0);
+      this.entity.move(1, 0);
     } 
 		else if (value == up_key)
 		{
-			this.entity.move(0,-1 * graphics_scaling);
+			this.entity.move(0,-1);
 		}
 		else if (value == down_key)
 		{
-			this.entity.move(0,graphics_scaling)
+			this.entity.move(0,1)
 		}		
 		else if (value == jump_key)
 		{
@@ -198,14 +203,14 @@ Entity.prototype.gravity = function()
 Entity.prototype.move = function(x, y) 
 {
 	// check if the character moves along the x-axis
-  if(this.x + x <= 0) // at the left edge
+  if(this.x + x - (this.width/2) <= 0) // at the left edge
 	{ 
-    this.x = 0;
+    this.x = (this.width/2);
     this.x_speed = 0;
   } 
-	else if (this.x + this.width + x >= width) // at the right edge
+	else if ((this.x + x + (this.width/2)) * graphics_scaling >= width) // at the right edge
 	{ 
-    this.x = width - this.width;
+    this.x = (width / graphics_scaling) - (this.width/2);
     this.x_speed = 0;
   }
 	else
@@ -214,14 +219,14 @@ Entity.prototype.move = function(x, y)
 	}
 	
   //check if the character moves along the y-axis
-	if (this.y + y <= 0) // at the top edge
+	if (this.y + y - this.height <= (height * 0.1 / graphics_scaling)) // at the top edge
 	{
-		this.y = 0;
+		this.y = this.height + (height * 0.1 / graphics_scaling);
 		this.y_speed = 0;
 	}
-	else if (this.y + this.height + y >= height) // at the bottom edge
+	else if (this.y + y >= (height / graphics_scaling)) // at the bottom edge
 	{
-		this.y = height - this.height;
+		this.y = (height / graphics_scaling);
 		this.y_speed = 0;
 	}
 	else
