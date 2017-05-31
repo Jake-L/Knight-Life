@@ -3,6 +3,7 @@ var animate = window.requestAnimationFrame ||
   window.mozRequestAnimationFrame ||
   function(callback) { window.setTimeout(callback, 1000/60) };
 
+
 // play background music	
 var audio = new Audio("audio//track1.mp3");
 audio.play();
@@ -27,10 +28,6 @@ context.shadowColor = "rgba(80, 80, 80, .4)";
 context.shadowBlur = 15;
 context.shadowOffsetX = graphics_scaling * 3;
 context.shadowOffsetY = graphics_scaling * 2;
-
-console.log("Width: " + width + " Height: " + height);
-
-
 
 window.onload = function() 
 {
@@ -82,7 +79,6 @@ Entity.prototype.render = function()
 {
 	this.width = (this.sprite.width + (this.y * 0.1));
 	this.height = (this.sprite.height + (this.y * 0.1));
-	console.log("y: " + this.y * 0.1 + " height: " + this.height);
 	this.draw_x = (this.x - (this.width/2)) * graphics_scaling;
 	this.draw_y = (this.y - this.height - (this.z * (this.height / this.sprite.height) * 0.2)) * graphics_scaling;
   context.drawImage(this.sprite, this.draw_x, this.draw_y, this.width * graphics_scaling, this.height * graphics_scaling);
@@ -111,23 +107,15 @@ var render = function()
 //event listeners for the keyboard
 var keysDown = {};
 
-window.addEventListener("keypress", function(event) 
-{
-	console.log("KeyPress keyCode" + event.keyCode);
-}
-);
-
 window.addEventListener("keydown", function(event) 
 {
   keysDown[event.keyCode] = true;
-	console.log("KeyDown keyCode" + event.keyCode);
 }
 );
 
 window.addEventListener("keyup", function(event) 
 {
   delete keysDown[event.keyCode];
-	console.log("KeyUp keyCode" + event.keyCode);
 }
 );
 
