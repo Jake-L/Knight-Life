@@ -15,8 +15,6 @@ canvas.height = height;
 var context = canvas.getContext('2d');
 context.imageSmoothingEnabled = false;
 
-console.log("Width: " + width + " Height: " + height);
-
 //key mappings
 var left_key = 37;
 var up_key = 38;
@@ -24,6 +22,15 @@ var right_key = 39;
 var down_key = 40;
 var jump_key = 70;
 var graphics_scaling = Math.ceil(height/250);
+
+context.shadowColor = "rgba(80, 80, 80, .4)";
+context.shadowBlur = 15;
+context.shadowOffsetX = graphics_scaling * 3;
+context.shadowOffsetY = graphics_scaling * 2;
+
+console.log("Width: " + width + " Height: " + height);
+
+
 
 window.onload = function() 
 {
@@ -182,6 +189,10 @@ Entity.prototype.gravity = function()
 		this.y += this.y_speed;
 		this.y_speed = (Math.abs(this.y_speed) - 0.5) * (this.y_speed / Math.abs(this.y_speed));
 	}
+	
+	context.shadowBlur = 15 + (this.z / graphics_scaling);
+	context.shadowOffsetX = graphics_scaling * 3 + (this.z * 0.2);
+	context.shadowOffsetY = graphics_scaling * 2 + (this.z * 0.8);
 }
 
 Entity.prototype.move = function(x, y) 
