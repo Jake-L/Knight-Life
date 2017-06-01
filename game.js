@@ -13,10 +13,9 @@ var graphics_scaling = Math.ceil(height/250);
 // create the player's graphics and add a shadow
 var context = canvas.getContext('2d');
 context.imageSmoothingEnabled = false;
-context.shadowColor = "rgba(80, 80, 80, .4)";
-context.shadowBlur = 15;
-context.shadowOffsetX = graphics_scaling * 3;
-context.shadowOffsetY = graphics_scaling * 2;
+context.fillStyle = "#ADD8E6";
+var backgroundSprite = new Image();
+backgroundSprite.src = "img//grassbackground.png"
 
 //key mappings
 var left_key = 37;
@@ -27,7 +26,7 @@ var jump_key = 70;
 
 var frameTime = 0;
 var startTime = 0;
-;
+
 
 window.onload = function() 
 {
@@ -35,7 +34,6 @@ window.onload = function()
 	frameTime = new Date().getTime();
 	startTime = frameTime;
 	step();
-//  animate(step);
 };
 
 var ucounter = 0;
@@ -50,10 +48,11 @@ var step = function()
 		ucounter += 1;
 	}
 	
+	renderBackground();
   render();
 	rcounter += 1;
 	
-	console.log("Render FPS: " + Math.round(rcounter / ((new Date().getTime() - startTime)/1000)) + " Update FPS: " + Math.round(ucounter / ((new Date().getTime() - startTime)/1000)));
+	//console.log("Render FPS: " + Math.round(rcounter / ((new Date().getTime() - startTime)/1000)) + " Update FPS: " + Math.round(ucounter / ((new Date().getTime() - startTime)/1000)));
 
 	setTimeout(step, 1);
 };
@@ -76,6 +75,23 @@ var update = function()
 	//update player object
   player.update();
 };
+
+function renderBackground()
+{
+	context.fillRect(0, 0, width, height);
+	
+	if (backgroundSprite.width != null)
+	{
+	var counter = (width / graphics_scaling) / backgroundSprite.width;
+	console.log(counter);
+	
+	for (i = 0; i < counter; i++)
+	{
+		context.drawImage(backgroundSprite, (backgroundSprite.width * (i-1)) * graphics_scaling, height - (backgroundSprite.height * graphics_scaling) , backgroundSprite.width * graphics_scaling, backgroundSprite.height * graphics_scaling);
+	}
+	}
+
+}
 
 //create the player
 var player = new Player();
@@ -100,11 +116,18 @@ function Entity(x, y)
 //display the entity
 Entity.prototype.render = function() 
 {
+	context.save();
+	context.shadowColor = "rgba(80, 80, 80, .4)";
+	context.shadowBlur = 15 + (this.z / graphics_scaling);
+	context.shadowOffsetX = graphics_scaling * 3 + (this.z * 0.2);
+	context.shadowOffsetY = graphics_scaling * 2 + (this.z * 0.8);
+	
 	this.width = (this.sprite.width + (this.y * 0.1));
 	this.height = (this.sprite.height + (this.y * 0.1));
 	this.draw_x = (this.x - (this.width/2)) * graphics_scaling;
 	this.draw_y = (this.y - this.height - (this.z * (this.height / this.sprite.height) * 0.2)) * graphics_scaling;
   context.drawImage(this.sprite, this.draw_x, this.draw_y, this.width * graphics_scaling, this.height * graphics_scaling);
+	context.restore();
 };
 
 //initialize the player
@@ -122,8 +145,6 @@ Player.prototype.render = function()
 //display graphics
 var render = function() 
 {
-  context.fillStyle = "#ADD8E6";
-  context.fillRect(0, 0, width, height);
   player.render();
 };
 
@@ -206,9 +227,7 @@ Entity.prototype.gravity = function()
 		this.y_speed = (Math.abs(this.y_speed) - 0.5) * (this.y_speed / Math.abs(this.y_speed));
 	}
 	
-	context.shadowBlur = 15 + (this.z / graphics_scaling);
-	context.shadowOffsetX = graphics_scaling * 3 + (this.z * 0.2);
-	context.shadowOffsetY = graphics_scaling * 2 + (this.z * 0.8);
+
 }
 
 Entity.prototype.move = function(x, y) 
