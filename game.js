@@ -266,5 +266,11 @@ Entity.prototype.move = function(x, y)
 }
 
 
+function printMousePos(event) {
+  console.log("clientX: " + event.clientX + " - clientY: " + event.clientY);
+}
+
+document.addEventListener("click", printMousePos);
+
 
 
