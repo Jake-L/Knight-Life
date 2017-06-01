@@ -1,6 +1,5 @@
 // play background music	
-var audio = new Audio("audio//track1.mp3");
-audio.play();
+var audio; 
 
 // create the graphics canvas
 var canvas = document.createElement('canvas');
@@ -15,7 +14,6 @@ var context = canvas.getContext('2d');
 context.imageSmoothingEnabled = false;
 context.fillStyle = "#ADD8E6";
 var backgroundSprite = new Image();
-backgroundSprite.src = "img//grassbackground.png"
 
 //key mappings
 var left_key = 37;
@@ -27,14 +25,37 @@ var jump_key = 70;
 var frameTime = 0;
 var startTime = 0;
 
+var mapId = 0;
+var maxX = [400];
+var minY = [30];
+var maxY = [200];
+
 
 window.onload = function() 
 {
   document.body.appendChild(canvas);
+	loadMap(mapId);
+	audio.play();
+	
 	frameTime = new Date().getTime();
 	startTime = frameTime;
 	step();
+	
 };
+
+function loadMap(mapId)
+{
+	if (mapId == 0)
+	{
+		audio = new Audio("audio//track1.mp3");
+		backgroundSprite.src = "img//grassbackground.png";
+	}
+	else if (mapId == 1)
+	{
+		audio = new Audio("audio//track3.mp3");
+		backgroundSprite.src = "img//smw.png";
+	}
+}
 
 var ucounter = 0;
 var rcounter = 0;
@@ -76,25 +97,26 @@ var update = function()
   player.update();
 };
 
+//displays the background image
 function renderBackground()
 {
 	context.fillRect(0, 0, width, height);
 	
-	if (backgroundSprite.width != null)
+	if (backgroundSprite.complete && backgroundSprite.naturalHeight !== 0)
 	{
-	var counter = (width / graphics_scaling) / backgroundSprite.width;
-	console.log(counter);
-	
-	for (i = 0; i < counter; i++)
-	{
-		context.drawImage(backgroundSprite, (backgroundSprite.width * (i-1)) * graphics_scaling, height - (backgroundSprite.height * graphics_scaling) , backgroundSprite.width * graphics_scaling, backgroundSprite.height * graphics_scaling);
-	}
+		var counter = Math.ceil((width / graphics_scaling) / backgroundSprite.width);
+		
+		for (i = 0; i <= counter; i++)
+		{
+			context.drawImage(backgroundSprite, (backgroundSprite.width * (i-1)) * graphics_scaling, height - (backgroundSprite.height * graphics_scaling) , backgroundSprite.width * graphics_scaling, backgroundSprite.height * graphics_scaling);
+		}
 	}
 
 }
 
 //create the player
 var player = new Player();
+
 
 //initialize an entity
 function Entity(x, y) 
@@ -115,19 +137,24 @@ function Entity(x, y)
 
 //display the entity
 Entity.prototype.render = function() 
-{
-	context.save();
-	context.shadowColor = "rgba(80, 80, 80, .4)";
-	context.shadowBlur = 15 + (this.z / graphics_scaling);
-	context.shadowOffsetX = graphics_scaling * 3 + (this.z * 0.2);
-	context.shadowOffsetY = graphics_scaling * 2 + (this.z * 0.8);
-	
-	this.width = (this.sprite.width + (this.y * 0.1));
-	this.height = (this.sprite.height + (this.y * 0.1));
-	this.draw_x = (this.x - (this.width/2)) * graphics_scaling;
-	this.draw_y = (this.y - this.height - (this.z * (this.height / this.sprite.height) * 0.2)) * graphics_scaling;
-  context.drawImage(this.sprite, this.draw_x, this.draw_y, this.width * graphics_scaling, this.height * graphics_scaling);
-	context.restore();
+{	
+	if (this.sprite.complete && this.sprite.naturalHeight !== 0)
+	{
+		context.save();
+		context.shadowColor = "rgba(80, 80, 80, .4)";
+		context.shadowBlur = 15 + (this.z / graphics_scaling);
+		context.shadowOffsetX = graphics_scaling * 3 + (this.z * 0.2);
+		context.shadowOffsetY = graphics_scaling * 2 + (this.z * 0.8);
+		
+		//this.width = (this.sprite.width + (this.y * 0.1));
+		//this.height = (this.sprite.height + (this.y * 0.1));
+		this.width = this.sprite.width;
+		this.height = this.sprite.height;
+		this.draw_x = (this.x - (this.width/2)) * graphics_scaling;
+		this.draw_y = (this.y - this.height - (this.z * (this.height / this.sprite.height) * 0.2)) * graphics_scaling;
+		context.drawImage(this.sprite, this.draw_x, this.draw_y, this.width * graphics_scaling, this.height * graphics_scaling);
+		context.restore();
+	}
 };
 
 //initialize the player
@@ -145,6 +172,7 @@ Player.prototype.render = function()
 //display graphics
 var render = function() 
 {
+	
   player.render();
 };
 
@@ -238,9 +266,9 @@ Entity.prototype.move = function(x, y)
     this.x = (this.width/2);
     this.x_speed = 0;
   } 
-	else if ((this.x + x + (this.width/2)) * graphics_scaling >= width) // at the right edge
+	else if ((this.x + x + (this.width/2)) >= maxX[mapId]) // at the right edge
 	{ 
-    this.x = (width / graphics_scaling) - (this.width/2);
+    this.x = maxX[mapId] - (this.width/2);
     this.x_speed = 0;
   }
 	else
@@ -249,14 +277,14 @@ Entity.prototype.move = function(x, y)
 	}
 	
   //check if the character moves along the y-axis
-	if (this.y + y - this.height <= (height * 0.1 / graphics_scaling)) // at the top edge
+	if (this.y + y - this.height <= minY[mapId]) // at the top edge
 	{
-		this.y = this.height + (height * 0.1 / graphics_scaling);
+		this.y = minY[mapId] + this.height;
 		this.y_speed = 0;
 	}
-	else if (this.y + y >= (height / graphics_scaling)) // at the bottom edge
+	else if (this.y + y >= maxY[mapId]) // at the bottom edge
 	{
-		this.y = (height / graphics_scaling);
+		this.y = maxY[mapId];
 		this.y_speed = 0;
 	}
 	else
