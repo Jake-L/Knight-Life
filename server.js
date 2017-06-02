@@ -21,15 +21,51 @@ server.listen(5000, function() {
   console.log('Starting server on port 5000');
 });
 
-// Add the WebSocket handlers
+// retrieve data from the client
+var connected = {};
 io.on('connection', function(socket) 
 {
+	console.log(socket.id + " connected");
 	
-}
-);
+  socket.on('new player', function() 
+	{
 
+  });
+	
+  socket.on('movement', function(player) 
+	{
+		
+		if (player != null)// && player.entity.x != null)
+		{
+			connected[socket.id] = player;
+		}
+		//connected = player;
+  });
+	
+	socket.on('disconnect', function()
+	{
+    console.log(socket.id + " disconnected");
+		delete connected[socket.id];
+	});
+});
+
+// trasfer data to the client
 setInterval(function() 
 {
-  io.sockets.emit('message', 'hi!'); //for testing, remove later
-}, 1000);
+	
+	for(var i in connected)
+	{
+		var players = new Array();
+		for(var j in connected)
+		{
+			if (j != i)
+			{
+				players.push(connected[j]);
+			}
+		}
+		io.to(i).emit('players', players); 
+	}
+	//io.emit('players', connected);
+  
+}, 1000/60);
 

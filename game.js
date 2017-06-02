@@ -30,6 +30,8 @@ var maxX = [400];
 var minY = [30];
 var maxY = [200];
 
+var playerList = {};
+
 
 window.onload = function() 
 {
@@ -62,11 +64,6 @@ var rcounter = 0;
 
 
 
-var socket = io();
-socket.on('message', function(data) {
-  console.log(data);
-});
-
 // update's the time when a user re-opens the game window
 window.addEventListener("focus", function()
 {
@@ -87,7 +84,7 @@ var step = function()
   render();
 	rcounter += 1;
 	
-	console.log("Render FPS: " + Math.round(rcounter / ((new Date().getTime() - startTime)/1000)) + " Update FPS: " + Math.round(ucounter / ((new Date().getTime() - startTime)/1000)));
+	//console.log("Render FPS: " + Math.round(rcounter / ((new Date().getTime() - startTime)/1000)) + " Update FPS: " + Math.round(ucounter / ((new Date().getTime() - startTime)/1000)));
 
 	setTimeout(step, 1);
 };
@@ -149,6 +146,22 @@ function Entity(x, y)
 	this.sprite.src = "img//playerDown0.png";
 }
 
+//initialize an entity from a pre-existing entity
+function copyEntity(old)
+{
+	var p = new Entity();
+	p.x = old.x; // X is the center of the sprite (in-game measurement units)
+  p.y = old.y; // Y is the bottom of the sprite (in-game measurement units)
+	p.z = old.z; // Z is the sprite's height off the ground (in-game measurement units)
+	p.draw_x = old.draw_x; // the x position for displaying the image (graphics scaled units)
+	p.draw_y = old.draw_y; // the y position for displaying the image (graphics scaled units)
+	p.width = old.width;
+	p.height = old.height;
+	p.sprite = new Image();
+	p.sprite.src = "img//playerDown0.png";
+	return p;
+}
+
 //display the entity
 Entity.prototype.render = function() 
 {	
@@ -186,8 +199,12 @@ Player.prototype.render = function()
 //display graphics
 var render = function() 
 {
-	
-  player.render();
+	player.render();
+	for (var i in playerList)
+	{
+		playerList[i].render();
+		console.log(playerList[i].x + " " + playerList[i].y);
+	}
 };
 
 //event listeners for the keyboard
@@ -307,12 +324,71 @@ Entity.prototype.move = function(x, y)
 	}
 }
 
-
+// check if the user clicks the mouse
 function printMousePos(event) {
   console.log("clientX: " + event.clientX + " - clientY: " + event.clientY);
 }
 
 document.addEventListener("click", printMousePos);
 
+// retrieve data from the server
+var socket = io();
+/*
+socket.on('players', function(players) 
+{
+  for(var i in players)
+	{
+		console.log(players[i].entity.x);
+		console.log(players[i].entity.width);
+		if (typeof(players[i]) != 'undefined' && players[i] != null)
+		{
+			players[i].entity.render();
+		}
+	}
+});*/
 
+socket.on('players', function(players)
+{
+	// back up the old player list, so we can see who left
+	var oldList = new Array();
+	
+	for (var n in playerList)
+	{
+		oldList[n] = true;
+	}
+	
+	/*
+	for(var i in players)
+	{
+		if (players[i] != null)
+		{
+			p = copyEntity(players[i].entity);
+			playerList[i] = p;
+		}
+	}*/
+	
+	// if there is a player in the new list not in the current list, add them
+	for(var i in players)
+	{
+		p = copyEntity(players[i].entity);
+		playerList[i] = p;
+		delete oldList[i];
+	}
+	
+	// remove any players who disconnected
+	for (var j in oldList)
+	{
+		delete playerList[j];
+	}
+});
+
+// send data to the server
+socket.emit('new player');
+setInterval(function() 
+{
+	if (player != null)
+	{
+		socket.emit('movement', player);
+	}
+}, 1000 / 60);
 
