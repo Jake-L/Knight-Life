@@ -59,6 +59,20 @@ function loadMap(mapId)
 
 var ucounter = 0;
 var rcounter = 0;
+
+
+
+var socket = io();
+socket.on('message', function(data) {
+  console.log(data);
+});
+
+// update's the time when a user re-opens the game window
+window.addEventListener("focus", function()
+{
+	frameTime = new Date().getTime();
+}
+);
 	
 var step = function() 
 {
@@ -73,7 +87,7 @@ var step = function()
   render();
 	rcounter += 1;
 	
-	//console.log("Render FPS: " + Math.round(rcounter / ((new Date().getTime() - startTime)/1000)) + " Update FPS: " + Math.round(ucounter / ((new Date().getTime() - startTime)/1000)));
+	console.log("Render FPS: " + Math.round(rcounter / ((new Date().getTime() - startTime)/1000)) + " Update FPS: " + Math.round(ucounter / ((new Date().getTime() - startTime)/1000)));
 
 	setTimeout(step, 1);
 };
