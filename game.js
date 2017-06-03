@@ -62,8 +62,6 @@ function loadMap(mapId)
 var ucounter = 0;
 var rcounter = 0;
 
-
-
 // update's the time when a user re-opens the game window
 window.addEventListener("focus", function()
 {
@@ -142,6 +140,7 @@ function Entity(x, y)
 	this.z_speed = 0;
 	this.width;
 	this.height;
+	this.knockback = false;
 	this.sprite = new Image();
 	this.sprite.src = "img//playerDown0.png";
 }
@@ -157,6 +156,7 @@ function copyEntity(old)
 	p.draw_y = old.draw_y; // the y position for displaying the image (graphics scaled units)
 	p.width = old.width;
 	p.height = old.height;
+	p.knockback = old.knockback;
 	p.sprite = new Image();
 	p.sprite.src = "img//playerDown0.png";
 	return p;
@@ -226,71 +226,87 @@ Player.prototype.update = function()
 {
 	// move the player based on user input
 	// loops through every key currently pressed and performs an action
-  for(var key in keysDown) 
-	{
-    var value = Number(key);
-		
-    if(value == left_key) 
-		{ 
-      this.entity.move(-1, 0);
-    } 
-		else if (value == right_key) 
+	if (!this.entity.knockback || (Maths.abs(y_speed) <= 3 && Math.abs(x_speed) <= 3))
+	{		
+		for(var key in keysDown) 
 		{
-      this.entity.move(1, 0);
-    } 
-		else if (value == up_key)
-		{
-			this.entity.move(0,-1);
-		}
-		else if (value == down_key)
-		{
-			this.entity.move(0,1)
-		}		
-		else if (value == jump_key)
-		{
-			if (this.entity.z == 0 && this.entity.z_speed == 0) //can only jump if standing on the ground
+			var value = Number(key);
+			
+			if(value == left_key) 
+			{ 
+				this.entity.move(-1, 0);
+				console.log(this.entity.x_speed);
+			} 
+			else if (value == right_key) 
 			{
-				this.entity.z_speed = 10;
+				this.entity.move(1, 0);
+			} 
+			else if (value == up_key)
+			{
+				this.entity.move(0,-1);
+			}
+			else if (value == down_key)
+			{
+				this.entity.move(0,1)
+			}		
+			else if (value == jump_key)
+			{
+				if (this.entity.z == 0 && this.entity.z_speed == 0) //can only jump if standing on the ground
+				{
+					this.entity.z_speed = 10;
+				}
 			}
 		}
-  }
+	}
+	
+	//console.log("x_speed: " + this.x_speed + "y_speed: " + this.y_speed);
 	
 	// apply gravity if the player is jumping
 	if (this.entity.z > 0 || this.entity.z_speed > 0)
 	{
-		this.entity.gravity();
+		this.entity.z += this.entity.z_speed;
+		this.entity.z_speed -= 0.5;
+		//var c = collisionCheck(z);
+	
+		if (this.entity.z + this.entity.z_speed <= 0) //if on the ground, no gravity
+		{
+			this.entity.z = 0;
+			this.entity.z_speed = 0;
+		}
+	}
+	
+	// if the player has been knocked back by an attack, decrease their falling speed
+	if (this.entity.knockback)
+	{
+		if (this.entity.x_speed != 0) 
+		{
+			this.entity.x += this.entity.x_speed;
+			this.entity.x_speed = (Math.abs(this.entity.x_speed) - 0.5) * (this.entity.x_speed / Math.abs(this.entity.x_speed));
+		}
+		if (this.entity.y_speed != 0)
+		{
+			this.entity.y += this.entity.y_speed;
+			this.entity.y_speed = (Math.abs(this.entity.y_speed) - 0.5) * (this.entity.y_speed / Math.abs(this.entity.y_speed));
+		}
+		if (this.entity.y_speed == 0 && this.entity.x_speed == 0)
+		{
+			this.entity.knockback = false;
+		}
+	}
+	// if they are not being knockbacked, apply their movement normally
+	else
+	{
+		this.entity.x += this.entity.x_speed;
+		this.entity.y += this.entity.y_speed;
+		this.entity.x_speed = 0;
+		this.entity.y_speed = 0;
 	}
 };
 
-// gravity physics
-Entity.prototype.gravity = function()
-{
-	this.z += this.z_speed;
-	this.z_speed -= 0.5;
-	
-	if (this.z + this.z_speed <= 0) //if on the ground, no gravity
-	{
-		this.z = 0;
-		this.z_speed = 0;
-	}
-	
-	if (this.x_speed != 0) //apply the speed and decrease it
-	{
-		this.x += this.x_speed;
-		this.x_speed = (Math.abs(this.x_speed) - 0.5) * (this.x_speed / Math.abs(this.x_speed));
-	}
-	
-	if (this.y_speed != 0) //apply the speed and decrease it
-	{
-		this.y += this.y_speed;
-		this.y_speed = (Math.abs(this.y_speed) - 0.5) * (this.y_speed / Math.abs(this.y_speed));
-	}
-	
-
-}
-
 Entity.prototype.move = function(x, y) 
 {
+	this.knockback = false;
+	
 	// check if the character moves along the x-axis
   if(this.x + x - (this.width/2) <= 0) // at the left edge
 	{ 
@@ -304,7 +320,7 @@ Entity.prototype.move = function(x, y)
   }
 	else
 	{
-		this.x += x;
+		this.x_speed += x;
 	}
 	
   //check if the character moves along the y-axis
@@ -320,7 +336,7 @@ Entity.prototype.move = function(x, y)
 	}
 	else
 	{
-		this.y += y;
+		this.y_speed += y;
 	}
 }
 
@@ -333,19 +349,6 @@ document.addEventListener("click", printMousePos);
 
 // retrieve data from the server
 var socket = io();
-/*
-socket.on('players', function(players) 
-{
-  for(var i in players)
-	{
-		console.log(players[i].entity.x);
-		console.log(players[i].entity.width);
-		if (typeof(players[i]) != 'undefined' && players[i] != null)
-		{
-			players[i].entity.render();
-		}
-	}
-});*/
 
 socket.on('players', function(players)
 {
@@ -356,16 +359,6 @@ socket.on('players', function(players)
 	{
 		oldList[n] = true;
 	}
-	
-	/*
-	for(var i in players)
-	{
-		if (players[i] != null)
-		{
-			p = copyEntity(players[i].entity);
-			playerList[i] = p;
-		}
-	}*/
 	
 	// if there is a player in the new list not in the current list, add them
 	for(var i in players)

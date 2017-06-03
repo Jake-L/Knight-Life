@@ -1,3 +1,9 @@
+/* Server.js
+ * Created by Jake Loftus
+ *
+ * The server connects multiple players and controls the spawning of enemies on the map. It determines when a player has damaged another player. 
+ */
+
 // Dependencies
 var express = require('express');
 var http = require('http');
@@ -39,7 +45,6 @@ io.on('connection', function(socket)
 		{
 			connected[socket.id] = player;
 		}
-		//connected = player;
   });
 	
 	socket.on('disconnect', function()
@@ -65,6 +70,7 @@ setInterval(function()
 		}
 		io.to(i).emit('players', players); 
 	}
+	
 	//io.emit('players', connected);
   
 }, 1000/60);
