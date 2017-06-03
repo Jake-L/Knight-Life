@@ -8,6 +8,9 @@ var height = window.innerHeight - 20;
 canvas.width = width;
 canvas.height = height;
 var graphics_scaling = Math.ceil(height/250);
+var pixelWidth = Math.ceil(width / graphics_scaling);
+var pixelHeight = Math.ceil(height / graphics_scaling);
+var x_offset = 0;
 
 // create the player's graphics and add a shadow
 var context = canvas.getContext('2d');
@@ -26,7 +29,7 @@ var frameTime = 0;
 var startTime = 0;
 
 var mapId = 0;
-var maxX = [400];
+var maxX = [1000];
 var minY = [30];
 var maxY = [200];
 
@@ -113,11 +116,11 @@ function renderBackground()
 	
 	if (backgroundSprite.complete && backgroundSprite.naturalHeight !== 0)
 	{
-		var counter = Math.ceil((width / graphics_scaling) / backgroundSprite.width);
+		var counter = Math.ceil((width / graphics_scaling) / backgroundSprite.width) + 1;
 		
 		for (i = 0; i <= counter; i++)
 		{
-			context.drawImage(backgroundSprite, (backgroundSprite.width * (i-1)) * graphics_scaling, height - (backgroundSprite.height * graphics_scaling) , backgroundSprite.width * graphics_scaling, backgroundSprite.height * graphics_scaling);
+			context.drawImage(backgroundSprite, ((backgroundSprite.width * (i-1)) - (x_offset % backgroundSprite.width)) * graphics_scaling, height - (backgroundSprite.height * graphics_scaling) , backgroundSprite.width * graphics_scaling, backgroundSprite.height * graphics_scaling);
 		}
 	}
 
@@ -177,7 +180,7 @@ Entity.prototype.render = function()
 		//this.height = (this.sprite.height + (this.y * 0.1));
 		this.width = this.sprite.width;
 		this.height = this.sprite.height;
-		this.draw_x = (this.x - (this.width/2)) * graphics_scaling;
+		this.draw_x = (this.x - (this.width/2) - x_offset) * graphics_scaling;
 		this.draw_y = (this.y - this.height - (this.z * (this.height / this.sprite.height) * 0.2)) * graphics_scaling;
 		context.drawImage(this.sprite, this.draw_x, this.draw_y, this.width * graphics_scaling, this.height * graphics_scaling);
 		context.restore();
@@ -199,13 +202,45 @@ Player.prototype.render = function()
 //display graphics
 var render = function() 
 {
-	player.render();
+	//create a list of all the entities to be rendered
+	var renderList = new Array();
+	
+	renderList.push(player.entity); // add the player
+	
 	for (var i in playerList)
 	{
-		playerList[i].render();
-		console.log(playerList[i].x + " " + playerList[i].y);
+		renderList.push(playerList[i]); // add all the other players
+	}
+	
+	// sort the list of players
+	renderSort(renderList);
+	console.log(renderList);
+	
+	for (var n in renderList)
+	{
+		renderList[n].render(); // render each player
 	}
 };
+
+// sort a list of entities by their y-position, so that they are overlap properly
+function renderSort(array)
+{
+	var n = array.length;
+	
+	for (var i = 1; i < n; i++)
+	{
+		e = array[i];
+		j = i - 1;
+		
+		while (j >= 0 && array[j].y > e.y)
+		{
+			array[j + 1] = array[j];
+			j -= 1;
+		}
+		
+		array[j+1] = e;
+	}
+}
 
 //event listeners for the keyboard
 var keysDown = {};
@@ -235,7 +270,6 @@ Player.prototype.update = function()
 			if(value == left_key) 
 			{ 
 				this.entity.move(-1, 0);
-				console.log(this.entity.x_speed);
 			} 
 			else if (value == right_key) 
 			{
@@ -259,6 +293,8 @@ Player.prototype.update = function()
 		}
 	}
 	
+	this.entity.collisionCheck();
+	
 	//console.log("x_speed: " + this.x_speed + "y_speed: " + this.y_speed);
 	
 	// apply gravity if the player is jumping
@@ -266,7 +302,6 @@ Player.prototype.update = function()
 	{
 		this.entity.z += this.entity.z_speed;
 		this.entity.z_speed -= 0.5;
-		//var c = collisionCheck(z);
 	
 		if (this.entity.z + this.entity.z_speed <= 0) //if on the ground, no gravity
 		{
@@ -301,7 +336,142 @@ Player.prototype.update = function()
 		this.entity.x_speed = 0;
 		this.entity.y_speed = 0;
 	}
+	
+	get_offset();
 };
+
+// check if the unit has collided with anything
+// in the future, maintain a list of entities within 100 units of the entity for faster checking
+Entity.prototype.collisionCheck = function()
+{
+	var state = [0,0,0];
+	var i = 0;
+	var c = 0;
+	
+	for (var i in playerList)
+	{
+		c = collisionCheckAux(this, playerList[i]);
+		
+		if (state[0] == 0)
+		{
+			state[0] = c[0];
+		}
+		else if (state[0] > 0 && state[0] != c)
+		{
+			state[0] = 3;
+		}		
+		
+		if (state[1] == 0)
+		{
+			state[1] = c[1];
+		}
+		else if (state[1] > 0 && state[1] != c)
+		{
+			state[1] = 3;
+		}		
+	}
+	
+	console.log(state);
+	
+	// adjust their movement based on their collisions
+	if (state[0] == 3 && state[1] > 0) //both sides collision
+	{
+		this.x_speed = 0;
+	}
+	else if (state[0] == 1 && state[1] > 0) //left side collision
+	{
+		if (this.x_speed < 0)
+		{
+			this.x_speed = 0;
+		}
+	}
+	else if (state[0] == 2 && state[1] > 0) //right side collision
+	{
+		if (this.x_speed > 0)
+		{
+			this.x_speed = 0;
+		}
+	}
+	
+	if (state[1] == 3 && state[0] > 0) // both sides collision
+	{
+		this.y_speed = 0;
+	}
+	else if (state[1] == 1 && state[0] > 0) //top side collision
+	{
+		if (this.y_speed < 0)
+		{
+			this.y_speed = 0;
+		}
+	}
+	else if (state[1] == 2 && state[0] > 0) // bottom side collision
+	{
+		if (this.y_speed > 0)
+		{
+			this.y_speed = 0;
+		}
+	}
+	
+	
+};
+
+// checks for a collision between two entities
+// returns an array with three values, in the order {x,y,z}
+// value is 0 for no collision, 1 for negative side collision, and 2 for positive side collision
+function collisionCheckAux(e1, e2)
+{
+	var c = [0,0,0];
+	
+	// x-axis
+	// check for intersection on the left side of e1
+	if (e1.x - (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) <= e2.x + (e2.width / 2))
+	{
+		c[0] = 1;
+	}
+	// check for intersection on the right side of e1
+	else if (e1.x + (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x + (e1.width / 2) <= e2.x + (e2.width / 2))
+	{
+		c[0] = 2;
+	}
+	
+	// y-axis
+	// check for intersection above e1
+	if (e1.y - (e1.height / 2) >= e2.y - (e2.height / 2) && e1.y - (e1.height / 2) <= e2.y)
+	{
+		c[1] = 1;
+	}
+	// check for intersection below e1
+	else if (e1.y >= e2.y - (e2.height / 2) && e1.y <= e2.y)
+	{
+		c[1] = 2;
+	}
+	
+	
+	// z-axis
+	
+	// return the result
+	return c;
+}
+
+function get_offset()
+{
+	var left_offset = player.entity.x - (pixelWidth / 2);
+	var right_offset = player.entity.x + (pixelWidth / 2);
+	
+	// check if the player is moving in the middle of the map and the screen needs to be moved
+	if (left_offset > 0 && right_offset < maxX[mapId])
+	{
+		x_offset = left_offset;
+	}
+	else if (left_offset > 0 && right_offset >= maxX[mapId])
+	{
+		x_offset = maxX[mapId] - pixelWidth;
+	}
+	else
+	{
+		x_offset = 0;
+	}
+}
 
 Entity.prototype.move = function(x, y) 
 {
@@ -365,7 +535,7 @@ socket.on('players', function(players)
 	{
 		p = copyEntity(players[i].entity);
 		playerList[i] = p;
-		delete oldList[i];
+		oldList.splice(i, 1);
 	}
 	
 	// remove any players who disconnected
