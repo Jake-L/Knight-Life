@@ -28,19 +28,13 @@ server.listen(5000, function() {
 });
 
 // retrieve data from the client
-var connected = {};
+var connected = new Array();
 io.on('connection', function(socket) 
 {
 	console.log(socket.id + " connected");
 	
-  socket.on('new player', function() 
-	{
-
-  });
-	
   socket.on('movement', function(player) 
 	{
-		
 		if (player != null)// && player.entity.x != null)
 		{
 			connected[socket.id] = player;
@@ -51,13 +45,13 @@ io.on('connection', function(socket)
 	{
     console.log(socket.id + " disconnected");
 		delete connected[socket.id];
+		displayPlayerCount();
 	});
 });
 
 // trasfer data to the client
 setInterval(function() 
 {
-	
 	for(var i in connected)
 	{
 		var players = new Array();
@@ -74,4 +68,24 @@ setInterval(function()
 	//io.emit('players', connected);
   
 }, 1000/60);
+
+// update server status every 5 seconds
+setInterval(function()
+{
+	displayPlayerCount();
+}, 30000);
+
+// display current number of players connected
+function displayPlayerCount()
+{
+	var n = 0;
+	
+	for (var i in connected)
+	{
+		n++;
+	}
+	
+	var currentTime = new Date();
+	console.log(currentTime.getHours() + ":" + currentTime.getMinutes() + ":" + currentTime.getSeconds() + " - " + n + " players connected");
+}
 

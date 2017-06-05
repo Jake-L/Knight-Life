@@ -71,6 +71,8 @@ window.addEventListener("focus", function()
 	frameTime = new Date().getTime();
 }
 );
+
+var rfps = 0;
 	
 var step = function() 
 {
@@ -80,14 +82,22 @@ var step = function()
 		frameTime += 16.6;
 		ucounter += 1;
 	}
-	
+	context.fillStyle = "#ADD8E6";
 	renderBackground();
   render();
 	rcounter += 1;
 	
+	if (rcounter >= 100)
+	{
+		rfps = Math.round(rcounter / ((new Date().getTime() - startTime)/1000));
+		startTime = new Date().getTime();
+		rcounter = 0;
+	}
+	context.fillStyle = "#000000";
+	context.fillText("FPS: " + rfps,10,10);
 	//console.log("Render FPS: " + Math.round(rcounter / ((new Date().getTime() - startTime)/1000)) + " Update FPS: " + Math.round(ucounter / ((new Date().getTime() - startTime)/1000)));
 
-	setTimeout(step, 1);
+	setTimeout(step, 5);
 };
 
 // run the main functions that must be updated based on time events
@@ -181,7 +191,7 @@ Entity.prototype.render = function()
 		this.width = this.sprite.width;
 		this.height = this.sprite.height;
 		this.draw_x = (this.x - (this.width/2) - x_offset) * graphics_scaling;
-		this.draw_y = (this.y - this.height - (this.z * (this.height / this.sprite.height) * 0.2)) * graphics_scaling;
+		this.draw_y = (this.y - this.height - this.z) * graphics_scaling;
 		context.drawImage(this.sprite, this.draw_x, this.draw_y, this.width * graphics_scaling, this.height * graphics_scaling);
 		context.restore();
 	}
@@ -214,7 +224,6 @@ var render = function()
 	
 	// sort the list of players
 	renderSort(renderList);
-	console.log(renderList);
 	
 	for (var n in renderList)
 	{
@@ -232,7 +241,7 @@ function renderSort(array)
 		e = array[i];
 		j = i - 1;
 		
-		while (j >= 0 && array[j].y > e.y)
+		while (j >= 0 && array[j].y > e.y - Math.floor(e.width / 2) - Math.ceil(e.z))
 		{
 			array[j + 1] = array[j];
 			j -= 1;
@@ -287,7 +296,7 @@ Player.prototype.update = function()
 			{
 				if (this.entity.z == 0 && this.entity.z_speed == 0) //can only jump if standing on the ground
 				{
-					this.entity.z_speed = 10;
+					this.entity.z_speed = 3;
 				}
 			}
 		}
@@ -295,13 +304,11 @@ Player.prototype.update = function()
 	
 	this.entity.collisionCheck();
 	
-	//console.log("x_speed: " + this.x_speed + "y_speed: " + this.y_speed);
-	
 	// apply gravity if the player is jumping
 	if (this.entity.z > 0 || this.entity.z_speed > 0)
 	{
 		this.entity.z += this.entity.z_speed;
-		this.entity.z_speed -= 0.5;
+		this.entity.z_speed -= 0.15;
 	
 		if (this.entity.z + this.entity.z_speed <= 0) //if on the ground, no gravity
 		{
@@ -344,110 +351,137 @@ Player.prototype.update = function()
 // in the future, maintain a list of entities within 100 units of the entity for faster checking
 Entity.prototype.collisionCheck = function()
 {
-	var state = [0,0,0];
-	var i = 0;
-	var c = 0;
-	
 	for (var i in playerList)
 	{
-		c = collisionCheckAux(this, playerList[i]);
-		
-		if (state[0] == 0)
+		// if the entity isn't trying to move, stop checking for collisions
+		if (Math.abs(this.x_speed) + Math.abs(this.y_speed) + Math.abs(this.z_speed) == 0)
 		{
-			state[0] = c[0];
+			break;
 		}
-		else if (state[0] > 0 && state[0] != c)
-		{
-			state[0] = 3;
-		}		
 		
-		if (state[1] == 0)
-		{
-			state[1] = c[1];
-		}
-		else if (state[1] > 0 && state[1] != c)
-		{
-			state[1] = 3;
-		}		
-	}
-	
-	console.log(state);
-	
-	// adjust their movement based on their collisions
-	if (state[0] == 3 && state[1] > 0) //both sides collision
-	{
-		this.x_speed = 0;
-	}
-	else if (state[0] == 1 && state[1] > 0) //left side collision
-	{
-		if (this.x_speed < 0)
+		console.log("collisionCheck");
+		var c = collisionCheckAux(this, playerList[i]);
+		
+		// check if their movement is blocked on the x-axis
+		if (c[0] == 1 && this.x_speed < 0)
 		{
 			this.x_speed = 0;
 		}
-	}
-	else if (state[0] == 2 && state[1] > 0) //right side collision
-	{
-		if (this.x_speed > 0)
+		else if (c[0] == -1 && this.x_speed > 0)
 		{
 			this.x_speed = 0;
 		}
-	}
-	
-	if (state[1] == 3 && state[0] > 0) // both sides collision
-	{
-		this.y_speed = 0;
-	}
-	else if (state[1] == 1 && state[0] > 0) //top side collision
-	{
-		if (this.y_speed < 0)
+		
+		// check if their movement is blocked on the y-axis
+		if (c[1] == 1 && this.y_speed < 0)
 		{
 			this.y_speed = 0;
 		}
-	}
-	else if (state[1] == 2 && state[0] > 0) // bottom side collision
-	{
-		if (this.y_speed > 0)
+		else if (c[1] == -1 && this.y_speed > 0)
 		{
 			this.y_speed = 0;
 		}
-	}
-	
-	
+		
+		// check if their movement is blocked on the z-axis
+		if (c[2] == 1 && this.z_speed < 0)
+		{
+			this.z_speed = 0;
+			this.z = Math.ceil(this.z);
+		}
+		else if (c[2] == -1 && this.z_speed > 0)
+		{
+			this.z_speed = 0;
+			this.z = Math.ceil(this.z);
+		}
+	}	
 };
 
-// checks for a collision between two entities
-// returns an array with three values, in the order {x,y,z}
-// value is 0 for no collision, 1 for negative side collision, and 2 for positive side collision
+/* checks for a collision between two entities
+ * returns an array with three values, in the order {x,y,z}
+ * possible return values:
+ * 	0: can move in any direction along that axis
+ * 	-1: can move in negative direction along axis
+ * 	1: can move in positive direction along axis
+ * a player can not be restricted from moving in either direction by a single entity
+ * if two entities are standing at the exact same coordinates, they can move in any direction
+ */
 function collisionCheckAux(e1, e2)
 {
 	var c = [0,0,0];
 	
-	// x-axis
-	// check for intersection on the left side of e1
-	if (e1.x - (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) <= e2.x + (e2.width / 2))
-	{
-		c[0] = 1;
-	}
-	// check for intersection on the right side of e1
-	else if (e1.x + (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x + (e1.width / 2) <= e2.x + (e2.width / 2))
-	{
-		c[0] = 2;
-	}
+	// check what x-directions the player can move (left / right)
+	if 
+	(
+		e1.x_speed != 0 //check that they are moving on the x-axis
+		// check for y-axis interception
+		&& ((e1.y - Math.floor(e1.width / 2) >= e2.y - Math.floor(e2.width / 2) && e1.y - Math.floor(e1.width / 2) < e2.y) //back side
+			|| (e1.y > e2.y - Math.floor(e2.width / 2) && e1.y <= e2.y)) //front side
+		&& ((Math.ceil(e1.z) >= Math.ceil(e2.z) && Math.ceil(e1.z) < Math.ceil(e2.z) + Math.floor(e2.height * 0.8)) // below
+			|| (Math.ceil(e1.z) + e1.height >= Math.ceil(e2.z) && Math.ceil(e1.z) + e1.height <= Math.ceil(e2.z) + e2.height)) // above
+		&& e1.x != e2.x //if they have the same x-position, don't restrict their movement on the x-axis
+	)
+		{
+			console.log("e1 y: " + e1.y + " e1 z: " + e1.z + " e2.y " + e2.y + " e2 z: " + e2.z);
+			// check if there is space to left of you to move
+			if (e1.x - (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) <= e2.x + (e2.width / 2))
+			{
+				c[0] = 1; //if there is no space to your left, you can only move right
+			}
+			// check if there is space to right of you to move
+			if (e1.x + (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x + (e1.width / 2) <= e2.x + (e2.width / 2))
+			{
+				c[0] = -1; //if there is no space to your right, you can only move left
+			}
+		}
 	
-	// y-axis
-	// check for intersection above e1
-	if (e1.y - (e1.height / 2) >= e2.y - (e2.height / 2) && e1.y - (e1.height / 2) <= e2.y)
-	{
-		c[1] = 1;
-	}
-	// check for intersection below e1
-	else if (e1.y >= e2.y - (e2.height / 2) && e1.y <= e2.y)
-	{
-		c[1] = 2;
-	}
+	// check what y-directions the player can move (forward / backward)
+	if 
+	(
+		e1.y_speed != 0 // check that they are actually moving on the y-axis
+		// check for x-axis interception
+		&& ((e1.x - (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) < e2.x + (e2.width / 2)) //left side
+		|| (e1.x + (e1.width / 2) > e2.x - (e2.width / 2) && e1.x + (e1.width / 2) <= e2.x + (e2.width / 2))) //right side
+		&& ((Math.ceil(e1.z) >= Math.ceil(e2.z) && Math.ceil(e1.z) < Math.ceil(e2.z) + Math.floor(e2.height * 0.8)) // below
+			|| (Math.ceil(e1.z) + e1.height >= Math.ceil(e2.z) && Math.ceil(e1.z) + e1.height <= Math.ceil(e2.z) + e2.height)) // above
+		&& e1.y != e2.y //if they have the same y-position, don't restrict their movement on the y-axis
+	)	
+		{
+			// check if there is space behind you to move
+			if (e1.y - (e1.width / 2) >= e2.y - (e2.width / 2) && e1.y - (e1.width / 2) <= e2.y) 
+			{
+				c[1] = 1; // if there is no space behind you, you can move downward but not upward
+			}
+			// check if there is space in front of you to move
+			else if (e1.y >= e2.y - (e2.width / 2) && e1.y <= e2.y)
+			{
+				c[1] = -1; // if there is no space in front of you, you can move upward but not downward
+			}
+		}
 	
+	// check what z-directions the player can move (upward / downward)
+	if
+	(
+		// check for x-axis interception
+		(e1.z > 0 || e1.z_speed != 0)
+		&& ((e1.x - (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) < e2.x + (e2.width / 2)) //left side
+		|| (e1.x + (e1.width / 2) > e2.x - (e2.width / 2) && e1.x + (e1.width / 2) <= e2.x + (e2.width / 2))) //right side
+		// check for y-axis interception
+		&& ((e1.y - Math.floor(e1.width / 2) >= e2.y - Math.floor(e2.width / 2) && e1.y - Math.floor(e1.width / 2) < e2.y) //back side
+		|| (e1.y > e2.y - Math.floor(e2.width / 2) && e1.y <= e2.y)) //front side
+	)
+		{
+			// check if there is space below you to move
+			if (Math.ceil(e1.z) >= Math.ceil(e2.z) && Math.ceil(e1.z) <= Math.ceil(e2.z) + Math.floor(e2.height * 0.8))
+			{
+				c[2] = 1;
+			}
+			// check if there is space above you to move
+			else if (Math.ceil(e1.z) + e1.height >= Math.ceil(e2.z) && Math.ceil(e1.z) + e1.height <= Math.ceil(e2.z) + e2.height)
+			{
+				c[2] = -1;
+			}
+		}
 	
-	// z-axis
 	
 	// return the result
 	return c;
@@ -527,31 +561,33 @@ socket.on('players', function(players)
 	
 	for (var n in playerList)
 	{
-		oldList[n] = true;
+		oldList[n] = false;
 	}
 	
 	// if there is a player in the new list not in the current list, add them
 	for(var i in players)
 	{
-		p = copyEntity(players[i].entity);
+		p = copyEntity(players[i]);
 		playerList[i] = p;
-		oldList.splice(i, 1);
+		oldList[i] = true;
 	}
 	
 	// remove any players who disconnected
 	for (var j in oldList)
 	{
+		if (oldList[j] == false)
+		{
 		delete playerList[j];
+		}
 	}
 });
 
-// send data to the server
-socket.emit('new player');
+// send current location to the server
 setInterval(function() 
 {
 	if (player != null)
 	{
-		socket.emit('movement', player);
+		socket.emit('movement', player.entity);
 	}
 }, 1000 / 60);
 
