@@ -182,9 +182,9 @@ Entity.prototype.render = function()
 	{
 		context.save();
 		context.shadowColor = "rgba(80, 80, 80, .4)";
-		context.shadowBlur = 15 + (this.z / graphics_scaling);
-		context.shadowOffsetX = graphics_scaling * 3 + (this.z * 0.2);
-		context.shadowOffsetY = graphics_scaling * 2 + (this.z * 0.8);
+		context.shadowBlur = 15 + this.z;
+		context.shadowOffsetX = 0;
+		context.shadowOffsetY = (3 + this.z) * graphics_scaling;
 		
 		//this.width = (this.sprite.width + (this.y * 0.1));
 		//this.height = (this.sprite.height + (this.y * 0.1));
@@ -241,13 +241,30 @@ function renderSort(array)
 		e = array[i];
 		j = i - 1;
 		
-		while (j >= 0 && array[j].y > e.y - Math.floor(e.width / 2) - Math.ceil(e.z))
+		while (j >= 0 && renderSortAux(array[j],e))
 		{
 			array[j + 1] = array[j];
 			j -= 1;
 		}
 		
 		array[j+1] = e;
+	}
+}
+
+// check what order two entities should be drawn in
+function renderSortAux(e1, e2)
+{
+	if (e1.y <= e2.y && e1.y > e2.y - (e2.width/3) && e1.z > e2.z) // if you're standing on top of them, you get drawn second
+	{
+		return true;
+	}
+	else if (e1.y > e2.y) // if you're standing in front of them, you get drawn second
+	{
+		return true;
+	}
+	else // otherwise, you're behind them and get drawn first
+	{
+		return false;
 	}
 }
 
@@ -359,7 +376,6 @@ Entity.prototype.collisionCheck = function()
 			break;
 		}
 		
-		console.log("collisionCheck");
 		var c = collisionCheckAux(this, playerList[i]);
 		
 		// check if their movement is blocked on the x-axis
@@ -421,7 +437,6 @@ function collisionCheckAux(e1, e2)
 		&& e1.x != e2.x //if they have the same x-position, don't restrict their movement on the x-axis
 	)
 		{
-			console.log("e1 y: " + e1.y + " e1 z: " + e1.z + " e2.y " + e2.y + " e2 z: " + e2.z);
 			// check if there is space to left of you to move
 			if (e1.x - (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) <= e2.x + (e2.width / 2))
 			{
