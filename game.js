@@ -18,6 +18,7 @@ var context = canvas.getContext('2d');
 context.imageSmoothingEnabled = false;
 context.fillStyle = "#ADD8E6";
 var backgroundSprite = new Image();
+var backgroundSpriteTop = new Image();
 
 //key mappings
 var left_key = 37;
@@ -54,12 +55,14 @@ function loadMap(mapId)
 	if (mapId == 0)
 	{
 		audio = new Audio("audio//track1.mp3");
-		backgroundSprite.src = "img//grassbackground.png";
+		backgroundSprite.src = "img//grass1.png";
+		backgroundSpriteTop.src = "img//grass1top.png";
 	}
 	else if (mapId == 1)
 	{
 		audio = new Audio("audio//track3.mp3");
-		backgroundSprite.src = "img//smw.png";
+		backgroundSprite.src = "img//grass1.png";
+		backgroundSpriteTop.src = "img//grass1top.png";
 	}
 }
 
@@ -128,26 +131,37 @@ function renderBackground()
 	if (backgroundSprite.complete && backgroundSprite.naturalHeight !== 0)
 	{
 		var x_counter = Math.ceil((width / graphics_scaling) / backgroundSprite.width) + 1;
-		var y_counter = Math.ceil((height / graphics_scaling) / backgroundSprite.height);
+		var y_counter = Math.ceil((height / graphics_scaling) / backgroundSprite.height) + 1;
 		
 		for (i = 0; i <= x_counter; i++)
 		{
 			for (j = 0; j <= y_counter; j++)
 			{
-				context.drawImage(backgroundSprite, 
-					((backgroundSprite.width * (i-1)) - (x_offset % backgroundSprite.width)) * graphics_scaling, //x position
-					((backgroundSprite.height * (j-1)) - (y_offset % backgroundSprite.height)) * graphics_scaling, //y position
+				// draw a different background rectangle at the very top of the screen
+				if (j == 0 && y_offset < backgroundSpriteTop.height)
+				{
+					context.drawImage(backgroundSpriteTop, 
+					((backgroundSpriteTop.width * i) - (x_offset % backgroundSpriteTop.width)) * graphics_scaling, //x position
+					((backgroundSpriteTop.height * j) - (y_offset % backgroundSpriteTop.height)) * graphics_scaling, //y position
+					backgroundSpriteTop.width * graphics_scaling, //width
+					backgroundSpriteTop.height * graphics_scaling); //height
+				}
+				// draw the usual background rectangle
+				else
+				{
+					context.drawImage(backgroundSprite, 
+					((backgroundSprite.width * i) - (x_offset % backgroundSprite.width)) * graphics_scaling, //x position
+					((backgroundSprite.height * j) - (y_offset % backgroundSprite.height)) * graphics_scaling, //y position
 					backgroundSprite.width * graphics_scaling, //width
 					backgroundSprite.height * graphics_scaling); //height
+				}
 			}
 		}
 	}
-
 }
 
 //create the player
 var player = new Player();
-
 
 //initialize an entity
 function Entity(x, y) 
