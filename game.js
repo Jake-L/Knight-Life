@@ -11,6 +11,7 @@ var graphics_scaling = Math.ceil(height/250);
 var pixelWidth = Math.ceil(width / graphics_scaling);
 var pixelHeight = Math.ceil(height / graphics_scaling);
 var x_offset = 0;
+var y_offset = 0;
 
 // create the player's graphics and add a shadow
 var context = canvas.getContext('2d');
@@ -31,7 +32,7 @@ var startTime = 0;
 var mapId = 0;
 var maxX = [1000];
 var minY = [30];
-var maxY = [200];
+var maxY = [500];
 
 var playerList = {};
 
@@ -126,11 +127,19 @@ function renderBackground()
 	
 	if (backgroundSprite.complete && backgroundSprite.naturalHeight !== 0)
 	{
-		var counter = Math.ceil((width / graphics_scaling) / backgroundSprite.width) + 1;
+		var x_counter = Math.ceil((width / graphics_scaling) / backgroundSprite.width) + 1;
+		var y_counter = Math.ceil((height / graphics_scaling) / backgroundSprite.height);
 		
-		for (i = 0; i <= counter; i++)
+		for (i = 0; i <= x_counter; i++)
 		{
-			context.drawImage(backgroundSprite, ((backgroundSprite.width * (i-1)) - (x_offset % backgroundSprite.width)) * graphics_scaling, height - (backgroundSprite.height * graphics_scaling) , backgroundSprite.width * graphics_scaling, backgroundSprite.height * graphics_scaling);
+			for (j = 0; j <= y_counter; j++)
+			{
+				context.drawImage(backgroundSprite, 
+					((backgroundSprite.width * (i-1)) - (x_offset % backgroundSprite.width)) * graphics_scaling, //x position
+					((backgroundSprite.height * (j-1)) - (y_offset % backgroundSprite.height)) * graphics_scaling, //y position
+					backgroundSprite.width * graphics_scaling, //width
+					backgroundSprite.height * graphics_scaling); //height
+			}
 		}
 	}
 
@@ -191,7 +200,7 @@ Entity.prototype.render = function()
 		this.width = this.sprite.width;
 		this.height = this.sprite.height;
 		this.draw_x = (this.x - (this.width/2) - x_offset) * graphics_scaling;
-		this.draw_y = (this.y - this.height - this.z) * graphics_scaling;
+		this.draw_y = (this.y - this.height - this.z - y_offset) * graphics_scaling;
 		context.drawImage(this.sprite, this.draw_x, this.draw_y, this.width * graphics_scaling, this.height * graphics_scaling);
 		context.restore();
 	}
@@ -502,6 +511,7 @@ function collisionCheckAux(e1, e2)
 	return c;
 }
 
+// check the offset used for screen scrolling
 function get_offset()
 {
 	var left_offset = player.entity.x - (pixelWidth / 2);
@@ -519,6 +529,22 @@ function get_offset()
 	else
 	{
 		x_offset = 0;
+	}
+	
+	var top_offset = player.entity.y - (pixelHeight / 2);
+	var bot_offset = player.entity.y + (pixelHeight / 2);
+	
+	if (top_offset > 0 && bot_offset < maxY[mapId])
+	{
+		y_offset = top_offset;
+	}
+	else if (top_offset > 0 && bot_offset >= maxY[mapId])
+	{
+		y_offset = maxY[mapId] - pixelHeight;
+	}
+	else
+	{
+		y_offset = 0;
 	}
 }
 
