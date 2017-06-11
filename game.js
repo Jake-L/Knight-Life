@@ -8,6 +8,7 @@ var height = window.innerHeight - 20;
 canvas.width = width;
 canvas.height = height;
 var graphics_scaling = Math.ceil(height/250);
+console.log(graphics_scaling);
 var pixelWidth = Math.ceil(width / graphics_scaling);
 var pixelHeight = Math.ceil(height / graphics_scaling);
 var x_offset = 0;
@@ -111,17 +112,19 @@ var step = function()
 		this.x = x; // X is the center of the sprite (in-game measurement units)
 		this.y = y; // Y is the bottom of the sprite (in-game measurement units)
 		this.z = 0; // Z is the sprite's height off the ground (in-game measurement units)
-		this.draw_x = 0; // the x position for displaying the image (graphics scaled units)
-		this.draw_y = 0; // the y position for displaying the image (graphics scaled units)
+
 		this.x_speed = 0;
 		this.y_speed = 0;
 		this.z_speed = 0;
-		this.width;
-		this.height;
-		this.knockback = false;
+		
+		this.width = 0;
+		this.depth = 0;
+		this.height = 0;
+		
+		this.knockback = false;		
+		
 		this.sprite = new Image();
 		this.sprite.src = "img//" + spriteName + ".png";
-
 	}
 
 
@@ -150,7 +153,7 @@ function renderBackground()
 	context.fillRect(0, 0, width, height);
 	
 	if (backgroundSprite.complete && backgroundSprite.naturalHeight !== 0)
-	{
+	{	
 		var x_counter = Math.ceil((width / graphics_scaling) / backgroundSprite.width) + 1;
 		var y_counter = Math.ceil((height / graphics_scaling) / backgroundSprite.height) + 1;
 		
@@ -193,11 +196,11 @@ function copyEntity(old)
 	p.x = old.x; // X is the center of the sprite (in-game measurement units)
   p.y = old.y; // Y is the bottom of the sprite (in-game measurement units)
 	p.z = old.z; // Z is the sprite's height off the ground (in-game measurement units)
-	p.draw_x = old.draw_x; // the x position for displaying the image (graphics scaled units)
-	p.draw_y = old.draw_y; // the y position for displaying the image (graphics scaled units)
 	p.width = old.width;
+	p.depth = old.depth;
 	p.height = old.height;
 	p.knockback = old.knockback;
+	
 	return p;
 }
 
@@ -212,13 +215,19 @@ Entity.prototype.render = function()
 		context.shadowOffsetX = 0;
 		context.shadowOffsetY = (3 + this.z) * graphics_scaling;
 		
-		//this.width = (this.sprite.width + (this.y * 0.1));
-		//this.height = (this.sprite.height + (this.y * 0.1));
-		this.width = this.sprite.width;
-		this.height = this.sprite.height;
-		this.draw_x = (this.x - (this.width/2) - x_offset) * graphics_scaling;
-		this.draw_y = (this.y - this.height - this.z - y_offset) * graphics_scaling;
-		context.drawImage(this.sprite, this.draw_x, this.draw_y, this.width * graphics_scaling, this.height * graphics_scaling);
+		if (this.width == 0)
+		{
+			this.width = this.sprite.width;
+			this.depth = this.sprite.height;
+			this.height = this.sprite.height;
+		}
+		
+		context.drawImage(
+			this.sprite, 
+			(this.x - (this.sprite.width/2) - x_offset) * graphics_scaling, 
+			(this.y - this.sprite.height - this.z - y_offset) * graphics_scaling,
+			this.sprite.width * graphics_scaling, 
+			this.sprite.height * graphics_scaling);
 		context.restore();
 	}
 };
@@ -226,7 +235,11 @@ Entity.prototype.render = function()
 //initialize the player
 function Player() 
 {
-   this.entity = new Entity(100,100,"playerDown0");
+   this.entity = new Entity(100,100,"playerDown0");	 
+
+	 
+	 
+	 console.log(this.entity.depth);
 }
 
 //display the player
@@ -285,7 +298,7 @@ function renderSort(array)
 // check what order two entities should be drawn in
 function renderSortAux(e1, e2)
 {
-	if (e1.y <= e2.y && e1.y > e2.y - (e2.width/3) && e1.z > e2.z) // if you're standing on top of them, you get drawn second
+	if (e1.y <= e2.y && e1.y > e2.y - Math.floor(e1.height * 0.8) && e1.z > e2.z) // if you're standing on top of them, you get drawn second
 	{
 		return true;
 	}
@@ -316,6 +329,16 @@ window.addEventListener("keyup", function(event)
 
 Player.prototype.update = function() 
 {
+	if (this.entity.sprite.complete && this.entity.sprite.naturalHeight !== 0)
+	{
+		 this.entity.width = Math.floor(this.entity.sprite.width * 0.75);
+		 this.entity.width -= this.entity.width % 2;
+		 this.entity.depth = Math.floor(this.entity.sprite.height * 0.25);
+		 this.entity.height = this.entity.sprite.height;
+	}
+	
+	console.log(this.entity.depth);
+	
 	// move the player based on user input
 	// loops through every key currently pressed and performs an action
 	if (!this.entity.knockback || (Maths.abs(y_speed) <= 3 && Math.abs(x_speed) <= 3))
@@ -465,11 +488,13 @@ function collisionCheckAux(e1, e2)
 	if 
 	(
 		e1.x_speed != 0 //check that they are moving on the x-axis
-		&& (e1.y > e2.y - (e2.width/2) && e1.y - (e1.width/2) < e2.y) // check for y-axis interception
+		&& (e1.y > e2.y - e2.depth && e1.y - e1.depth < e2.y) // check for y-axis interception
 		&& (e1.z < e2.z + Math.floor(e2.height * 0.8) && e1.z + Math.floor(e1.height * 0.8) > e2.z) // check for z-axis interception
 		&& e1.x != e2.x //if they have the same x-position, don't restrict their movement on the x-axis
 	)
 		{
+			console.log("e1.x : " + e1.x + " y: " + e1.y + " depth: " + e1.depth + " e2.y " + e2.y + " e2.depth " + e2.depth);
+			
 			// check if there is space to left of you to move
 			if (e1.x - (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) <= e2.x + (e2.width / 2))
 			{
@@ -492,12 +517,12 @@ function collisionCheckAux(e1, e2)
 	)	
 		{
 			// check if there is space behind you to move
-			if (e1.y - Math.ceil(e1.width / 2) >= e2.y - Math.ceil(e2.width / 2) && e1.y - Math.ceil(e1.width / 2) <= e2.y) 
+			if (e1.y - e1.depth >= e2.y - e2.depth && e1.y - e1.depth <= e2.y) 
 			{
 				c[1] = 1; // if there is no space behind you, you can move downward but not upward
 			}
 			// check if there is space in front of you to move
-			else if (e1.y >= e2.y - Math.ceil(e2.width / 2) && e1.y <= e2.y)
+			else if (e1.y >= e2.y - e2.depth && e1.y <= e2.y)
 			{
 				c[1] = -1; // if there is no space in front of you, you can move upward but not downward
 			}
@@ -509,7 +534,7 @@ function collisionCheckAux(e1, e2)
 		// check for x-axis interception
 		(e1.z > 0 || e1.z_speed != 0)
 		&& (e1.x + e1.width/2 > e2.x - e2.width/2 && e1.x - e1.width/2 < e2.x + e2.width/2) // check for x-axis interception
-		&& (e1.y > e2.y - (e2.width/2) && e1.y - (e1.width/2) < e2.y) // check for y-axis interception
+		&& (e1.y > e2.y - e2.depth && e1.y - e1.depth < e2.y) // check for y-axis interception
 	)
 		{
 			// check if there is space below you to move

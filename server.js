@@ -38,12 +38,14 @@ function mapObject(x,y,name)
 	}
 	
 var mapEntities = [];
-var mapObjects = new Array();
+var mapObjects = [];
 
 function initializeMap()
 {
 	// load Map 1
-	mapObjects[0] = new mapObject(100,200,"rock1");
+	mapObjects.push(new mapObject(100,200,"rock1"));
+	mapObjects.push(new mapObject(700,350,"bigrock"));
+	mapObjects.push(new mapObject(400,400,"rock1"));
 }
 
 // retrieve data from the client
