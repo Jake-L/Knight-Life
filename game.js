@@ -35,7 +35,8 @@ var maxX = [1000];
 var minY = [30];
 var maxY = [500];
 
-var playerList = {};
+var playerList = [];
+var mapObjects = [];
 
 
 window.onload = function() 
@@ -104,6 +105,26 @@ var step = function()
 	setTimeout(step, 5);
 };
 
+//initialize an entity
+	function Entity(x,y,spriteName)
+	{
+		this.x = x; // X is the center of the sprite (in-game measurement units)
+		this.y = y; // Y is the bottom of the sprite (in-game measurement units)
+		this.z = 0; // Z is the sprite's height off the ground (in-game measurement units)
+		this.draw_x = 0; // the x position for displaying the image (graphics scaled units)
+		this.draw_y = 0; // the y position for displaying the image (graphics scaled units)
+		this.x_speed = 0;
+		this.y_speed = 0;
+		this.z_speed = 0;
+		this.width;
+		this.height;
+		this.knockback = false;
+		this.sprite = new Image();
+		this.sprite.src = "img//" + spriteName + ".png";
+
+	}
+
+
 // run the main functions that must be updated based on time events
 // when the tab is inactive assume this function runs at 1 fps
 var update = function() 
@@ -163,28 +184,12 @@ function renderBackground()
 //create the player
 var player = new Player();
 
-//initialize an entity
-function Entity(x, y) 
-{
-  this.x = x; // X is the center of the sprite (in-game measurement units)
-  this.y = y; // Y is the bottom of the sprite (in-game measurement units)
-	this.z = 0; // Z is the sprite's height off the ground (in-game measurement units)
-	this.draw_x = 0; // the x position for displaying the image (graphics scaled units)
-	this.draw_y = 0; // the y position for displaying the image (graphics scaled units)
-  this.x_speed = 0;
-  this.y_speed = 0;
-	this.z_speed = 0;
-	this.width;
-	this.height;
-	this.knockback = false;
-	this.sprite = new Image();
-	this.sprite.src = "img//playerDown0.png";
-}
+
 
 //initialize an entity from a pre-existing entity
 function copyEntity(old)
 {
-	var p = new Entity();
+	var p = new Entity(old.x, old.y, "playerDown0");
 	p.x = old.x; // X is the center of the sprite (in-game measurement units)
   p.y = old.y; // Y is the bottom of the sprite (in-game measurement units)
 	p.z = old.z; // Z is the sprite's height off the ground (in-game measurement units)
@@ -193,8 +198,6 @@ function copyEntity(old)
 	p.width = old.width;
 	p.height = old.height;
 	p.knockback = old.knockback;
-	p.sprite = new Image();
-	p.sprite.src = "img//playerDown0.png";
 	return p;
 }
 
@@ -223,7 +226,7 @@ Entity.prototype.render = function()
 //initialize the player
 function Player() 
 {
-   this.entity = new Entity(100,100);
+   this.entity = new Entity(100,100,"playerDown0");
 }
 
 //display the player
@@ -243,6 +246,11 @@ var render = function()
 	for (var i in playerList)
 	{
 		renderList.push(playerList[i]); // add all the other players
+	}
+	
+	for (var j in mapObjects)
+	{
+		renderList.push(mapObjects[j]);
 	}
 	
 	// sort the list of players
@@ -391,15 +399,20 @@ Player.prototype.update = function()
 // in the future, maintain a list of entities within 100 units of the entity for faster checking
 Entity.prototype.collisionCheck = function()
 {
-	for (var i in playerList)
+	var collisionList = [];
+	Array.prototype.push.apply(collisionList, playerList);
+	Array.prototype.push.apply(collisionList, mapObjects);
+	
+	for (var i in collisionList)
 	{
+		
 		// if the entity isn't trying to move, stop checking for collisions
 		if (Math.abs(this.x_speed) + Math.abs(this.y_speed) + Math.abs(this.z_speed) == 0)
 		{
 			break;
 		}
 		
-		var c = collisionCheckAux(this, playerList[i]);
+		var c = collisionCheckAux(this, collisionList[i]);
 		
 		// check if their movement is blocked on the x-axis
 		if (c[0] == 1 && this.x_speed < 0)
@@ -452,11 +465,8 @@ function collisionCheckAux(e1, e2)
 	if 
 	(
 		e1.x_speed != 0 //check that they are moving on the x-axis
-		// check for y-axis interception
-		&& ((e1.y - Math.floor(e1.width / 2) >= e2.y - Math.floor(e2.width / 2) && e1.y - Math.floor(e1.width / 2) < e2.y) //back side
-			|| (e1.y > e2.y - Math.floor(e2.width / 2) && e1.y <= e2.y)) //front side
-		&& ((Math.ceil(e1.z) >= Math.ceil(e2.z) && Math.ceil(e1.z) < Math.ceil(e2.z) + Math.floor(e2.height * 0.8)) // below
-			|| (Math.ceil(e1.z) + e1.height >= Math.ceil(e2.z) && Math.ceil(e1.z) + e1.height <= Math.ceil(e2.z) + e2.height)) // above
+		&& (e1.y > e2.y - (e2.width/2) && e1.y - (e1.width/2) < e2.y) // check for y-axis interception
+		&& (e1.z < e2.z + Math.floor(e2.height * 0.8) && e1.z + Math.floor(e1.height * 0.8) > e2.z) // check for z-axis interception
 		&& e1.x != e2.x //if they have the same x-position, don't restrict their movement on the x-axis
 	)
 		{
@@ -476,21 +486,18 @@ function collisionCheckAux(e1, e2)
 	if 
 	(
 		e1.y_speed != 0 // check that they are actually moving on the y-axis
-		// check for x-axis interception
-		&& ((e1.x - (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) < e2.x + (e2.width / 2)) //left side
-		|| (e1.x + (e1.width / 2) > e2.x - (e2.width / 2) && e1.x + (e1.width / 2) <= e2.x + (e2.width / 2))) //right side
-		&& ((Math.ceil(e1.z) >= Math.ceil(e2.z) && Math.ceil(e1.z) < Math.ceil(e2.z) + Math.floor(e2.height * 0.8)) // below
-			|| (Math.ceil(e1.z) + e1.height >= Math.ceil(e2.z) && Math.ceil(e1.z) + e1.height <= Math.ceil(e2.z) + e2.height)) // above
+		&& (e1.x + e1.width/2 > e2.x - e2.width/2 && e1.x - e1.width/2 < e2.x + e2.width/2) // check for x-axis interception
+		&& (e1.z < e2.z + Math.floor(e2.height * 0.8) && e1.z + Math.floor(e1.height * 0.8) > e2.z) // check for z-axis interception
 		&& e1.y != e2.y //if they have the same y-position, don't restrict their movement on the y-axis
 	)	
 		{
 			// check if there is space behind you to move
-			if (e1.y - (e1.width / 2) >= e2.y - (e2.width / 2) && e1.y - (e1.width / 2) <= e2.y) 
+			if (e1.y - Math.ceil(e1.width / 2) >= e2.y - Math.ceil(e2.width / 2) && e1.y - Math.ceil(e1.width / 2) <= e2.y) 
 			{
 				c[1] = 1; // if there is no space behind you, you can move downward but not upward
 			}
 			// check if there is space in front of you to move
-			else if (e1.y >= e2.y - (e2.width / 2) && e1.y <= e2.y)
+			else if (e1.y >= e2.y - Math.ceil(e2.width / 2) && e1.y <= e2.y)
 			{
 				c[1] = -1; // if there is no space in front of you, you can move upward but not downward
 			}
@@ -501,11 +508,8 @@ function collisionCheckAux(e1, e2)
 	(
 		// check for x-axis interception
 		(e1.z > 0 || e1.z_speed != 0)
-		&& ((e1.x - (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) < e2.x + (e2.width / 2)) //left side
-		|| (e1.x + (e1.width / 2) > e2.x - (e2.width / 2) && e1.x + (e1.width / 2) <= e2.x + (e2.width / 2))) //right side
-		// check for y-axis interception
-		&& ((e1.y - Math.floor(e1.width / 2) >= e2.y - Math.floor(e2.width / 2) && e1.y - Math.floor(e1.width / 2) < e2.y) //back side
-		|| (e1.y > e2.y - Math.floor(e2.width / 2) && e1.y <= e2.y)) //front side
+		&& (e1.x + e1.width/2 > e2.x - e2.width/2 && e1.x - e1.width/2 < e2.x + e2.width/2) // check for x-axis interception
+		&& (e1.y > e2.y - (e2.width/2) && e1.y - (e1.width/2) < e2.y) // check for y-axis interception
 	)
 		{
 			// check if there is space below you to move
@@ -605,9 +609,19 @@ function printMousePos(event) {
 }
 
 document.addEventListener("click", printMousePos);
+//window.addEventListener("resize", myFunction);
 
 // retrieve data from the server
 var socket = io();
+
+socket.on('mapObjects', function(a)
+	{
+		for (var i in a)
+		{
+			mapObjects.push(new Entity(a[i].x, a[i].y, a[i].name));
+		}
+	}
+)
 
 socket.on('players', function(players)
 {
@@ -646,3 +660,4 @@ setInterval(function()
 	}
 }, 1000 / 60);
 
+socket.emit('new player');

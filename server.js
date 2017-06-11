@@ -25,13 +25,38 @@ app.get('/', function(request, response) {
 // Starts the server.
 server.listen(5000, function() {
   console.log('Starting server on port 5000');
+	initializeMap();
 });
+
+
+
+function mapObject(x,y,name)
+	{
+		this.x = x; // X is the center of the sprite (in-game measurement units)
+		this.y = y; // Y is the bottom of the sprite (in-game measurement units)
+		this.name = name;
+	}
+	
+var mapEntities = [];
+var mapObjects = new Array();
+
+function initializeMap()
+{
+	// load Map 1
+	mapObjects[0] = new mapObject(100,200,"rock1");
+}
 
 // retrieve data from the client
 var connected = new Array();
 io.on('connection', function(socket) 
 {
 	console.log(socket.id + " connected");
+	
+	socket.on('new player', function() 
+		{
+			io.to(socket.id).emit('mapObjects', mapObjects);
+		}
+  );
 	
   socket.on('movement', function(player) 
 	{
