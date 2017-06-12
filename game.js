@@ -121,6 +121,8 @@ var step = function()
 		this.depth = 0;
 		this.height = 0;
 		
+		this.direction = "Down";
+		
 		this.knockback = false;		
 		
 		this.sprite = new Image();
@@ -337,8 +339,6 @@ Player.prototype.update = function()
 		 this.entity.height = this.entity.sprite.height;
 	}
 	
-	console.log(this.entity.depth);
-	
 	// move the player based on user input
 	// loops through every key currently pressed and performs an action
 	if (!this.entity.knockback || (Maths.abs(y_speed) <= 3 && Math.abs(x_speed) <= 3))
@@ -410,6 +410,17 @@ Player.prototype.update = function()
 	// if they are not being knockbacked, apply their movement normally
 	else
 	{
+		if (this.entity.x_speed == 0 && this.entity.y_speed == 0)
+		{
+			this.entity.sprite.src = "img//player" + this.entity.direction + ".png";
+			console.log(this.entity.x_speed, this.entity.y_speed);
+		}
+		else
+		{
+			this.entity.sprite.src = "img//player" + this.entity.direction + (Math.floor(new Date().getMilliseconds() / 250) % 4 + ".png"); 
+		}
+		console.log(this.entity.sprite.src);
+		
 		this.entity.x += this.entity.x_speed;
 		this.entity.y += this.entity.y_speed;
 		this.entity.x_speed = 0;
