@@ -218,8 +218,8 @@ Entity.prototype.render = function()
 		if (this.width == 0)
 		{
 			this.width = this.sprite.width;
-			this.depth = this.sprite.height;
-			this.height = this.sprite.height;
+			this.depth = this.sprite.height * 0.75;
+			this.height = this.sprite.height / 2;
 		}
 		
 		context.drawImage(
@@ -380,8 +380,9 @@ Player.prototype.update = function()
 	{
 		this.entity.z += this.entity.z_speed;
 		this.entity.z_speed -= 0.15;
+		console.log(this.entity.z + " " + this.entity.z_speed);
 	
-		if (this.entity.z + this.entity.z_speed <= 0) //if on the ground, no gravity
+		if (this.entity.z <= 0) //if on the ground, no gravity
 		{
 			this.entity.z = 0;
 			this.entity.z_speed = 0;
@@ -461,12 +462,12 @@ Entity.prototype.collisionCheck = function()
 		if (c[2] == 1 && this.z_speed < 0)
 		{
 			this.z_speed = 0;
-			this.z = Math.ceil(this.z);
+			this.z = Math.floor(this.z);
 		}
 		else if (c[2] == -1 && this.z_speed > 0)
 		{
 			this.z_speed = 0;
-			this.z = Math.ceil(this.z);
+			this.z = Math.floor(this.z);
 		}
 	}	
 };
@@ -489,11 +490,12 @@ function collisionCheckAux(e1, e2)
 	(
 		e1.x_speed != 0 //check that they are moving on the x-axis
 		&& (e1.y > e2.y - e2.depth && e1.y - e1.depth < e2.y) // check for y-axis interception
-		&& (e1.z < e2.z + Math.floor(e2.height * 0.8) && e1.z + Math.floor(e1.height * 0.8) > e2.z) // check for z-axis interception
+		&& (Math.floor(e1.z) < Math.floor(e2.z) + Math.floor(e2.height * 0.5) 
+			&& Math.floor(e1.z) + Math.floor(e1.height * 0.5) > Math.floor(e2.z)) // check for z-axis interception
 		&& e1.x != e2.x //if they have the same x-position, don't restrict their movement on the x-axis
 	)
 		{
-			console.log("e1.x : " + e1.x + " y: " + e1.y + " depth: " + e1.depth + " e2.y " + e2.y + " e2.depth " + e2.depth);
+			
 			
 			// check if there is space to left of you to move
 			if (e1.x - (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) <= e2.x + (e2.width / 2))
@@ -512,7 +514,8 @@ function collisionCheckAux(e1, e2)
 	(
 		e1.y_speed != 0 // check that they are actually moving on the y-axis
 		&& (e1.x + e1.width/2 > e2.x - e2.width/2 && e1.x - e1.width/2 < e2.x + e2.width/2) // check for x-axis interception
-		&& (e1.z < e2.z + Math.floor(e2.height * 0.8) && e1.z + Math.floor(e1.height * 0.8) > e2.z) // check for z-axis interception
+		&& (Math.floor(e1.z) < Math.floor(e2.z) + Math.floor(e2.height * 0.5) 
+			&& Math.floor(e1.z) + Math.floor(e1.height * 0.5) > Math.floor(e2.z)) // check for z-axis interception
 		&& e1.y != e2.y //if they have the same y-position, don't restrict their movement on the y-axis
 	)	
 		{
@@ -531,19 +534,19 @@ function collisionCheckAux(e1, e2)
 	// check what z-directions the player can move (upward / downward)
 	if
 	(
-		// check for x-axis interception
-		(e1.z > 0 || e1.z_speed != 0)
-		&& (e1.x + e1.width/2 > e2.x - e2.width/2 && e1.x - e1.width/2 < e2.x + e2.width/2) // check for x-axis interception
+		(e1.x + e1.width/2 > e2.x - e2.width/2 && e1.x - e1.width/2 < e2.x + e2.width/2) // check for x-axis interception
 		&& (e1.y > e2.y - e2.depth && e1.y - e1.depth < e2.y) // check for y-axis interception
 	)
 		{
+			console.log("e1: " + "( " + e1.x + "," + e1.y + "," + e1.z + ")" + "e2: " + "( " + e2.x + "," + e2.y + "," + e2.z + ")");
+
 			// check if there is space below you to move
-			if (Math.ceil(e1.z) >= Math.ceil(e2.z) && Math.ceil(e1.z) <= Math.ceil(e2.z) + Math.floor(e2.height * 0.8))
+			if (Math.floor(e1.z) >= Math.floor(e2.z) && Math.floor(e1.z) <= Math.floor(e2.z) + Math.floor(e2.height * 0.8))
 			{
 				c[2] = 1;
 			}
 			// check if there is space above you to move
-			else if (Math.ceil(e1.z) + e1.height >= Math.ceil(e2.z) && Math.ceil(e1.z) + e1.height <= Math.ceil(e2.z) + e2.height)
+			else if (Math.floor(e1.z) + e1.height >= Math.floor(e2.z) && Math.floor(e1.z) + e1.height <= Math.floor(e2.z) + e2.height)
 			{
 				c[2] = -1;
 			}
