@@ -417,6 +417,22 @@ Player.prototype.update = function()
 		}
 		else
 		{
+			if(this.entity.x_speed > 0)
+			{
+				this.entity.direction = "Right";
+			}
+			else if (this.entity.x_speed < 0)
+			{
+				this.entity.direction = "Left";
+			}
+			else if (this.entity.y_speed < 0)
+			{
+				this.entity.direction = "Up";
+			}
+			else
+			{
+				this.entity.direction = "Down";
+			}
 			this.entity.sprite.src = "img//player" + this.entity.direction + (Math.floor(new Date().getMilliseconds() / 250) % 4 + ".png"); 
 		}
 		console.log(this.entity.sprite.src);
