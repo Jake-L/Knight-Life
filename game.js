@@ -39,6 +39,8 @@ var maxY = [500];
 var playerList = [];
 var mapObjects = [];
 
+//functions from external files
+mapObject = share.mapObject;
 
 window.onload = function() 
 {
@@ -126,6 +128,7 @@ var step = function()
 		this.knockback = false;		
 		
 		this.sprite = new Image();
+
 		this.sprite.src = "img//" + spriteName + ".png";
 	}
 
@@ -189,8 +192,6 @@ function renderBackground()
 //create the player
 var player = new Player();
 
-
-
 //initialize an entity from a pre-existing entity
 function copyEntity(old)
 {
@@ -202,6 +203,9 @@ function copyEntity(old)
 	p.depth = old.depth;
 	p.height = old.height;
 	p.knockback = old.knockback;
+	p.x_speed = old.x_speed;
+	p.y_speed = old.y_speed;
+	p.direction = old.direction;
 	
 	return p;
 }
@@ -209,6 +213,8 @@ function copyEntity(old)
 //display the entity
 Entity.prototype.render = function() 
 {	
+	this.updateSprite();
+
 	if (this.sprite.complete && this.sprite.naturalHeight !== 0)
 	{
 		context.save();
@@ -234,14 +240,39 @@ Entity.prototype.render = function()
 	}
 };
 
+Entity.prototype.updateSprite = function()
+{
+	if (this.x_speed == 0 && this.y_speed == 0)
+		{
+			this.sprite.src = "img//player" + this.direction + ".png";
+			console.log(this.x_speed, this.y_speed);
+		}
+		else
+		{
+			if(this.x_speed > 0)
+			{
+				this.direction = "Right";
+			}
+			else if (this.x_speed < 0)
+			{
+				this.direction = "Left";
+			}
+			else if (this.y_speed < 0)
+			{
+				this.direction = "Up";
+			}
+			else
+			{
+				this.direction = "Down";
+			}
+			this.sprite.src = "img//player" + this.direction + (Math.floor(new Date().getMilliseconds() / 250) % 4 + ".png"); 
+		}
+};
+
 //initialize the player
 function Player() 
 {
-   this.entity = new Entity(100,100,"playerDown0");	 
-
-	 
-	 
-	 console.log(this.entity.depth);
+  this.entity = new Entity(100,100,"playerDown0");	 
 }
 
 //display the player
@@ -331,11 +362,14 @@ window.addEventListener("keyup", function(event)
 
 Player.prototype.update = function() 
 {
+	this.entity.x_speed = 0;
+	this.entity.y_speed = 0;
+	
 	if (this.entity.sprite.complete && this.entity.sprite.naturalHeight !== 0)
 	{
-		 this.entity.width = Math.floor(this.entity.sprite.width * 0.75);
+		 this.entity.width = Math.floor(this.entity.sprite.width * 0.8);
 		 this.entity.width -= this.entity.width % 2;
-		 this.entity.depth = Math.floor(this.entity.sprite.height * 0.25);
+		 this.entity.depth = Math.floor(this.entity.sprite.height * 0.5);
 		 this.entity.height = this.entity.sprite.height;
 	}
 	
@@ -380,7 +414,7 @@ Player.prototype.update = function()
 	{
 		this.entity.z += this.entity.z_speed;
 		this.entity.z_speed -= 0.15;
-		console.log(this.entity.z + " " + this.entity.z_speed);
+		//console.log(this.entity.z + " " + this.entity.z_speed);
 	
 		if (this.entity.z <= 0) //if on the ground, no gravity
 		{
@@ -410,37 +444,10 @@ Player.prototype.update = function()
 	// if they are not being knockbacked, apply their movement normally
 	else
 	{
-		if (this.entity.x_speed == 0 && this.entity.y_speed == 0)
-		{
-			this.entity.sprite.src = "img//player" + this.entity.direction + ".png";
-			console.log(this.entity.x_speed, this.entity.y_speed);
-		}
-		else
-		{
-			if(this.entity.x_speed > 0)
-			{
-				this.entity.direction = "Right";
-			}
-			else if (this.entity.x_speed < 0)
-			{
-				this.entity.direction = "Left";
-			}
-			else if (this.entity.y_speed < 0)
-			{
-				this.entity.direction = "Up";
-			}
-			else
-			{
-				this.entity.direction = "Down";
-			}
-			this.entity.sprite.src = "img//player" + this.entity.direction + (Math.floor(new Date().getMilliseconds() / 250) % 4 + ".png"); 
-		}
-		console.log(this.entity.sprite.src);
-		
 		this.entity.x += this.entity.x_speed;
 		this.entity.y += this.entity.y_speed;
-		this.entity.x_speed = 0;
-		this.entity.y_speed = 0;
+		//this.entity.x_speed = 0;
+		//this.entity.y_speed = 0;
 	}
 	
 	get_offset();
@@ -670,13 +677,16 @@ document.addEventListener("click", printMousePos);
 var socket = io();
 
 socket.on('mapObjects', function(a)
+{
+	for (var i in a)
 	{
-		for (var i in a)
-		{
-			mapObjects.push(new Entity(a[i].x, a[i].y, a[i].name));
-		}
+		p = new mapObject(a[i].x, a[i].y, a[i].spriteName);
+		p.initialize();
+		mapObjects.push(p);
+		
 	}
-)
+});
+
 
 socket.on('players', function(players)
 {

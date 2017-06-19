@@ -28,14 +28,7 @@ server.listen(5000, function() {
 	initializeMap();
 });
 
-
-
-function mapObject(x,y,name)
-	{
-		this.x = x; // X is the center of the sprite (in-game measurement units)
-		this.y = y; // Y is the bottom of the sprite (in-game measurement units)
-		this.name = name;
-	}
+var mapObject = require('./mapobject.js').mapObject;
 	
 var mapEntities = [];
 var mapObjects = [];
@@ -46,6 +39,7 @@ function initializeMap()
 	mapObjects.push(new mapObject(100,200,"rock1"));
 	mapObjects.push(new mapObject(700,350,"bigrock"));
 	mapObjects.push(new mapObject(400,400,"rock1"));
+	console.log(mapObjects[0]);
 }
 
 // retrieve data from the client
