@@ -6,7 +6,12 @@
     this.x = x;
 		this.y = y;
 		this.z = 0;
+		this.x_speed = 0;
+		this.y_speed = 0;
 		this.spriteName = spriteName;
+		this.width = 20;
+		this.height = 20;
+		this.depth = 20;
 		
 		/*
 		this.initialize = function()

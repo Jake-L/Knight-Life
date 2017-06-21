@@ -20,6 +20,10 @@ context.imageSmoothingEnabled = false;
 context.fillStyle = "#ADD8E6";
 var backgroundSprite = new Image();
 var backgroundSpriteTop = new Image();
+var healthBarSprite = new Image();
+healthBarSprite.src = "img//healthbar.png";
+var healthBarGreenSprite = new Image();
+healthBarGreenSprite.src = "img//healthbargreen.png";
 
 //key mappings
 var left_key = 37;
@@ -41,12 +45,19 @@ var mapObjects = [];
 
 //functions from external files
 mapObject = share.mapObject;
+Entity = shareEntity.Entity;
+
+//create the player
+var player = new Player();
 
 window.onload = function() 
 {
   document.body.appendChild(canvas);
 	loadMap(mapId);
 	audio.play();
+	
+	//get the player's username
+	player.entity.display_name = getUsername();
 	
 	frameTime = new Date().getTime();
 	startTime = frameTime;
@@ -81,11 +92,12 @@ window.addEventListener("focus", function()
 );
 
 var rfps = 0;
-	
+
 var step = function() 
 {
 	if (new Date().getTime() > frameTime)
 	{
+		updateCollisionList();
 		update();
 		frameTime += 16.6;
 		ucounter += 1;
@@ -101,6 +113,7 @@ var step = function()
 		startTime = new Date().getTime();
 		rcounter = 0;
 	}
+	context.font = "10px sans-serif";
 	context.fillStyle = "#000000";
 	context.fillText("FPS: " + rfps,10,10);
 	//console.log("Render FPS: " + Math.round(rcounter / ((new Date().getTime() - startTime)/1000)) + " Update FPS: " + Math.round(ucounter / ((new Date().getTime() - startTime)/1000)));
@@ -108,29 +121,39 @@ var step = function()
 	setTimeout(step, 5);
 };
 
-//initialize an entity
-	function Entity(x,y,spriteName)
+function getUsername()
+{
+	var username = prompt("Please enter your username:");
+	if (username == null || username == "")
 	{
-		this.x = x; // X is the center of the sprite (in-game measurement units)
-		this.y = y; // Y is the bottom of the sprite (in-game measurement units)
-		this.z = 0; // Z is the sprite's height off the ground (in-game measurement units)
-
-		this.x_speed = 0;
-		this.y_speed = 0;
-		this.z_speed = 0;
-		
-		this.width = 0;
-		this.depth = 0;
-		this.height = 0;
-		
-		this.direction = "Down";
-		
-		this.knockback = false;		
-		
-		this.sprite = new Image();
-
-		this.sprite.src = "img//" + spriteName + ".png";
+		username = "Player";
 	}
+	return username;
+}
+
+// update the list of nearby entities once a second
+function updateCollisionList()
+{
+	var collisionList = [];
+	
+	for (var i in playerList)
+	{
+		if (Math.abs(playerList[i].x - player.entity.x) <= 120 && Math.abs(playerList[i].y - player.entity.y) <= 120)
+		{
+			collisionList.push(playerList[i]);
+		}
+	}
+	
+	for (var j in mapObjects)
+	{
+		if (Math.abs(mapObjects[j].x - player.entity.x) <= 120 && Math.abs(mapObjects[j].y - player.entity.y) <= 120)
+		{
+			collisionList.push(mapObjects[j]);
+		}
+	}
+	
+	player.entity.collisionList = collisionList;
+};
 
 
 // run the main functions that must be updated based on time events
@@ -150,6 +173,7 @@ var update = function()
 	
 	//update player object
   player.update();
+	
 };
 
 //displays the background image
@@ -189,9 +213,6 @@ function renderBackground()
 	}
 }
 
-//create the player
-var player = new Player();
-
 //initialize an entity from a pre-existing entity
 function copyEntity(old)
 {
@@ -206,73 +227,20 @@ function copyEntity(old)
 	p.x_speed = old.x_speed;
 	p.y_speed = old.y_speed;
 	p.direction = old.direction;
-	
+	p.display_name = old.display_name;
+	p.max_health = old.max_health;
+	p.current_health = old.current_health;
+	p.initialize();
 	return p;
 }
 
-//display the entity
-Entity.prototype.render = function() 
-{	
-	this.updateSprite();
-
-	if (this.sprite.complete && this.sprite.naturalHeight !== 0)
-	{
-		context.save();
-		context.shadowColor = "rgba(80, 80, 80, .4)";
-		context.shadowBlur = 15 + this.z;
-		context.shadowOffsetX = 0;
-		context.shadowOffsetY = (3 + this.z) * graphics_scaling;
-		
-		if (this.width == 0)
-		{
-			this.width = this.sprite.width;
-			this.depth = this.sprite.height * 0.75;
-			this.height = this.sprite.height / 2;
-		}
-		
-		context.drawImage(
-			this.sprite, 
-			(this.x - (this.sprite.width/2) - x_offset) * graphics_scaling, 
-			(this.y - this.sprite.height - this.z - y_offset) * graphics_scaling,
-			this.sprite.width * graphics_scaling, 
-			this.sprite.height * graphics_scaling);
-		context.restore();
-	}
-};
-
-Entity.prototype.updateSprite = function()
-{
-	if (this.x_speed == 0 && this.y_speed == 0)
-		{
-			this.sprite.src = "img//player" + this.direction + ".png";
-			console.log(this.x_speed, this.y_speed);
-		}
-		else
-		{
-			if(this.x_speed > 0)
-			{
-				this.direction = "Right";
-			}
-			else if (this.x_speed < 0)
-			{
-				this.direction = "Left";
-			}
-			else if (this.y_speed < 0)
-			{
-				this.direction = "Up";
-			}
-			else
-			{
-				this.direction = "Down";
-			}
-			this.sprite.src = "img//player" + this.direction + (Math.floor(new Date().getMilliseconds() / 250) % 4 + ".png"); 
-		}
-};
 
 //initialize the player
 function Player() 
 {
   this.entity = new Entity(100,100,"playerDown0");	 
+	this.entity.initialize();
+	this.healthRegenCounter = 0;
 }
 
 //display the player
@@ -285,7 +253,7 @@ Player.prototype.render = function()
 var render = function() 
 {
 	//create a list of all the entities to be rendered
-	var renderList = new Array();
+	var renderList = [];
 	
 	renderList.push(player.entity); // add the player
 	
@@ -293,6 +261,9 @@ var render = function()
 	{
 		renderList.push(playerList[i]); // add all the other players
 	}
+	
+	var entityList = [];
+	Array.prototype.push.apply(entityList, renderList);
 	
 	for (var j in mapObjects)
 	{
@@ -306,6 +277,12 @@ var render = function()
 	{
 		renderList[n].render(); // render each player
 	}
+	
+	for (var i in entityList)
+	{
+		entityList[i].renderHealthBar();
+	}
+	
 };
 
 // sort a list of entities by their y-position, so that they are overlap properly
@@ -362,8 +339,24 @@ window.addEventListener("keyup", function(event)
 
 Player.prototype.update = function() 
 {
+	// slowly regenerate health over time
+	if (this.entity.current_health < this.entity.max_health)
+	{
+		this.healthRegenCounter ++;
+		console.log(this.entity.current_health);
+	
+		if (this.healthRegenCounter >= 300)
+		{
+			this.entity.current_health ++;
+			this.healthRegenCounter = 0;
+		}
+	}
+	
 	this.entity.x_speed = 0;
 	this.entity.y_speed = 0;
+	
+	var x_direction = 0;
+	var y_direction = 0;
 	
 	if (this.entity.sprite.complete && this.entity.sprite.naturalHeight !== 0)
 	{
@@ -383,19 +376,19 @@ Player.prototype.update = function()
 			
 			if(value == left_key) 
 			{ 
-				this.entity.move(-1, 0);
+				x_direction += -1;
 			} 
 			else if (value == right_key) 
 			{
-				this.entity.move(1, 0);
+				x_direction += 1;
 			} 
 			else if (value == up_key)
 			{
-				this.entity.move(0,-1);
+				y_direction += -1;
 			}
 			else if (value == down_key)
 			{
-				this.entity.move(0,1)
+				y_direction += 1;
 			}		
 			else if (value == jump_key)
 			{
@@ -407,189 +400,14 @@ Player.prototype.update = function()
 		}
 	}
 	
-	this.entity.collisionCheck();
+	this.entity.move(x_direction, y_direction);
 	
-	// apply gravity if the player is jumping
-	if (this.entity.z > 0 || this.entity.z_speed > 0)
-	{
-		this.entity.z += this.entity.z_speed;
-		this.entity.z_speed -= 0.15;
-		//console.log(this.entity.z + " " + this.entity.z_speed);
+	this.entity.update();
 	
-		if (this.entity.z <= 0) //if on the ground, no gravity
-		{
-			this.entity.z = 0;
-			this.entity.z_speed = 0;
-		}
-	}
-	
-	// if the player has been knocked back by an attack, decrease their falling speed
-	if (this.entity.knockback)
-	{
-		if (this.entity.x_speed != 0) 
-		{
-			this.entity.x += this.entity.x_speed;
-			this.entity.x_speed = (Math.abs(this.entity.x_speed) - 0.5) * (this.entity.x_speed / Math.abs(this.entity.x_speed));
-		}
-		if (this.entity.y_speed != 0)
-		{
-			this.entity.y += this.entity.y_speed;
-			this.entity.y_speed = (Math.abs(this.entity.y_speed) - 0.5) * (this.entity.y_speed / Math.abs(this.entity.y_speed));
-		}
-		if (this.entity.y_speed == 0 && this.entity.x_speed == 0)
-		{
-			this.entity.knockback = false;
-		}
-	}
-	// if they are not being knockbacked, apply their movement normally
-	else
-	{
-		this.entity.x += this.entity.x_speed;
-		this.entity.y += this.entity.y_speed;
-		//this.entity.x_speed = 0;
-		//this.entity.y_speed = 0;
-	}
+	socket.emit('movement', player.entity); // transmit new location to the server
 	
 	get_offset();
 };
-
-// check if the unit has collided with anything
-// in the future, maintain a list of entities within 100 units of the entity for faster checking
-Entity.prototype.collisionCheck = function()
-{
-	var collisionList = [];
-	Array.prototype.push.apply(collisionList, playerList);
-	Array.prototype.push.apply(collisionList, mapObjects);
-	
-	for (var i in collisionList)
-	{
-		
-		// if the entity isn't trying to move, stop checking for collisions
-		if (Math.abs(this.x_speed) + Math.abs(this.y_speed) + Math.abs(this.z_speed) == 0)
-		{
-			break;
-		}
-		
-		var c = collisionCheckAux(this, collisionList[i]);
-		
-		// check if their movement is blocked on the x-axis
-		if (c[0] == 1 && this.x_speed < 0)
-		{
-			this.x_speed = 0;
-		}
-		else if (c[0] == -1 && this.x_speed > 0)
-		{
-			this.x_speed = 0;
-		}
-		
-		// check if their movement is blocked on the y-axis
-		if (c[1] == 1 && this.y_speed < 0)
-		{
-			this.y_speed = 0;
-		}
-		else if (c[1] == -1 && this.y_speed > 0)
-		{
-			this.y_speed = 0;
-		}
-		
-		// check if their movement is blocked on the z-axis
-		if (c[2] == 1 && this.z_speed < 0)
-		{
-			this.z_speed = 0;
-			this.z = Math.floor(this.z);
-		}
-		else if (c[2] == -1 && this.z_speed > 0)
-		{
-			this.z_speed = 0;
-			this.z = Math.floor(this.z);
-		}
-	}	
-};
-
-/* checks for a collision between two entities
- * returns an array with three values, in the order {x,y,z}
- * possible return values:
- * 	0: can move in any direction along that axis
- * 	-1: can move in negative direction along axis
- * 	1: can move in positive direction along axis
- * a player can not be restricted from moving in either direction by a single entity
- * if two entities are standing at the exact same coordinates, they can move in any direction
- */
-function collisionCheckAux(e1, e2)
-{
-	var c = [0,0,0];
-	
-	// check what x-directions the player can move (left / right)
-	if 
-	(
-		e1.x_speed != 0 //check that they are moving on the x-axis
-		&& (e1.y > e2.y - e2.depth && e1.y - e1.depth < e2.y) // check for y-axis interception
-		&& (Math.floor(e1.z) < Math.floor(e2.z) + Math.floor(e2.height * 0.5) 
-			&& Math.floor(e1.z) + Math.floor(e1.height * 0.5) > Math.floor(e2.z)) // check for z-axis interception
-		&& e1.x != e2.x //if they have the same x-position, don't restrict their movement on the x-axis
-	)
-		{
-			
-			
-			// check if there is space to left of you to move
-			if (e1.x - (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) <= e2.x + (e2.width / 2))
-			{
-				c[0] = 1; //if there is no space to your left, you can only move right
-			}
-			// check if there is space to right of you to move
-			if (e1.x + (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x + (e1.width / 2) <= e2.x + (e2.width / 2))
-			{
-				c[0] = -1; //if there is no space to your right, you can only move left
-			}
-		}
-	
-	// check what y-directions the player can move (forward / backward)
-	if 
-	(
-		e1.y_speed != 0 // check that they are actually moving on the y-axis
-		&& (e1.x + e1.width/2 > e2.x - e2.width/2 && e1.x - e1.width/2 < e2.x + e2.width/2) // check for x-axis interception
-		&& (Math.floor(e1.z) < Math.floor(e2.z) + Math.floor(e2.height * 0.5) 
-			&& Math.floor(e1.z) + Math.floor(e1.height * 0.5) > Math.floor(e2.z)) // check for z-axis interception
-		&& e1.y != e2.y //if they have the same y-position, don't restrict their movement on the y-axis
-	)	
-		{
-			// check if there is space behind you to move
-			if (e1.y - e1.depth >= e2.y - e2.depth && e1.y - e1.depth <= e2.y) 
-			{
-				c[1] = 1; // if there is no space behind you, you can move downward but not upward
-			}
-			// check if there is space in front of you to move
-			else if (e1.y >= e2.y - e2.depth && e1.y <= e2.y)
-			{
-				c[1] = -1; // if there is no space in front of you, you can move upward but not downward
-			}
-		}
-	
-	// check what z-directions the player can move (upward / downward)
-	if
-	(
-		(e1.x + e1.width/2 > e2.x - e2.width/2 && e1.x - e1.width/2 < e2.x + e2.width/2) // check for x-axis interception
-		&& (e1.y > e2.y - e2.depth && e1.y - e1.depth < e2.y) // check for y-axis interception
-	)
-		{
-			console.log("e1: " + "( " + e1.x + "," + e1.y + "," + e1.z + ")" + "e2: " + "( " + e2.x + "," + e2.y + "," + e2.z + ")");
-
-			// check if there is space below you to move
-			if (Math.floor(e1.z) >= Math.floor(e2.z) && Math.floor(e1.z) <= Math.floor(e2.z) + Math.floor(e2.height * 0.8))
-			{
-				c[2] = 1;
-			}
-			// check if there is space above you to move
-			else if (Math.floor(e1.z) + e1.height >= Math.floor(e2.z) && Math.floor(e1.z) + e1.height <= Math.floor(e2.z) + e2.height)
-			{
-				c[2] = -1;
-			}
-		}
-	
-	
-	// return the result
-	return c;
-}
 
 // check the offset used for screen scrolling
 function get_offset()
@@ -628,42 +446,7 @@ function get_offset()
 	}
 }
 
-Entity.prototype.move = function(x, y) 
-{
-	this.knockback = false;
-	
-	// check if the character moves along the x-axis
-  if(this.x + x - (this.width/2) <= 0) // at the left edge
-	{ 
-    this.x = (this.width/2);
-    this.x_speed = 0;
-  } 
-	else if ((this.x + x + (this.width/2)) >= maxX[mapId]) // at the right edge
-	{ 
-    this.x = maxX[mapId] - (this.width/2);
-    this.x_speed = 0;
-  }
-	else
-	{
-		this.x_speed += x;
-	}
-	
-  //check if the character moves along the y-axis
-	if (this.y + y - this.height <= minY[mapId]) // at the top edge
-	{
-		this.y = minY[mapId] + this.height;
-		this.y_speed = 0;
-	}
-	else if (this.y + y >= maxY[mapId]) // at the bottom edge
-	{
-		this.y = maxY[mapId];
-		this.y_speed = 0;
-	}
-	else
-	{
-		this.y_speed += y;
-	}
-}
+
 
 // check if the user clicks the mouse
 function printMousePos(event) {
@@ -711,7 +494,7 @@ socket.on('players', function(players)
 	{
 		if (oldList[j] == false)
 		{
-		delete playerList[j];
+			delete playerList[j];
 		}
 	}
 });
