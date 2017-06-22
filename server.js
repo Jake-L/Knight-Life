@@ -17,11 +17,6 @@ var io = socketIO(server);
 app.set('port', 5000);
 app.use('/', express.static(__dirname + '/'));
 
-// Constants
-global.maxX = [1000];
-global.minY = [30];
-global.maxY = [500];
-
 // Routing
 app.get('/', function(request, response) {
   response.sendFile(path.join(__dirname, 'index.html'));
@@ -33,8 +28,14 @@ server.listen(5000, function() {
 	initializeMap();
 });
 
+// Constants
+global.maxX = [1000];
+global.minY = [30];
+global.maxY = [500];
+
 var mapObject = require('./mapobject.js').mapObject;
 var Entity = require('./entity.js').Entity;
+var sizeOf = require('image-size');
 	
 var mapEntities = [];
 var directionCounter = [];
@@ -52,6 +53,13 @@ function initializeMap()
 	mapObjects.push(new mapObject(700,350,"bigrock"));
 	mapObjects.push(new mapObject(400,400,"rock1"));
 	
+	for (var i in mapObjects)
+	{
+		mapObjects[i].width = sizeOf("img//" + mapObjects[i].spriteName + ".png").width;
+		mapObjects[i].width = sizeOf("img//" + mapObjects[i].spriteName + ".png").width;
+		console.log(mapObjects[i].width);
+	}
+	
 	// load NPCs
 	mapEntities.push(new Entity(300, 150, "playerDown"));
 	mapEntities.push(new Entity(500, 60, "playerDown"));
@@ -60,9 +68,11 @@ function initializeMap()
 	
 	for (var i in mapEntities)
 	{
-		mapEntities[i].width = 12;
-		mapEntities[i].depth = 12;
-		mapEntities[i].height = 25;		
+		mapEntities[i].width = sizeOf("img//" + mapEntities[i].spriteName + ".png").width;
+		mapEntities[i].width -= mapEntities[i].width % 2;
+		mapEntities[i].depth = Math.floor(sizeOf("img//" + mapEntities[i].spriteName + ".png").height * 0.5);
+		mapEntities[i].height = sizeOf("img//" + mapEntities[i].spriteName + ".png").height
+		console.log(mapEntities[i]);
 		directionCounter[i] = 0;
 		x_direction[i] = 0;
 		y_direction[i] = 0;
@@ -70,6 +80,7 @@ function initializeMap()
 }
 
 //initialize an entity from a pre-existing entity
+// output is only used for collision detection, so visual attributes don't matter
 function copyEntity(old)
 {
 	var p = new Entity(old.x, old.y, old.spriteName);
@@ -109,14 +120,12 @@ function updateCollisionList()
 			
 		for (var j in mapObjects)
 		{			
-			console.log(j);
-			//if (Math.abs(mapObjects[j].x - mapEntities[i].x) <= 60 && Math.abs(mapObjects[j].y - mapEntities[i].y) <= 60)
+			if (Math.abs(mapObjects[j].x - mapEntities[i].x) <= 60 && Math.abs(mapObjects[j].y - mapEntities[i].y) <= 60)
 			{
 				c.push(copyEntity(mapObjects[j]));
 			}
 		}
 		
-		//mapEntities[i].setCollisionList(c, connected, mapObjects);
 		mapEntities[i].collisionList = c;
 	}
 }
@@ -208,6 +217,29 @@ function displayPlayerCount()
 	}
 	
 	var currentTime = new Date();
-	console.log(currentTime.getHours() + ":" + currentTime.getMinutes() + ":" + currentTime.getSeconds() + " - " + n + " players connected");
+	var t = ""
+	
+	if (currentTime.getHours() < 10)
+	{
+		t = "0";
+	}
+	
+	t += currentTime.getHours() + ":";
+	
+	if (currentTime.getMinutes() < 10)
+	{
+		t += "0";
+	}
+	
+	t += currentTime.getMinutes() + ":";
+	
+	if (currentTime.getSeconds() < 10)
+	{
+		t += "0";
+	}
+	
+	t += currentTime.getSeconds();
+	
+	console.log(t + " - " + n + " players connected");
 }
 

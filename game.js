@@ -31,6 +31,7 @@ var up_key = 38;
 var right_key = 39;
 var down_key = 40;
 var jump_key = 70;
+var attack_key = 71;
 
 var frameTime = 0;
 var startTime = 0;
@@ -43,6 +44,51 @@ var maxY = [500];
 var playerList = [];
 var mapObjects = [];
 
+var playerSprite = [];
+
+function getDirName(n)
+	{
+		if (n == 0)
+		{
+			return "Left";
+		}
+		else if (n == 1)
+		{
+			return "Up";
+		}
+		else if (n == 2)
+		{
+			return "Right";
+		}
+		else if (n == 3)
+		{
+			return "Down";
+		}
+		
+		return "";
+	}
+	
+	function getDirNum(s)
+	{
+		if (s == "Left")
+		{
+			return 0;
+		}
+		else if (s == "Up")
+		{
+			return 1;
+		}
+		else if (s == "Right")
+		{
+			return 2;
+		}
+		else if (s == "Down")
+		{
+			return 3;
+		}
+	}
+
+
 //functions from external files
 mapObject = share.mapObject;
 Entity = shareEntity.Entity;
@@ -54,7 +100,8 @@ window.onload = function()
 {
   document.body.appendChild(canvas);
 	loadMap(mapId);
-	audio.play();
+	audio.play(); //must come after loadMap
+	loadSprite();
 	
 	//get the player's username
 	player.entity.display_name = getUsername();
@@ -79,6 +126,30 @@ function loadMap(mapId)
 		backgroundSprite.src = "img//grass1.png";
 		backgroundSpriteTop.src = "img//grass1top.png";
 	}
+}
+
+//load sprites
+function loadSprite()
+{	
+	var a = [];
+
+	for (var i = 0; i < 4; i++)
+	{
+		var s = [];
+		var img;
+		
+		for (var j = 0; j < 4; j++)
+		{
+			img = new Image();
+			img.src = "img//player" + getDirName(i) + j + ".png";
+			s[j] = img;		
+		}
+		
+		a[i] = s;
+	}	
+	
+	playerSprite["playerDown"] = a;
+	//console.log(a[3][3]);
 }
 
 var ucounter = 0;
@@ -216,7 +287,7 @@ function renderBackground()
 //initialize an entity from a pre-existing entity
 function copyEntity(old)
 {
-	var p = new Entity(old.x, old.y, "playerDown0");
+	var p = new Entity(old.x, old.y, "playerDown");
 	p.x = old.x; // X is the center of the sprite (in-game measurement units)
   p.y = old.y; // Y is the bottom of the sprite (in-game measurement units)
 	p.z = old.z; // Z is the sprite's height off the ground (in-game measurement units)
@@ -238,7 +309,7 @@ function copyEntity(old)
 //initialize the player
 function Player() 
 {
-  this.entity = new Entity(100,100,"playerDown0");	 
+  this.entity = new Entity(100,100,"playerDown");	 
 	this.entity.initialize();
 	this.healthRegenCounter = 0;
 }
@@ -255,12 +326,12 @@ var render = function()
 	//create a list of all the entities to be rendered
 	var renderList = [];
 	
-	renderList.push(player.entity); // add the player
-	
 	for (var i in playerList)
 	{
 		renderList.push(playerList[i]); // add all the other players
 	}
+	
+	renderList.push(player.entity); // add the player
 	
 	var entityList = [];
 	Array.prototype.push.apply(entityList, renderList);

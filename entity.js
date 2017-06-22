@@ -149,29 +149,30 @@ exports.Entity.prototype.renderHealthBar = function()
 exports.Entity.prototype.updateSprite = function()
 {
 	if (this.x_speed == 0 && this.y_speed == 0)
+	{
+		this.sprite = playerSprite[this.spriteName][getDirNum(this.direction)][0];
+	}
+	else
+	{
+		if(this.x_speed > 0)
 		{
-			this.sprite.src = "img//player" + this.direction + ".png";
+			this.direction = "Right";
 		}
-		else
+		else if (this.x_speed < 0)
 		{
-			if(this.x_speed > 0)
-			{
-				this.direction = "Right";
-			}
-			else if (this.x_speed < 0)
-			{
-				this.direction = "Left";
-			}
-			else if (this.y_speed < 0)
-			{
-				this.direction = "Up";
-			}
-			else
-			{
-				this.direction = "Down";
-			}
-			this.sprite.src = "img//player" + this.direction + (Math.floor(new Date().getMilliseconds() / 250) % 4 + ".png"); 
+			this.direction = "Left";
 		}
+		else if (this.y_speed < 0)
+		{
+			this.direction = "Up";
+		}
+		else if (this.y_speed > 0)
+		{
+			this.direction = "Down";
+		}
+
+		this.sprite = playerSprite[this.spriteName][getDirNum(this.direction)][Math.floor(new Date().getMilliseconds() / 250) % 4];
+	}
 };
 
 // check if the unit has collided with anything
@@ -242,7 +243,7 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 		&& (e1.y + e1.y_speed > e2.y - e2.depth && e1.y - e1.depth + e1.y_speed < e2.y) // check for y-axis interception
 		&& (Math.floor(e1.z) < Math.floor(e2.z) + Math.floor(e2.height * 0.5) 
 			&& Math.floor(e1.z) + Math.floor(e1.height * 0.5) > Math.floor(e2.z)) // check for z-axis interception
-		//&& e1.x != e2.x //if they have the same x-position, don't restrict their movement on the x-axis
+		&& e1.x != e2.x //if they have the same x-position, don't restrict their movement on the x-axis
 	)
 		{
 			// check if there is space to left of you to move
@@ -264,7 +265,7 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 		&& (e1.x + (e1.width/2) + e1.x_speed > e2.x - (e2.width/2) && e1.x - (e1.width/2) + e1.x_speed < e2.x + (e2.width/2)) // check for x-axis interception
 		&& (Math.floor(e1.z) < Math.floor(e2.z) + Math.floor(e2.height * 0.5) 
 			&& Math.floor(e1.z) + Math.floor(e1.height * 0.5) > Math.floor(e2.z)) // check for z-axis interception
-		//&& e1.y != e2.y //if they have the same y-position, don't restrict their movement on the y-axis
+		&& e1.y != e2.y //if they have the same y-position, don't restrict their movement on the y-axis
 	)	
 		{
 			// check if there is space behind you to move
