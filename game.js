@@ -30,8 +30,9 @@ var left_key = 37;
 var up_key = 38;
 var right_key = 39;
 var down_key = 40;
-var jump_key = 70;
-var attack_key = 71;
+var jump_key = 49;
+var attack_key = 50;
+var attack2_key = 51;
 
 var frameTime = 0;
 var startTime = 0;
@@ -43,8 +44,10 @@ var maxY = [500];
 
 var playerList = [];
 var mapObjects = [];
+var projectileList = [];
 
 var playerSprite = [];
+var playerAttackSprite = [];
 
 function getDirName(n)
 	{
@@ -131,12 +134,13 @@ function loadMap(mapId)
 //load sprites
 function loadSprite()
 {	
+	// load player movement sprites
 	var a = [];
+	var img;
 
 	for (var i = 0; i < 4; i++)
 	{
 		var s = [];
-		var img;
 		
 		for (var j = 0; j < 4; j++)
 		{
@@ -149,7 +153,25 @@ function loadSprite()
 	}	
 	
 	playerSprite["playerDown"] = a;
-	//console.log(a[3][3]);
+	
+	// load player attack sprites
+	var a = [];
+	
+	for (var i = 0; i < 4; i++)
+	{
+		var s = [];
+		
+		for (var j = 0; j < 3; j++)
+		{
+			img = new Image();
+			img.src = "img//playerAttack" + getDirName(i) + j + ".png";
+			s[j] = img;		
+		}
+		
+		a[i] = s;
+	}
+	
+	playerAttackSprite["playerDown"] = a;
 }
 
 var ucounter = 0;
@@ -224,7 +246,7 @@ function updateCollisionList()
 	}
 	
 	player.entity.collisionList = collisionList;
-};
+}
 
 
 // run the main functions that must be updated based on time events
@@ -243,8 +265,7 @@ var update = function()
 	}
 	
 	//update player object
-  player.update();
-	
+  player.update();	
 };
 
 //displays the background image
@@ -328,9 +349,11 @@ var render = function()
 	
 	for (var i in playerList)
 	{
+		playerList[i].updateSprite();
 		renderList.push(playerList[i]); // add all the other players
 	}
 	
+	player.entity.updateSprite();
 	renderList.push(player.entity); // add the player
 	
 	var entityList = [];
@@ -339,6 +362,11 @@ var render = function()
 	for (var j in mapObjects)
 	{
 		renderList.push(mapObjects[j]);
+	}
+	
+	for (var j in projectileList)
+	{
+		renderList.push(projectileList[j]);
 	}
 	
 	// sort the list of players
@@ -414,7 +442,6 @@ Player.prototype.update = function()
 	if (this.entity.current_health < this.entity.max_health)
 	{
 		this.healthRegenCounter ++;
-		console.log(this.entity.current_health);
 	
 		if (this.healthRegenCounter >= 300)
 		{
@@ -445,7 +472,23 @@ Player.prototype.update = function()
 		{
 			var value = Number(key);
 			
-			if(value == left_key) 
+			if (value == attack_key)
+			{
+				if (this.entity.attack_counter <= 0)
+				{
+					this.entity.attack = 1;
+					this.entity.attack_counter = this.entity.attack1_frame_length;
+				}
+			}		
+			else if (value == attack2_key)
+			{
+				if (this.entity.attack_counter <= 0)
+				{
+					this.entity.attack = 2;
+					this.entity.attack_counter = this.entity.attack2_frame_length;
+				}
+			}
+			else if(value == left_key) 
 			{ 
 				x_direction += -1;
 			} 
@@ -517,7 +560,42 @@ function get_offset()
 	}
 }
 
-
+// holds information about projectiles on-screen
+function Projectile(p)
+{
+	this.x = p.x;
+	this.y = p.y;
+	//this.x = p.spawn_x;
+	//this.y = p.spawn_y;
+	this.z = p.z;
+	this.x_speed = p.x_speed;
+	this.y_speed = p.y_speed;
+	this.spriteName = p.spriteName;
+	this.spawn_time = p.spawn_time;
+	this.sprite = new Image();
+	this.sprite.src = "img//" + this.spriteName + ".png";
+	
+	this.render = function()
+	{
+		context.save();
+		context.shadowColor = "rgba(80, 80, 80, .4)";
+		context.shadowBlur = 15 + this.z;
+		context.shadowOffsetX = 0;
+		context.shadowOffsetY = (3 + this.z) * graphics_scaling;
+		
+		var n = (new Date().getTime() - this.spawn_time)/(1000/60);
+		
+		context.drawImage(
+			this.sprite, (this.x - (this.sprite.width/2) - x_offset) * graphics_scaling, 
+			(this.y - this.sprite.height - this.z - y_offset) * graphics_scaling,
+			//(this.x + (n * this.x_speed) - (this.sprite.width/2) - x_offset) * graphics_scaling, 
+			//(this.y + (n * this.y_speed) - this.sprite.height - this.z - y_offset) * graphics_scaling,
+			this.sprite.width * graphics_scaling, 
+			this.sprite.height * graphics_scaling);
+			
+		context.restore();
+	};
+}
 
 // check if the user clicks the mouse
 function printMousePos(event) {
@@ -537,7 +615,6 @@ socket.on('mapObjects', function(a)
 		p = new mapObject(a[i].x, a[i].y, a[i].spriteName);
 		p.initialize();
 		mapObjects.push(p);
-		
 	}
 });
 
@@ -567,6 +644,24 @@ socket.on('players', function(players)
 		{
 			delete playerList[j];
 		}
+	}
+});
+
+// server notifies that the player has taken damage
+socket.on('damageIn', function(x, y, damage)
+{
+	player.entity.takeDamage(x, y, damage);
+	player.healthRegenCounter = 0;
+});
+
+// server sends all the projectiles currently on screen
+socket.on('projectiles', function(p)
+{
+	projectileList = [];
+	
+	for (var i in p)
+	{
+		projectileList.push(new Projectile(p[i]));
 	}
 });
 

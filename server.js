@@ -33,6 +33,10 @@ global.maxX = [1000];
 global.minY = [30];
 global.maxY = [500];
 
+// other shared variables
+global.projectileList = []; // keep track of all active projectiles
+global.damageList = []; // keep track of all upcoming attacks 
+
 var mapObject = require('./mapobject.js').mapObject;
 var Entity = require('./entity.js').Entity;
 var sizeOf = require('image-size');
@@ -56,8 +60,8 @@ function initializeMap()
 	for (var i in mapObjects)
 	{
 		mapObjects[i].width = sizeOf("img//" + mapObjects[i].spriteName + ".png").width;
-		mapObjects[i].width = sizeOf("img//" + mapObjects[i].spriteName + ".png").width;
-		console.log(mapObjects[i].width);
+		mapObjects[i].height = sizeOf("img//" + mapObjects[i].spriteName + ".png").height;
+		mapObjects[i].depth = sizeOf("img//" + mapObjects[i].spriteName + ".png").height;
 	}
 	
 	// load NPCs
@@ -72,7 +76,7 @@ function initializeMap()
 		mapEntities[i].width -= mapEntities[i].width % 2;
 		mapEntities[i].depth = Math.floor(sizeOf("img//" + mapEntities[i].spriteName + ".png").height * 0.5);
 		mapEntities[i].height = sizeOf("img//" + mapEntities[i].spriteName + ".png").height
-		console.log(mapEntities[i]);
+		mapEntities[i].id = i;
 		directionCounter[i] = 0;
 		x_direction[i] = 0;
 		y_direction[i] = 0;
@@ -90,6 +94,7 @@ function copyEntity(old)
 	p.width = old.width;
 	p.depth = old.depth;
 	p.height = old.height;
+	p.id = old.id;
 	return p;
 }
 
@@ -98,15 +103,13 @@ function updateCollisionList()
 {
 	for (var i in mapEntities)
 	{
-		var c = [];
-		
+		var c = [];		
 	
 		for (var j in mapEntities)
 		{
 			if (i != j)
 			{
-				c.push(copyEntity(mapEntities[j]));
-				
+				c.push(copyEntity(mapEntities[j]));				
 			}
 		}
 		
@@ -136,6 +139,8 @@ setInterval(function()
 {
 	updateCollisionList();
 	
+	checkDamage();
+	
 	for (var i in mapEntities)
 	{
 		if (directionCounter[i] <= 0)
@@ -145,11 +150,189 @@ setInterval(function()
 			directionCounter[i] = Math.ceil(Math.random() * 60);
 		}
 		directionCounter[i]--;
-		mapEntities[i].move(x_direction[i], y_direction[i]);
+		
+		if (i != 1)
+		{
+		mapEntities[i].move(x_direction[i] * 0.5, y_direction[i] * 0.5);
 		mapEntities[i].update();
-		//console.log(mapEntities[i].x + " " + mapEntities[i].y);
+		}
 	}
-}, 1000/30);
+	
+}, 1000/60);
+
+
+
+// holds information about where damage will be applied
+function Damage(x, y, source, damage_time, damage)
+{
+	this.x = x;
+	this.y = y;
+	this.source = source;
+	this.damage_time = damage_time;
+	this.damage = damage;
+	
+	console.log("will apply damage at position " + x + " " + y);
+	
+	this.collisionCheck = function(e)
+	{
+		if ((this.x + 1 >= e.x - (e.width / 2) && this.x - 1 <= e.x + (e.width / 2))
+			&& (this.y + 1 >= e.y - e.depth && this.y - 1 <= e.y))
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	};
+}
+
+// holds information about projectiles on-screen
+function Projectile(x, y, x_speed, y_speed, source, spawn_time, damage, spriteName)
+{
+	this.x = x;
+	this.y = y;
+	this.spawn_x = x;
+	this.spawn_y = y;
+	this.z = 5;
+	this.x_speed = x_speed;
+	this.y_speed = y_speed;
+	this.source = source; 
+	this.damage = damage;
+	this.spriteName = spriteName;
+	this.height = sizeOf("img//" + this.spriteName + ".png").height;
+	this.width = sizeOf("img//" + this.spriteName + ".png").width;
+	this.depth = 6;
+	this.spawn_time = spawn_time;
+	
+	this.update = function()
+	{
+		this.x += this.x_speed;
+		this.y += this.y_speed;
+	};
+	
+	this.collisionCheck = function(e)
+	{
+		if ((this.x + (this.width/2) >= e.x - (e.width / 2) && this.x - (this.width/2) <= e.x + (e.width / 2))
+			&& (this.y + (this.depth/2) >= e.y - e.depth && this.y - (this.depth/2) <= e.y))
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	};
+	
+	this.offscreen = function()
+	{
+		if (this.x - this.width > maxX[0] || this.x + this.width < 0 || this.y < 0 || this.y - this.height > maxY[0])
+		{
+			return true;
+		}
+		else false;
+	}
+}
+
+/* check if an attack damaged any entities */
+function checkDamage()
+{
+	var currentTime = new Date();
+	var n = damageList.length;
+	
+	// go through every active attack
+	for (var i = 0; i < n; i++)
+	{
+		// check if the animation reached the frame where it does damage
+		if (currentTime.getTime() >= damageList[i].damage_time)
+		{
+			// check every connected player to see if they were hit
+			for (var j in connected)
+			{
+				if (damageList[i].source != connected[j].id && damageList[i].collisionCheck(connected[j]))
+				{
+					// tell the client that they took damage
+					io.to(connected[j].id).emit('damageIn', damageList[i].x, damageList[i].y, damageList[i].damage);
+					console.log(connected[j].display_name + " took " + damageList[i].damage + " damage");
+				}
+			}
+			
+			// check every cpu to see if they were hit
+			for (var j in mapEntities)
+			{
+				if (damageList[i].source != mapEntities[j].id && damageList[i].collisionCheck(mapEntities[j]))
+				{
+					// damage the entity
+					mapEntities[j].takeDamage(damageList[i].x, damageList[i].y, damageList[i].damage);
+					console.log(mapEntities[j].display_name + mapEntities[j].id + " took " + damageList[i].damage + " damage");
+				}
+			}		
+		
+		damageList.splice(i,1);
+		i--;
+		n--;
+		}
+	}
+	
+	// go through every active projectile
+	n = projectileList.length;
+	
+	for (var i = 0; i < n; i++)
+	{
+		if (currentTime.getTime() >= projectileList[i].spawn_time)
+		{
+			if (projectileList[i].x == projectileList[i].spawn_x && projectileList[i].y == projectileList[i].spawn_y)
+			{
+				projectileList[i].spawn_time = currentTime.getTime();
+			}
+			
+			projectileList[i].update();
+			
+			if (projectileList[i].offscreen())
+			{
+				projectileList.splice(i, 1);
+				i--;
+				n--;
+			}
+			
+			else
+			{
+				var dmg = false;
+				
+				// check every connected player to see if they were hit
+				for (var j in connected)
+				{
+					if (projectileList[i].source != connected[j].id && projectileList[i].collisionCheck(connected[j]))
+					{
+						// tell the client that they took damage
+						io.to(connected[j].id).emit('damageIn', projectileList[i].x, projectileList[i].y, projectileList[i].damage);
+						console.log(connected[j].display_name + " took " + projectileList[i].damage + " damage");
+						dmg = true;
+					}
+				}
+				
+				// check every cpu to see if they were hit
+				for (var j in mapEntities)
+				{
+					if (projectileList[i].source != mapEntities[j].id && projectileList[i].collisionCheck(mapEntities[j]))
+					{
+						// damage the entity
+						mapEntities[j].takeDamage(projectileList[i].x, projectileList[i].y, projectileList[i].damage);
+						console.log(mapEntities[j].display_name + mapEntities[j].id + " took " + projectileList[i].damage + " damage");
+						dmg = true;
+					}
+				}		
+				
+				if (dmg)
+				{
+					projectileList.splice(i, 1);
+					i--;
+					n--;
+				}
+			}
+		}
+	}	
+}
 
 // retrieve data from the client
 io.on('connection', function(socket) 
@@ -166,9 +349,20 @@ io.on('connection', function(socket)
 	{
 		if (player != null)// && player.entity.x != null)
 		{
+			player.id = socket.id;
 			connected[socket.id] = player;
 		}
   });
+	
+	socket.on('damageOut', function(x, y, damage_time, damage)
+	{
+		damageList.push(new Damage(x, y, socket.id, damage_time, damage));
+	});
+	
+	socket.on('createProjectile', function(x, y, x_speed, y_speed, spawn_time, damage, spriteName)
+	{
+		projectileList.push(new Projectile(x, y, x_speed, y_speed, socket.id, spawn_time, damage, spriteName));
+	});
 	
 	socket.on('disconnect', function()
 	{
@@ -193,11 +387,21 @@ setInterval(function()
 		}
 		
 		Array.prototype.push.apply(players, mapEntities);
-		io.to(i).emit('players', players); 
+		io.to(i).emit('players', players); 	
+	}  
+	
+	var p = [];
+	
+	for (var i in projectileList)
+	{
+		if (new Date().getTime() >= projectileList[i].spawn_time)
+		{
+			p.push(projectileList[i]);
+		}
 	}
 	
-	//io.emit('players', connected);
-  
+	io.emit('projectiles', p);
+	
 }, 1000/60);
 
 // update server status every 5 seconds
