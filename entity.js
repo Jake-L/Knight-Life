@@ -34,6 +34,7 @@ exports.Entity = function(x,y,spriteName)
 	this.attack = 0;
 	this.attack1 = "punch";
 	this.attack2 = "snowball";
+	this.spawn_time = new Date().getTime();
 	
 	this.mapId = 0;
 
@@ -178,24 +179,6 @@ exports.Entity.prototype.updateSprite = function()
 	}
 	else
 	{
-		/*
-		if(this.x_speed > 0)
-		{
-			this.direction = "Right";
-		}
-		else if (this.x_speed < 0)
-		{
-			this.direction = "Left";
-		}
-		else if (this.y_speed < 0)
-		{
-			this.direction = "Up";
-		}
-		else if (this.y_speed > 0)
-		{
-			this.direction = "Down";
-		}*/
-
 		this.sprite = playerSprite[this.spriteName][getDirNum(this.direction)][Math.floor(new Date().getMilliseconds() / 250) % 4];
 	}
 };
@@ -390,6 +373,11 @@ exports.Entity.prototype.update = function()
 	// if they are not being knockbacked, apply their movement normally
 	else
 	{
+		if (this.x_speed > 0) {this.direction = "Right";}
+		else if (this.x_speed < 0) {this.direction = "Left";}
+		else if (this.y_speed > 0) {this.direction = "Down";}
+		else if (this.y_speed < 0) {this.direction = "Up";}
+				
 		this.x += this.x_speed;
 		this.y += this.y_speed;
 		//this.x_speed = 0;
@@ -399,11 +387,14 @@ exports.Entity.prototype.update = function()
 
 exports.Entity.prototype.takeDamage = function(x, y, damage)
 {
-	this.current_health -= damage;
-
-	if (this.current_health < 0)
+	if (this.spawn_time + 100 < new Date().getTime()) // don't take damage in the first 0.1 seconds you're alive
 	{
-		this.current_health = 0;
+		this.current_health -= damage;
+
+		if (this.current_health < 0)
+		{
+			this.current_health = 0;
+		}
 	}
 };
 

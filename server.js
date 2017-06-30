@@ -14,7 +14,7 @@ var app = express();
 var server = http.Server(app);
 var io = socketIO(server);
 
-app.set('port', 5000);
+app.set('port', 80);
 app.use('/', express.static(__dirname + '/'));
 
 // Routing
@@ -23,7 +23,7 @@ app.get('/', function(request, response) {
 });
 
 // Starts the server.
-server.listen(5000, function() {
+server.listen(80, function() {
   console.log('Starting server on port 5000');
 	initializeMap();
 });
@@ -65,21 +65,14 @@ function initializeMap()
 	}
 	
 	// load NPCs
-	mapEntities.push(new Entity(300, 150, "playerDown"));
-	mapEntities.push(new Entity(500, 60, "playerDown"));
-	mapEntities.push(new Entity(200, 400, "playerDown"));
-	mapEntities.push(new Entity(700, 250, "playerDown"));
+	mapEntities.push(new CPU(300, 150, "playerDown"));
+	mapEntities.push(new CPU(500, 60, "playerDown"));
+	mapEntities.push(new CPU(200, 400, "playerDown"));
+	mapEntities.push(new CPU(700, 250, "playerDown"));
 	
 	for (var i in mapEntities)
 	{
-		mapEntities[i].width = sizeOf("img//" + mapEntities[i].spriteName + ".png").width;
-		mapEntities[i].width -= mapEntities[i].width % 2;
-		mapEntities[i].depth = Math.floor(sizeOf("img//" + mapEntities[i].spriteName + ".png").height * 0.5);
-		mapEntities[i].height = sizeOf("img//" + mapEntities[i].spriteName + ".png").height
-		mapEntities[i].id = i;
-		directionCounter[i] = 0;
-		x_direction[i] = 0;
-		y_direction[i] = 0;
+		mapEntities[i].entity.id = i;
 	}
 }
 
@@ -109,13 +102,13 @@ function updateCollisionList()
 		{
 			if (i != j)
 			{
-				c.push(copyEntity(mapEntities[j]));				
+				c.push(copyEntity(mapEntities[j].entity));				
 			}
 		}
 		
 		for (var j in connected)
 		{
-			if (Math.abs(connected[j].x - mapEntities[i].x) <= 120 && Math.abs(connected[j].y - mapEntities[i].y) <= 120)
+			if (Math.abs(connected[j].x - mapEntities[i].entity.x) <= 120 && Math.abs(connected[j].y - mapEntities[i].entity.y) <= 120)
 			{
 				c.push(copyEntity(connected[j]));
 			}
@@ -123,16 +116,106 @@ function updateCollisionList()
 			
 		for (var j in mapObjects)
 		{			
-			if (Math.abs(mapObjects[j].x - mapEntities[i].x) <= 60 && Math.abs(mapObjects[j].y - mapEntities[i].y) <= 60)
+			if (Math.abs(mapObjects[j].x - mapEntities[i].entity.x) <= 60 && Math.abs(mapObjects[j].y - mapEntities[i].entity.y) <= 60)
 			{
 				c.push(copyEntity(mapObjects[j]));
 			}
 		}
 		
-		mapEntities[i].collisionList = c;
+		mapEntities[i].entity.collisionList = c;
 	}
 }
 
+var CPU = function(x, y, spriteName)
+{
+	//configure the entity
+	this.entity = new Entity(x, y, spriteName);
+	this.entity.width = sizeOf("img//" + this.entity.spriteName + ".png").width;
+	this.entity.width -= this.entity.width % 2;
+	this.entity.depth = Math.floor(sizeOf("img//" + this.entity.spriteName + ".png").height * 0.5);
+	this.entity.height = sizeOf("img//" + this.entity.spriteName + ".png").height;
+	
+	//configure CPU specific attributes
+	this.target = null;
+	this.directionCounter = 0;
+	this.x_direction = 0;
+	this.y_direction = 0;
+	console.log("entity created");
+};
+
+CPU.prototype.update = function()
+{
+	
+	
+	if (this.target != null)
+	{
+		var e = getEntity(this.target);
+		
+		this.x_direction = 0;
+		this.y_direction = 0;
+		
+		// move along the x-axis toward your target
+		if (this.entity.x < e.x - (e.width / 2))
+		{
+			this.x_direction = 1;
+		}
+		else if (this.entity.x > e.x + (e.width / 2))
+		{
+			this.x_direction = -1;
+		}
+		
+		// move along the y-axis toward your target
+		if (this.entity.y < e.y - (e.depth / 2))
+		{
+			this.y_direction = 1;
+		}
+		else if (this.entity.y - (this.entity.depth / 2) > e.y)
+		{
+			this.y_direction = -1;
+		}
+	}
+	else
+	{
+		if (this.directionCounter <= 0)
+		{
+			this.x_direction = Math.round(Math.random() * 2)-1;
+			this.y_direction = Math.round(Math.random() * 2)-1;
+			this.directionCounter = Math.ceil(Math.random() * 60);
+		}
+	}
+	
+	this.directionCounter--;
+
+	this.entity.move(this.x_direction * 0.5, this.y_direction * 0.5);
+	this.entity.update();
+};
+
+CPU.prototype.setTarget = function(id)
+{
+	this.target = id;
+};
+
+// returns the entity with the given ID
+// may be a player or CPU
+function getEntity(id)
+{
+	if (id == null)
+	{
+		return null;
+	}
+	else if (typeof connected[id] !== 'undefined')
+	{
+		return connected[id];
+	}
+	else if (typeof mapEntities[id] !== 'undefined')
+	{
+		return mapEntities[id].entity;
+	}
+	else
+	{
+		return null;
+	}
+}
 
 // move computer controlled NPCs
 setInterval(function()
@@ -143,19 +226,28 @@ setInterval(function()
 	
 	for (var i in mapEntities)
 	{
-		if (directionCounter[i] <= 0)
+		/*
+		if (mapEntities[i].target != null)
 		{
-			x_direction[i] = Math.round(Math.random() * 2)-1;
-			y_direction[i] = Math.round(Math.random() * 2)-1;
-			directionCounter[i] = Math.ceil(Math.random() * 60);
-		}
-		directionCounter[i]--;
+			if (connected[mapEntities[i].target] == null)
+			{
+				mapEntities[i].target = null;
+			}
+			else 
+			{
+				x_direction[i] = 0;
+				y_direction[i] = 0;
+				
+				if (connected[mapEntities[i].target].x < mapEntities[i].x - (mapEntities[i].width / 2))
+				{
+					x_direction[i] = -1;
+					directionCounter[i] = Math.ceil(Math.random() * 60);
+				}
+			}
+		}*/
 		
-		if (i != 1)
-		{
-		mapEntities[i].move(x_direction[i] * 0.5, y_direction[i] * 0.5);
 		mapEntities[i].update();
-		}
+
 	}
 	
 }, 1000/60);
@@ -231,7 +323,7 @@ function Projectile(x, y, x_speed, y_speed, source, spawn_time, damage, spriteNa
 			return true;
 		}
 		else false;
-	}
+	};
 }
 
 /* check if an attack damaged any entities */
@@ -260,11 +352,12 @@ function checkDamage()
 			// check every cpu to see if they were hit
 			for (var j in mapEntities)
 			{
-				if (damageList[i].source != mapEntities[j].id && damageList[i].collisionCheck(mapEntities[j]))
+				if (damageList[i].source != mapEntities[j].entity.id && damageList[i].collisionCheck(mapEntities[j].entity))
 				{
 					// damage the entity
-					mapEntities[j].takeDamage(damageList[i].x, damageList[i].y, damageList[i].damage);
-					console.log(mapEntities[j].display_name + mapEntities[j].id + " took " + damageList[i].damage + " damage");
+					mapEntities[j].entity.takeDamage(damageList[i].x, damageList[i].y, damageList[i].damage);
+					mapEntities[j].setTarget(damageList[i].source);
+					console.log(mapEntities[j].entity.display_name + mapEntities[j].entity.id + " took " + damageList[i].damage + " damage");
 				}
 			}		
 		
@@ -314,11 +407,12 @@ function checkDamage()
 				// check every cpu to see if they were hit
 				for (var j in mapEntities)
 				{
-					if (projectileList[i].source != mapEntities[j].id && projectileList[i].collisionCheck(mapEntities[j]))
+					if (projectileList[i].source != mapEntities[j].entity.id && projectileList[i].collisionCheck(mapEntities[j].entity))
 					{
 						// damage the entity
-						mapEntities[j].takeDamage(projectileList[i].x, projectileList[i].y, projectileList[i].damage);
-						console.log(mapEntities[j].display_name + mapEntities[j].id + " took " + projectileList[i].damage + " damage");
+						mapEntities[j].entity.takeDamage(projectileList[i].x, projectileList[i].y, projectileList[i].damage);
+						mapEntities[j].setTarget(projectileList[i].source);
+						console.log(mapEntities[j].entity.display_name + mapEntities[j].entity.id + " took " + projectileList[i].damage + " damage");
 						dmg = true;
 					}
 				}		
@@ -386,7 +480,11 @@ setInterval(function()
 			}
 		}
 		
-		Array.prototype.push.apply(players, mapEntities);
+		for (var j in mapEntities)
+		{
+			players.push(mapEntities[j].entity);
+		}
+		
 		io.to(i).emit('players', players); 	
 	}  
 	
@@ -421,7 +519,7 @@ function displayPlayerCount()
 	}
 	
 	var currentTime = new Date();
-	var t = ""
+	var t = "";
 	
 	if (currentTime.getHours() < 10)
 	{

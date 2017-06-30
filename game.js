@@ -48,6 +48,7 @@ var projectileList = [];
 
 var playerSprite = [];
 var playerAttackSprite = [];
+var username = "";
 
 function getDirName(n)
 	{
@@ -71,7 +72,7 @@ function getDirName(n)
 		return "";
 	}
 	
-	function getDirNum(s)
+function getDirNum(s)
 	{
 		if (s == "Left")
 		{
@@ -96,24 +97,33 @@ function getDirName(n)
 mapObject = share.mapObject;
 Entity = shareEntity.Entity;
 
-//create the player
-var player = new Player();
+var player;
 
 window.onload = function() 
 {
   document.body.appendChild(canvas);
+	
+	//get the player's username
+	username = getUsername();
+	
+	spawnPlayer();
 	loadMap(mapId);
 	audio.play(); //must come after loadMap
 	loadSprite();
-	
-	//get the player's username
-	player.entity.display_name = getUsername();
 	
 	frameTime = new Date().getTime();
 	startTime = frameTime;
 	step();
 	
 };
+
+// create the player
+function spawnPlayer()
+{
+	 player = new Player();
+	 player.entity.display_name = username;
+	 get_offset();
+}
 
 function loadMap(mapId)
 {
@@ -264,8 +274,16 @@ var update = function()
 		}
 	}
 	
-	//update player object
-  player.update();	
+	//BUG: need to clear any incoming damage, i.e. if lagging cant take damage after respawn
+	if (player.entity.current_health <= 0)
+	{
+		spawnPlayer();
+	}
+	else
+	{
+		//update player object
+		player.update();	
+	}
 };
 
 //displays the background image
