@@ -1,6 +1,5 @@
 (function(exports)
 {
-
 //initialize an entity
 exports.Entity = function(x,y,spriteName)
 {
@@ -446,7 +445,7 @@ exports.Entity.prototype.createAttackAux = function()
 	}
 	else
 	{
-		damageList.push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), 10));
+		damageList.push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), 10));
 	}
 }
 

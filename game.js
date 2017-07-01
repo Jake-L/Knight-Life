@@ -14,6 +14,9 @@ var pixelHeight = Math.ceil(height / graphics_scaling);
 var x_offset = 0;
 var y_offset = 0;
 
+// retrieve data from the server
+var socket = io();
+
 // create the player's graphics and add a shadow
 var context = canvas.getContext('2d');
 context.imageSmoothingEnabled = false;
@@ -277,6 +280,7 @@ var update = function()
 	//BUG: need to clear any incoming damage, i.e. if lagging cant take damage after respawn
 	if (player.entity.current_health <= 0)
 	{
+		socket.emit('death');
 		spawnPlayer();
 	}
 	else
@@ -340,6 +344,7 @@ function copyEntity(old)
 	p.display_name = old.display_name;
 	p.max_health = old.max_health;
 	p.current_health = old.current_health;
+	p.attack_counter = old.attack_counter;
 	p.initialize();
 	return p;
 }
@@ -622,9 +627,6 @@ function printMousePos(event) {
 
 document.addEventListener("click", printMousePos);
 //window.addEventListener("resize", myFunction);
-
-// retrieve data from the server
-var socket = io();
 
 socket.on('mapObjects', function(a)
 {

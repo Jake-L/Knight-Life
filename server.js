@@ -14,7 +14,7 @@ var app = express();
 var server = http.Server(app);
 var io = socketIO(server);
 
-app.set('port', 80);
+app.set('port', 5000);
 app.use('/', express.static(__dirname + '/'));
 
 // Routing
@@ -23,7 +23,7 @@ app.get('/', function(request, response) {
 });
 
 // Starts the server.
-server.listen(80, function() {
+server.listen(5000, function() {
   console.log('Starting server on port 5000');
 	initializeMap();
 });
@@ -64,16 +64,53 @@ function initializeMap()
 		mapObjects[i].depth = sizeOf("img//" + mapObjects[i].spriteName + ".png").height;
 	}
 	
-	// load NPCs
-	mapEntities.push(new CPU(300, 150, "playerDown"));
-	mapEntities.push(new CPU(500, 60, "playerDown"));
-	mapEntities.push(new CPU(200, 400, "playerDown"));
-	mapEntities.push(new CPU(700, 250, "playerDown"));
-	
-	for (var i in mapEntities)
+	// spawn NPCs
+	for (var i = 0; i < 6; i++)
 	{
-		mapEntities[i].entity.id = i;
+		mapEntities.push(new CPU(0, 0, "playerDown", i));
 	}
+}
+
+// get x,y coordinates of a valid spawn point for an object of the given height and width
+function getSpawn(h, w)
+{
+	var c = {x: 0, y: 0};
+	var count = 0;	
+	
+	while (c.x + c.y == 0 && count < 100)
+	{
+		c.x = Math.ceil(Math.random() * maxX[0]);
+		c.y = Math.ceil((Math.random() * (maxY[0] - minY[0])) + minY[0]);
+		count++;
+		
+		var blocked = false;
+		
+		for (var i in connected)
+		{
+			if (c.y > connected[i].y - connected[i].depth && c.y - h < connected[i].y 
+				&& c.x + (w/2) > connected[i].x - (connected[i].width/2) && c.x - (w/2) < connected[i].x + (connected[i].width/2))
+			{
+				blocked = true;
+			}
+		}
+		
+		for (var i in mapEntities)
+		{
+			if (c.y > mapEntities[i].y - mapEntities[i].depth && c.y - h < mapEntities[i].y 
+				&& c.x + (w/2) > mapEntities[i].x - (mapEntities[i].width/2) && c.x - (w/2) < mapEntities[i].x + (mapEntities[i].width/2))
+			{
+				blocked = true;
+			}
+		}
+		
+		if (blocked)
+		{
+			c.x = 0;
+			c.y = 0;
+		}
+	}
+	
+	return c;
 }
 
 //initialize an entity from a pre-existing entity
@@ -126,27 +163,38 @@ function updateCollisionList()
 	}
 }
 
-var CPU = function(x, y, spriteName)
+var CPU = function(x, y, spriteName, id)
 {
+	var w = sizeOf("img//" + spriteName + ".png").width;
+	w -= w % 2;
+	
+	var h = sizeOf("img//" + spriteName + ".png").height;
+	
+	if (x + y == 0)
+	{
+		var c = getSpawn(h, w);
+
+		x = c.x;
+		y = c.y;		
+	}
+	
 	//configure the entity
 	this.entity = new Entity(x, y, spriteName);
-	this.entity.width = sizeOf("img//" + this.entity.spriteName + ".png").width;
-	this.entity.width -= this.entity.width % 2;
-	this.entity.depth = Math.floor(sizeOf("img//" + this.entity.spriteName + ".png").height * 0.5);
-	this.entity.height = sizeOf("img//" + this.entity.spriteName + ".png").height;
+	console.log("Spawning entity at (" + x + "," + y + ")");
+	this.entity.width = w;
+	this.entity.depth = Math.floor(h * 0.5);
+	this.entity.height = h;
+	this.entity.id = id;
 	
 	//configure CPU specific attributes
 	this.target = null;
 	this.directionCounter = 0;
 	this.x_direction = 0;
 	this.y_direction = 0;
-	console.log("entity created");
 };
 
 CPU.prototype.update = function()
 {
-	
-	
 	if (this.target != null)
 	{
 		var e = getEntity(this.target);
@@ -169,9 +217,42 @@ CPU.prototype.update = function()
 		{
 			this.y_direction = 1;
 		}
-		else if (this.entity.y - (this.entity.depth / 2) > e.y)
+		else if (this.entity.y > e.y)
 		{
 			this.y_direction = -1;
+		}
+		
+		/* check if you can attack the target */
+		if (this.entity.attack_counter <= 0)
+		{
+			// check if you should attack up or down
+			if (this.entity.x <= e.x + (e.width / 2) && this.entity.x >= e.x - (e.width / 2))
+			{
+				if (Math.abs(this.entity.y - e.y) < this.entity.depth * 2)
+				{
+					this.entity.attack = 1;
+					this.entity.attack_counter = this.entity.attack1_frame_length;
+				}
+				else
+				{
+					this.entity.attack = 2;
+					this.entity.attack_counter = this.entity.attack2_frame_length;
+				}
+			}
+			// check if you should attack left or right
+			else if (this.entity.y > e.y - e.depth && this.entity.y - this.entity.depth < e.y)
+			{
+				if (Math.abs(this.entity.x - e.x) < this.entity.width * 2)
+				{
+					this.entity.attack = 1;
+					this.entity.attack_counter = this.entity.attack1_frame_length;
+				}
+				else
+				{
+					this.entity.attack = 2;
+					this.entity.attack_counter = this.entity.attack2_frame_length;
+				}
+			}
 		}
 	}
 	else
@@ -180,7 +261,7 @@ CPU.prototype.update = function()
 		{
 			this.x_direction = Math.round(Math.random() * 2)-1;
 			this.y_direction = Math.round(Math.random() * 2)-1;
-			this.directionCounter = Math.ceil(Math.random() * 60);
+			this.directionCounter = Math.ceil(Math.random() * 55) + 5;
 		}
 	}
 	
@@ -217,6 +298,18 @@ function getEntity(id)
 	}
 }
 
+// CPUs should stop targeting someone after they die
+function clearAgro(id)
+{
+	for (var i in mapEntities)
+	{
+		if (mapEntities[i].target == id)
+		{
+			mapEntities[i].target = null;
+		}
+	}
+}
+
 // move computer controlled NPCs
 setInterval(function()
 {
@@ -226,28 +319,14 @@ setInterval(function()
 	
 	for (var i in mapEntities)
 	{
-		/*
-		if (mapEntities[i].target != null)
-		{
-			if (connected[mapEntities[i].target] == null)
-			{
-				mapEntities[i].target = null;
-			}
-			else 
-			{
-				x_direction[i] = 0;
-				y_direction[i] = 0;
-				
-				if (connected[mapEntities[i].target].x < mapEntities[i].x - (mapEntities[i].width / 2))
-				{
-					x_direction[i] = -1;
-					directionCounter[i] = Math.ceil(Math.random() * 60);
-				}
-			}
-		}*/
-		
 		mapEntities[i].update();
-
+		if (mapEntities[i].entity.current_health <= 0)
+		{
+			spriteName = mapEntities[i].entity.spriteName;
+			id = mapEntities[i].entity.id;
+			clearAgro(id);
+			mapEntities[i] = new CPU(0,0,spriteName,id);
+		}
 	}
 	
 }, 1000/60);
@@ -255,15 +334,13 @@ setInterval(function()
 
 
 // holds information about where damage will be applied
-function Damage(x, y, source, damage_time, damage)
+global.Damage = function(x, y, source, damage_time, damage)
 {
 	this.x = x;
 	this.y = y;
 	this.source = source;
 	this.damage_time = damage_time;
 	this.damage = damage;
-	
-	console.log("will apply damage at position " + x + " " + y);
 	
 	this.collisionCheck = function(e)
 	{
@@ -277,10 +354,10 @@ function Damage(x, y, source, damage_time, damage)
 			return false;
 		}
 	};
-}
+};
 
 // holds information about projectiles on-screen
-function Projectile(x, y, x_speed, y_speed, source, spawn_time, damage, spriteName)
+global.Projectile = function(x, y, x_speed, y_speed, source, spawn_time, damage, spriteName)
 {
 	this.x = x;
 	this.y = y;
@@ -324,7 +401,7 @@ function Projectile(x, y, x_speed, y_speed, source, spawn_time, damage, spriteNa
 		}
 		else false;
 	};
-}
+};
 
 /* check if an attack damaged any entities */
 function checkDamage()
@@ -456,6 +533,12 @@ io.on('connection', function(socket)
 	socket.on('createProjectile', function(x, y, x_speed, y_speed, spawn_time, damage, spriteName)
 	{
 		projectileList.push(new Projectile(x, y, x_speed, y_speed, socket.id, spawn_time, damage, spriteName));
+	});
+	
+	socket.on('death', function()
+	{
+		console.log("player died");
+		clearAgro(socket.id);
 	});
 	
 	socket.on('disconnect', function()
