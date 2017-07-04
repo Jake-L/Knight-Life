@@ -48,10 +48,12 @@ var maxY = [500];
 var playerList = [];
 var mapObjects = [];
 var projectileList = [];
+var flyTextList = [];
 
 var playerSprite = [];
 var playerAttackSprite = [];
 var username = "";
+var playerXP = 0;
 
 function getDirName(n)
 	{
@@ -125,6 +127,8 @@ function spawnPlayer()
 {
 	 player = new Player();
 	 player.entity.display_name = username;
+	 player.entity.xp = playerXP;
+	 player.entity.updateLevel();
 	 get_offset();
 }
 
@@ -280,6 +284,7 @@ var update = function()
 	//BUG: need to clear any incoming damage, i.e. if lagging cant take damage after respawn
 	if (player.entity.current_health <= 0)
 	{
+		playerXP = player.entity.xp;
 		socket.emit('death');
 		spawnPlayer();
 	}
@@ -288,6 +293,20 @@ var update = function()
 		//update player object
 		player.update();	
 	}
+	
+	var n = flyTextList.length;
+	for (var i = 0; i < n; i++)
+	{
+		flyTextList[i].update();
+		
+		if (flyTextList[i].counter <= 0)
+		{
+			flyTextList.splice(i,1);
+			i--;
+			n--;
+		}
+	}
+	
 };
 
 //displays the background image
@@ -345,6 +364,8 @@ function copyEntity(old)
 	p.max_health = old.max_health;
 	p.current_health = old.current_health;
 	p.attack_counter = old.attack_counter;
+	p.lvl = old.lvl;
+	p.allyState = old.allyState;
 	p.initialize();
 	return p;
 }
@@ -355,6 +376,7 @@ function Player()
 {
   this.entity = new Entity(100,100,"playerDown");	 
 	this.entity.initialize();
+	this.entity.allyState = "Player";
 	this.healthRegenCounter = 0;
 }
 
@@ -403,6 +425,11 @@ var render = function()
 	for (var i in entityList)
 	{
 		entityList[i].renderHealthBar();
+	}
+	
+	for (var i in flyTextList)
+	{
+		flyTextList[i].render();
 	}
 	
 };
@@ -473,12 +500,6 @@ Player.prototype.update = function()
 		}
 	}
 	
-	this.entity.x_speed = 0;
-	this.entity.y_speed = 0;
-	
-	var x_direction = 0;
-	var y_direction = 0;
-	
 	if (this.entity.sprite.complete && this.entity.sprite.naturalHeight !== 0)
 	{
 		 this.entity.width = Math.floor(this.entity.sprite.width * 0.8);
@@ -487,7 +508,10 @@ Player.prototype.update = function()
 		 this.entity.height = this.entity.sprite.height;
 	}
 	
-	// move the player based on user input
+	/* move the player based on user input */
+	var x_direction = 0;
+	var y_direction = 0;
+	
 	// loops through every key currently pressed and performs an action
 	if (!this.entity.knockback || (Maths.abs(y_speed) <= 3 && Math.abs(x_speed) <= 3))
 	{		
@@ -620,6 +644,32 @@ function Projectile(p)
 	};
 }
 
+function flyText(x, y, s, colour)
+{
+	this.msg = s;
+	this.colour = colour;
+	this.counter = 100;
+	
+	this.update = function()
+	{
+		if (this.counter > 0)
+		{
+			this.counter--;
+		}
+	}
+	
+	this.render = function()
+	{
+		context.fillStyle = this.colour;	
+		context.font = "bold" + 4 * graphics_scaling + "px sans-serif";
+		context.globalAlpha = this.counter / 100;
+		context.fillText(this.msg,
+		((x - x_offset) * graphics_scaling) - (context.measureText(this.msg).width/2), 
+		(y - y_offset - ((100-this.counter) / 10)) * graphics_scaling);
+		context.globalAlpha = 1;
+	}
+}
+
 // check if the user clicks the mouse
 function printMousePos(event) {
   console.log("clientX: " + event.clientX + " - clientY: " + event.clientY);
@@ -672,6 +722,14 @@ socket.on('damageIn', function(x, y, damage)
 {
 	player.entity.takeDamage(x, y, damage);
 	player.healthRegenCounter = 0;
+});
+
+// server notifies that the player has gained xp
+socket.on('xpgain', function(xp)
+{
+	player.entity.xp += xp;
+	player.entity.updateLevel();
+	flyTextList.push(new flyText(player.entity.x, player.entity.y - (player.entity.height * 1.5), "+" + xp + " XP", "#0000C0"));
 });
 
 // server sends all the projectiles currently on screen

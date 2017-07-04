@@ -24,6 +24,8 @@ exports.Entity = function(x,y,spriteName)
 	this.max_health = 100;
 	this.current_health = 100;
 	this.display_name = "CPU";
+	this.xp = 0;
+	this.lvl = 1;
 	
 	this.attack_counter = 0;
 	this.attack1_frame_length = 60;
@@ -36,6 +38,7 @@ exports.Entity = function(x,y,spriteName)
 	this.spawn_time = new Date().getTime();
 	
 	this.mapId = 0;
+	this.allyState = "Neutral";
 
 	//this.sprite.src;// = "img//" + spriteName + ".png";
 	
@@ -47,23 +50,41 @@ exports.Entity = function(x,y,spriteName)
 		this.sprite.src = "img//" + this.spriteName + ".png";
 	};
 	
+	this.updateLevel = function()
+	{
+		this.lvl = Math.floor(Math.sqrt(this.xp / 5)) + 1
+	}
+	
 	this.move = function(x_direction, y_direction)
 	{
-		this.x_speed = 0;
-		this.y_speed = 0;
-		
 		if (x_direction != 0 || y_direction != 0)
 		{	
 			this.knockback = false;
 			
 			// change direction even if they are blocked and can't move
-			//if (this.attack == 0)
-			//{
-				if (x_direction > 0) {this.direction = "Right";}
-				else if (x_direction < 0) {this.direction = "Left";}
-				else if (y_direction > 0) {this.direction = "Down";}
-				else if (y_direction < 0) {this.direction = "Up";}
-			//}
+			if (this.attack == 0)
+			{
+				if (this.x_speed != x_direction)
+				{
+					if (x_direction > 0) {this.direction = "Right";}
+					else if (x_direction < 0) {this.direction = "Left";}
+				}
+				else if (this.y_speed != y_direction)
+				{
+					if (y_direction > 0) {this.direction = "Down";}
+					else if (y_direction < 0) {this.direction = "Up";}
+				}
+				else if (this.y_speed == 0 && x_direction != 0)
+				{
+					if (x_direction > 0) {this.direction = "Right";}
+					else if (x_direction < 0) {this.direction = "Left";}
+				}
+				else if (this.x_speed == 0 && y_direction != 0)
+				{
+					if (y_direction > 0) {this.direction = "Down";}
+					else if (y_direction < 0) {this.direction = "Up";}
+				}
+			}
 			
 			// check if the character moves along the x-axis
 			if(this.x + x_direction - (this.width/2) <= 0) // at the left edge
@@ -78,7 +99,7 @@ exports.Entity = function(x,y,spriteName)
 			}
 			else
 			{
-				this.x_speed += x_direction;
+				this.x_speed = x_direction;
 			}
 			
 			//check if the character moves along the y-axis
@@ -94,11 +115,27 @@ exports.Entity = function(x,y,spriteName)
 			}
 			else
 			{
-				this.y_speed += y_direction;
+				this.y_speed = y_direction;
 			}
+		}
+		else
+		{
+			this.x_speed = 0;
+			this.y_speed = 0;
 		}
 		
 		this.collisionCheck();
+		
+		if (this.y_speed == 0 && this.x_speed != 0)
+		{
+			if (x_direction > 0) {this.direction = "Right";}
+			else if (x_direction < 0) {this.direction = "Left";}
+		}
+		else if (this.x_speed == 0 && this.y_speed != 0)
+		{
+			if (y_direction > 0) {this.direction = "Down";}
+			else if (y_direction < 0) {this.direction = "Up";}
+		}		
 	};
 };
 	
@@ -155,10 +192,31 @@ exports.Entity.prototype.renderHealthBar = function()
 			Math.ceil((this.current_health / this.max_health) * (healthBarSprite.width - 2) * graphics_scaling), 
 			(healthBarSprite.height - 2) * graphics_scaling);
 			
-	// display the entity's name		
-	context.fillStyle = "#000000";	
+	/* display the entity's name */
 	context.font = "bold " + 4 * graphics_scaling + "px sans-serif";
-	context.fillText(this.display_name,
+	
+	// display the black outline
+	context.strokeStyle = "#000000";
+	context.lineWidth = 2;
+	context.strokeText(this.display_name + " LVL" + this.lvl,
+		((this.x - x_offset) * graphics_scaling) - (context.measureText(this.display_name).width/2), 
+		(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 2)) * graphics_scaling);
+		
+	// display the coloured text
+	if (this.allyState == "Player")
+	{
+		context.fillStyle = "#1E90FF";	
+	}
+	else if (this.allyState == "Enemy")
+	{
+		context.fillStyle = "#FF0000";	
+	}
+	else
+	{
+		context.fillStyle = "#FFFF00";	
+	}
+
+	context.fillText(this.display_name + " LVL" + this.lvl,
 		((this.x - x_offset) * graphics_scaling) - (context.measureText(this.display_name).width/2), 
 		(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 2)) * graphics_scaling);
 };
@@ -372,10 +430,14 @@ exports.Entity.prototype.update = function()
 	// if they are not being knockbacked, apply their movement normally
 	else
 	{
-		if (this.x_speed > 0) {this.direction = "Right";}
-		else if (this.x_speed < 0) {this.direction = "Left";}
-		else if (this.y_speed > 0) {this.direction = "Down";}
-		else if (this.y_speed < 0) {this.direction = "Up";}
+		/*
+		if (this.attack == 0)
+		{
+			if (this.x_speed > 0) {this.direction = "Right";}
+			else if (this.x_speed < 0) {this.direction = "Left";}
+			else if (this.y_speed > 0) {this.direction = "Down";}
+			else if (this.y_speed < 0) {this.direction = "Up";}
+		}*/
 				
 		this.x += this.x_speed;
 		this.y += this.y_speed;
@@ -394,6 +456,11 @@ exports.Entity.prototype.takeDamage = function(x, y, damage)
 		{
 			this.current_health = 0;
 		}
+	}
+	
+	if(typeof(module) === 'undefined')
+	{
+	flyTextList.push(new flyText(this.x, this.y - (this.height * 1.5), "-" + damage + " health", "#C00000"));
 	}
 };
 

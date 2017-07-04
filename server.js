@@ -41,13 +41,11 @@ var mapObject = require('./mapobject.js').mapObject;
 var Entity = require('./entity.js').Entity;
 var sizeOf = require('image-size');
 	
-var mapEntities = [];
-var directionCounter = [];
-var x_direction = [];
-var y_direction = [];
-var mapObjects = [];
-var connected = [];
+var mapEntities = []; // all the CPUs
+var mapObjects = []; // non-moving map objects like rocks
+var connected = []; // connected players
 var collisionList = [];
+var killParticipation = []; // keep track of players who recently attacked an enemy
 
 function initializeMap()
 {
@@ -68,6 +66,9 @@ function initializeMap()
 	for (var i = 0; i < 6; i++)
 	{
 		mapEntities.push(new CPU(0, 0, "playerDown", i));
+		mapEntities[i].entity.xp = i * i;
+		mapEntities[i].entity.updateLevel();
+		killParticipation[i] = null;
 	}
 }
 
@@ -324,6 +325,7 @@ setInterval(function()
 		{
 			spriteName = mapEntities[i].entity.spriteName;
 			id = mapEntities[i].entity.id;
+			entityDeath(id, mapEntities[i].entity.lvl);
 			clearAgro(id);
 			mapEntities[i] = new CPU(0,0,spriteName,id);
 		}
@@ -331,7 +333,20 @@ setInterval(function()
 	
 }, 1000/60);
 
+// when a unit dies, divide EXP across anyone who damaged them in the past 30 seconds 
+function entityDeath(id, lvl)
+{
+	var a = killParticipation[id];
+	var e = 10 * lvl;
 
+		if (a != null && !Number.isInteger(a))
+		{
+			io.to(a).emit('xpgain', e); 
+			console.log(a + " gained " + e + " XP");
+		}
+	
+	killParticipation[id] = null;
+}
 
 // holds information about where damage will be applied
 global.Damage = function(x, y, source, damage_time, damage)
@@ -422,6 +437,10 @@ function checkDamage()
 				{
 					// tell the client that they took damage
 					io.to(connected[j].id).emit('damageIn', damageList[i].x, damageList[i].y, damageList[i].damage);
+					
+					// track most recent attackers
+					killParticipation[connected[j].id] = damageList[i].source;
+					
 					console.log(connected[j].display_name + " took " + damageList[i].damage + " damage");
 				}
 			}
@@ -433,7 +452,13 @@ function checkDamage()
 				{
 					// damage the entity
 					mapEntities[j].entity.takeDamage(damageList[i].x, damageList[i].y, damageList[i].damage);
+					
+					// tell the CPU to target that entity
 					mapEntities[j].setTarget(damageList[i].source);
+					
+					// track most recent attackers
+					killParticipation[mapEntities[j].entity.id] = damageList[i].source;
+					
 					console.log(mapEntities[j].entity.display_name + mapEntities[j].entity.id + " took " + damageList[i].damage + " damage");
 				}
 			}		
@@ -476,6 +501,10 @@ function checkDamage()
 					{
 						// tell the client that they took damage
 						io.to(connected[j].id).emit('damageIn', projectileList[i].x, projectileList[i].y, projectileList[i].damage);
+						
+						// track most recent attackers
+						killParticipation[connected[j].id] = projectileList[i].source;
+						
 						console.log(connected[j].display_name + " took " + projectileList[i].damage + " damage");
 						dmg = true;
 					}
@@ -488,7 +517,13 @@ function checkDamage()
 					{
 						// damage the entity
 						mapEntities[j].entity.takeDamage(projectileList[i].x, projectileList[i].y, projectileList[i].damage);
+						
+						// tell the CPU to target that entity
 						mapEntities[j].setTarget(projectileList[i].source);
+						
+						// track most recent attackers
+						killParticipation[mapEntities[j].entity.id] = projectileList[i].source;
+						
 						console.log(mapEntities[j].entity.display_name + mapEntities[j].entity.id + " took " + projectileList[i].damage + " damage");
 						dmg = true;
 					}
@@ -513,6 +548,7 @@ io.on('connection', function(socket)
 	socket.on('new player', function() 
 		{
 			io.to(socket.id).emit('mapObjects', mapObjects);
+			killParticipation[socket.id] = null;
 		}
   );
 	
@@ -538,6 +574,7 @@ io.on('connection', function(socket)
 	socket.on('death', function()
 	{
 		console.log("player died");
+		entityDeath(socket.id, connected[socket.id].lvl);
 		clearAgro(socket.id);
 	});
 	
@@ -565,6 +602,16 @@ setInterval(function()
 		
 		for (var j in mapEntities)
 		{
+			if (mapEntities[j].target == i)
+			{
+				mapEntities[j].entity.allyState = "Enemy";
+				
+			}
+			else 
+			{
+				mapEntities[j].entity.allyState = "Neutral";
+			}
+			
 			players.push(mapEntities[j].entity);
 		}
 		
