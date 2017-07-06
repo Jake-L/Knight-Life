@@ -17,7 +17,7 @@ var y_offset = 0;
 // retrieve data from the server
 var socket = io();
 
-// create the player's graphics and add a shadow
+// create the player's graphics
 var context = canvas.getContext('2d');
 context.imageSmoothingEnabled = false;
 context.fillStyle = "#ADD8E6";
@@ -27,6 +27,8 @@ var healthBarSprite = new Image();
 healthBarSprite.src = "img//healthbar.png";
 var healthBarGreenSprite = new Image();
 healthBarGreenSprite.src = "img//healthbargreen.png";
+var minimapbox = new Image();
+minimapbox.src = "img//minimapbox.png";
 
 //key mappings
 var left_key = 37;
@@ -54,6 +56,7 @@ var playerSprite = [];
 var playerAttackSprite = [];
 var username = "";
 var playerXP = 0;
+var minimapScale = 16;
 
 function getDirName(n)
 	{
@@ -432,6 +435,7 @@ var render = function()
 		flyTextList[i].render();
 	}
 	
+	renderMinimap();
 };
 
 // sort a list of entities by their y-position, so that they are overlap properly
@@ -668,6 +672,78 @@ function flyText(x, y, s, colour)
 		(y - y_offset - ((100-this.counter) / 10)) * graphics_scaling);
 		context.globalAlpha = 1;
 	}
+}
+
+// display the minimap
+function renderMinimap()
+{
+	var x = width - (52 * graphics_scaling);
+	var y = height - (52 * graphics_scaling);
+	var m_x_offset = 0;
+	var m_y_offset = 0;
+	
+	// get x-offset
+	if (player.entity.x / minimapScale < 25 || maxX / minimapScale <= 50)
+	{
+		m_x_offset = 0;
+	}
+	else if ((maxX[mapId] - player.entity.x) / minimapScale < 25)
+	{
+		m_x_offset = (maxX[mapId] / minimapScale) -50;
+	}
+	else
+	{
+		m_x_offset = (player.entity.x / minimapScale) - 25;
+	}
+	
+	// get y-offset
+	if (player.entity.y / minimapScale <= 25 || maxY / minimapScale <= 50)
+	{
+		m_y_offset = 0;
+	}
+	else if ((maxY[mapId] - player.entity.y) / minimapScale <= 25)
+	{
+		m_y_offset = (maxY[mapId] / minimapScale) - 50;
+	}
+	else
+	{
+		m_y_offset = (player.entity.y / minimapScale) - 25;
+	}
+	
+	// draw the minimap background
+	context.fillStyle = "#C0C0C0";	
+	context.fillRect(x, y, 50 * graphics_scaling, 50 * graphics_scaling);
+	
+	// draw the NPCs
+	for (var i in playerList)
+	{
+		// only draw if they are currently on the map
+		if ((playerList[i].x / minimapScale) - m_x_offset - 1.5 >= -2 && (playerList[i].x / minimapScale) - m_x_offset + 1.5 <= 52
+			&& (playerList[i].y / minimapScale) - m_y_offset - 1.5 >= -2 && (playerList[i].y / minimapScale) - m_y_offset + 1.5 <= 52)
+		{
+			playerList[i].setColour();
+			context.beginPath();
+			context.arc(
+				x + ((playerList[i].x / minimapScale) - m_x_offset) * graphics_scaling, 
+				y + ((playerList[i].y - 1.5) * graphics_scaling / minimapScale),
+				1.5 * graphics_scaling, 
+				0, Math.PI * 2, false);
+			context.fill();
+		}
+	}
+	
+	// draw the player
+	context.fillStyle = "#1E90FF";	
+	context.beginPath();
+	context.arc(
+		x + (((player.entity.x / minimapScale) - m_x_offset) * graphics_scaling), 
+		y + ((player.entity.y - m_y_offset - 1.5) * graphics_scaling / minimapScale),
+		1.5 * graphics_scaling, 
+		0, Math.PI * 2, false);
+	context.fill();
+	
+	// draw the minimap outline
+	context.drawImage(minimapbox, x - (2 * graphics_scaling), y - (2 * graphics_scaling), 54 * graphics_scaling, 54 * graphics_scaling);
 }
 
 // check if the user clicks the mouse

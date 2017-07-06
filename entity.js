@@ -173,6 +173,24 @@ exports.Entity.prototype.render = function()
 	}
 };
 
+// set the colour for an entity's nameplate or map icon
+exports.Entity.prototype.setColour = function()
+{
+	// display the coloured text
+	if (this.allyState == "Player")
+	{
+		context.fillStyle = "#1E90FF";	
+	}
+	else if (this.allyState == "Enemy")
+	{
+		context.fillStyle = "#FF0000";	
+	}
+	else
+	{
+		context.fillStyle = "#FFFF00";	
+	}
+};
+
 // display the nameplate and health bar
 exports.Entity.prototype.renderHealthBar = function()
 {
@@ -203,19 +221,7 @@ exports.Entity.prototype.renderHealthBar = function()
 		(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 2)) * graphics_scaling);
 		
 	// display the coloured text
-	if (this.allyState == "Player")
-	{
-		context.fillStyle = "#1E90FF";	
-	}
-	else if (this.allyState == "Enemy")
-	{
-		context.fillStyle = "#FF0000";	
-	}
-	else
-	{
-		context.fillStyle = "#FFFF00";	
-	}
-
+	this.setColour();
 	context.fillText(this.display_name + " LVL" + this.lvl,
 		((this.x - x_offset) * graphics_scaling) - (context.measureText(this.display_name).width/2), 
 		(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 2)) * graphics_scaling);
