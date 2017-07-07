@@ -62,7 +62,7 @@ exports.Entity = function(x,y,spriteName)
 			this.knockback = false;
 			
 			// change direction even if they are blocked and can't move
-			if (this.attack == 0)
+			if (this.attack_counter <= 5)
 			{
 				if (this.x_speed != x_direction)
 				{
@@ -126,15 +126,18 @@ exports.Entity = function(x,y,spriteName)
 		
 		this.collisionCheck();
 		
-		if (this.y_speed == 0 && this.x_speed != 0)
+		if (this.attack_counter <= 5)
 		{
-			if (x_direction > 0) {this.direction = "Right";}
-			else if (x_direction < 0) {this.direction = "Left";}
-		}
-		else if (this.x_speed == 0 && this.y_speed != 0)
-		{
-			if (y_direction > 0) {this.direction = "Down";}
-			else if (y_direction < 0) {this.direction = "Up";}
+			if (this.y_speed == 0 && this.x_speed != 0)
+			{
+				if (x_direction > 0) {this.direction = "Right";}
+				else if (x_direction < 0) {this.direction = "Left";}
+			}
+			else if (this.x_speed == 0 && this.y_speed != 0)
+			{
+				if (y_direction > 0) {this.direction = "Down";}
+				else if (y_direction < 0) {this.direction = "Up";}
+			}	
 		}		
 	};
 };

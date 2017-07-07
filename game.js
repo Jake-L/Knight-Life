@@ -236,11 +236,31 @@ var step = function()
 
 function getUsername()
 {
-	var username = prompt("Please enter your username:");
-	if (username == null || username == "")
+	var username;
+	var c = decodeURIComponent(document.cookie).split(';');
+	
+	// read username from a cookie
+	if (c != null && c[0].substr(0,8) == "username" && c[0].length > 9)
 	{
-		username = "Player";
+		username = c[0].substr(9,c[0].length - 1);
+		console.log(username);
 	}
+	
+	// get username from user
+	else
+	{	
+		username = prompt("Please enter your username:");
+		if (username == null || username == "")
+		{
+			username = "Player";
+		}
+		else
+		{
+			// save username to cookie
+			document.cookie = "username=" + username;
+		}
+	}
+	
 	return username;
 }
 
@@ -561,6 +581,11 @@ Player.prototype.update = function()
 				{
 					this.entity.z_speed = 3;
 				}
+			}
+			else if (value == 67)
+			{
+				document.cookie = "username=";
+				console.log(document.cookie);
 			}
 		}
 	}

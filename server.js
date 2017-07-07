@@ -196,25 +196,25 @@ var CPU = function(x, y, spriteName, id)
 
 CPU.prototype.update = function()
 {
-	if (this.target != null)
+	var e = getEntity(this.target);
+	
+	if (e != null)
 	{
-		var e = getEntity(this.target);
-		
 		this.x_direction = 0;
 		this.y_direction = 0;
 		
 		// move along the x-axis toward your target
-		if (this.entity.x < e.x - (e.width / 2))
+		if (this.entity.x < e.x)
 		{
 			this.x_direction = 1;
 		}
-		else if (this.entity.x > e.x + (e.width / 2))
+		else if (this.entity.x > e.x)
 		{
 			this.x_direction = -1;
 		}
 		
 		// move along the y-axis toward your target
-		if (this.entity.y < e.y - (e.depth / 2))
+		if (this.entity.y < e.y)
 		{
 			this.y_direction = 1;
 		}
@@ -269,6 +269,39 @@ CPU.prototype.update = function()
 	this.directionCounter--;
 
 	this.entity.move(this.x_direction * 0.5, this.y_direction * 0.5);
+	
+	if (e != null && (this.entity.attack_counter <= 5
+		|| (this.entity.attack_counter == this.entity.attack1_frame_length && this.entity.attack == 1) //let them change direction in the first attack frame
+		|| (this.entity.attack_counter == this.entity.attack2_frame_length && this.entity.attack == 2)))
+	{
+		console.log((e.x - this.entity.x) + " " + (e.y - this.entity.y));
+		
+		// check if you should face left / right
+		if (Math.abs(e.x - this.entity.x) >= Math.abs(e.y - this.entity.y))
+		{
+			if (e.x > this.entity.x)
+			{
+				this.entity.direction = "Right";
+			}
+			else if (e.x < this.entity.x)
+			{
+				this.entity.direction = "Left";
+			}
+		}
+		// face up / down
+		else
+		{
+			if (e.y > this.entity.y)
+			{
+				this.entity.direction = "Down";
+			}
+			else if (e.y < this.entity.y)
+			{
+				this.entity.direction = "Up";
+			}
+		}
+	}
+	
 	this.entity.update();
 };
 
