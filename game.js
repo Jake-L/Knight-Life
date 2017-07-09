@@ -7,7 +7,7 @@ var width = window.innerWidth - 20;
 var height = window.innerHeight - 20;
 canvas.width = width;
 canvas.height = height;
-var graphics_scaling = Math.ceil(height/250);
+var graphics_scaling = Math.ceil(Math.min(height,width)/250);
 console.log(graphics_scaling);
 var pixelWidth = Math.ceil(width / graphics_scaling);
 var pixelHeight = Math.ceil(height / graphics_scaling);
@@ -51,6 +51,7 @@ var playerList = [];
 var mapObjects = [];
 var projectileList = [];
 var flyTextList = [];
+var notificationList = [];
 
 var playerSprite = [];
 var playerAttackSprite = [];
@@ -59,47 +60,46 @@ var playerXP = 0;
 var minimapScale = 16;
 
 function getDirName(n)
+{
+	if (n == 0)
 	{
-		if (n == 0)
-		{
-			return "Left";
-		}
-		else if (n == 1)
-		{
-			return "Up";
-		}
-		else if (n == 2)
-		{
-			return "Right";
-		}
-		else if (n == 3)
-		{
-			return "Down";
-		}
-		
-		return "";
+		return "Left";
+	}
+	else if (n == 1)
+	{
+		return "Up";
+	}
+	else if (n == 2)
+	{
+		return "Right";
+	}
+	else if (n == 3)
+	{
+		return "Down";
 	}
 	
-function getDirNum(s)
-	{
-		if (s == "Left")
-		{
-			return 0;
-		}
-		else if (s == "Up")
-		{
-			return 1;
-		}
-		else if (s == "Right")
-		{
-			return 2;
-		}
-		else if (s == "Down")
-		{
-			return 3;
-		}
-	}
+	return "";
+}
 
+function getDirNum(s)
+{
+	if (s == "Left")
+	{
+		return 0;
+	}
+	else if (s == "Up")
+	{
+		return 1;
+	}
+	else if (s == "Right")
+	{
+		return 2;
+	}
+	else if (s == "Down")
+	{
+		return 3;
+	}
+}
 
 //functions from external files
 mapObject = share.mapObject;
@@ -205,34 +205,39 @@ window.addEventListener("focus", function()
 );
 
 var rfps = 0;
+var ufps = 0;
 
-var step = function() 
+function step()
 {
 	if (new Date().getTime() > frameTime)
 	{
-		updateCollisionList();
 		update();
+		socket.emit('movement', player.entity); //send new location to server
 		frameTime += 16.6;
 		ucounter += 1;
 	}
 	context.fillStyle = "#ADD8E6";
-	renderBackground();
+	
   render();
 	rcounter += 1;
+	//renderBackground();
 	
 	if (rcounter >= 100)
 	{
+		
 		rfps = Math.round(rcounter / ((new Date().getTime() - startTime)/1000));
+		ufps = Math.round(ucounter / ((new Date().getTime() - startTime)/1000));
 		startTime = new Date().getTime();
+		ucounter = 0;
 		rcounter = 0;
 	}
 	context.font = "10px sans-serif";
 	context.fillStyle = "#000000";
 	context.fillText("FPS: " + rfps,10,10);
+	context.fillText("FPS: " + ufps,10,20);
 	//console.log("Render FPS: " + Math.round(rcounter / ((new Date().getTime() - startTime)/1000)) + " Update FPS: " + Math.round(ucounter / ((new Date().getTime() - startTime)/1000)));
-
-	setTimeout(step, 5);
-};
+	setTimeout(step, 4);
+}
 
 function getUsername()
 {
@@ -258,6 +263,7 @@ function getUsername()
 		{
 			// save username to cookie
 			document.cookie = "username=" + username;
+			notificationList.push(new Notification("Default Controls","Press 1 to jump;Press 2 for basic attack;Press 3 for ranged attack"));
 		}
 	}
 	
@@ -304,7 +310,7 @@ var update = function()
 		}
 	}
 	
-	//BUG: need to clear any incoming damage, i.e. if lagging cant take damage after respawn
+
 	if (player.entity.current_health <= 0)
 	{
 		playerXP = player.entity.xp;
@@ -317,6 +323,7 @@ var update = function()
 		player.update();	
 	}
 	
+	// update flytext and remove any that expired
 	var n = flyTextList.length;
 	for (var i = 0; i < n; i++)
 	{
@@ -327,6 +334,17 @@ var update = function()
 			flyTextList.splice(i,1);
 			i--;
 			n--;
+		}
+	}
+	
+	// update current notifcation and check if it expired
+	if (notificationList[0] != null)
+	{
+		notificationList[0].update();
+		
+		if (notificationList[0].counter <= 0)
+		{
+			notificationList.splice(0,1);
 		}
 	}
 	
@@ -387,6 +405,7 @@ function copyEntity(old)
 	p.max_health = old.max_health;
 	p.current_health = old.current_health;
 	p.attack_counter = old.attack_counter;
+	p.attack_length = old.attack_length;
 	p.lvl = old.lvl;
 	p.allyState = old.allyState;
 	p.initialize();
@@ -412,6 +431,8 @@ Player.prototype.render = function()
 //display graphics
 var render = function() 
 {
+	renderBackground();
+	
 	//create a list of all the entities to be rendered
 	var renderList = [];
 	
@@ -453,6 +474,11 @@ var render = function()
 	for (var i in flyTextList)
 	{
 		flyTextList[i].render();
+	}
+	
+	if (notificationList[0] != null)
+	{
+		notificationList[0].render();
 	}
 	
 	renderMinimap();
@@ -512,6 +538,8 @@ window.addEventListener("keyup", function(event)
 
 Player.prototype.update = function() 
 {
+	updateCollisionList();
+	
 	// slowly regenerate health over time
 	if (this.entity.current_health < this.entity.max_health)
 	{
@@ -546,18 +574,12 @@ Player.prototype.update = function()
 			if (value == attack_key)
 			{
 				if (this.entity.attack_counter <= 0)
-				{
-					this.entity.attack = 1;
-					this.entity.attack_counter = this.entity.attack1_frame_length;
-				}
+				{this.entity.createAttack(1);}
 			}		
 			else if (value == attack2_key)
 			{
 				if (this.entity.attack_counter <= 0)
-				{
-					this.entity.attack = 2;
-					this.entity.attack_counter = this.entity.attack2_frame_length;
-				}
+				{this.entity.createAttack(2);}
 			}
 			else if(value == left_key) 
 			{ 
@@ -699,6 +721,47 @@ function flyText(x, y, s, colour)
 	}
 }
 
+function Notification(header, body)
+{
+	this.header = header;
+	this.body = body.split(';');
+	this.counter = 300;
+	this.x = pixelWidth / 2;
+	this.y = pixelHeight;
+	
+	this.update = function()
+	{
+		if (this.counter > 240)
+		{
+			this.y -= 0.5;
+		}
+		else if (this.counter <= 60)
+		{
+			this.y += 0.5;
+		}
+		this.counter--;
+	}
+	
+	this.render = function()
+	{
+		// display the header
+		context.font = "bold " + 5 * graphics_scaling + "px sans-serif";
+		context.fillStyle = "#FFFFFF";
+		context.fillText(this.header,
+			(this.x * graphics_scaling) - (context.measureText(this.header).width / 2),
+			(this.y + 10) * graphics_scaling);
+			
+		// display the body
+		context.font = "bold " + 4 * graphics_scaling + "px sans-serif";
+		for (var i in this.body)
+		{
+			context.fillText(this.body[i],
+				(this.x * graphics_scaling) - (context.measureText(this.body[i]).width / 2),
+				(this.y + 15 + (5 * i)) * graphics_scaling);
+		}
+	}
+}
+
 // display the minimap
 function renderMinimap()
 {
@@ -777,7 +840,20 @@ function printMousePos(event) {
 }
 
 document.addEventListener("click", printMousePos);
-//window.addEventListener("resize", myFunction);
+window.addEventListener("resize", setScreenSize);
+//document.addEventListener("fullscreenchange", setScreenSize);
+
+function setScreenSize(event) 
+{
+	canvas = document.createElement('canvas');
+	width = window.innerWidth - 20;
+	height = window.innerHeight - 20;
+	canvas.width = width;
+	canvas.height = height;
+  graphics_scaling = Math.ceil(Math.min(height,width)/250);
+	pixelWidth = Math.ceil(width / graphics_scaling);
+	pixelHeight = Math.ceil(height / graphics_scaling);
+};
 
 socket.on('mapObjects', function(a)
 {
@@ -792,6 +868,7 @@ socket.on('mapObjects', function(a)
 
 socket.on('players', function(players)
 {
+	/*
 	// back up the old player list, so we can see who left
 	var oldList = new Array();
 	
@@ -815,6 +892,11 @@ socket.on('players', function(players)
 		{
 			delete playerList[j];
 		}
+	}*/
+	
+	for (var i in players)
+	{
+		playerList[i] = copyEntity(players[i]);
 	}
 });
 
@@ -828,8 +910,16 @@ socket.on('damageIn', function(x, y, damage)
 // server notifies that the player has gained xp
 socket.on('xpgain', function(xp)
 {
+	var old_lvl = player.entity.lvl;
 	player.entity.xp += xp;
 	player.entity.updateLevel();
+	
+	while (old_lvl < player.entity.lvl)
+	{
+		old_lvl++;
+		notificationList.push(new Notification("Level Up!","You reached level " + old_lvl));
+	}
+	
 	flyTextList.push(new flyText(player.entity.x, player.entity.y - (player.entity.height * 1.5), "+" + xp + " XP", "#0000C0"));
 });
 
@@ -843,14 +933,5 @@ socket.on('projectiles', function(p)
 		projectileList.push(new Projectile(p[i]));
 	}
 });
-
-// send current location to the server
-setInterval(function() 
-{
-	if (player != null)
-	{
-		socket.emit('movement', player.entity);
-	}
-}, 1000 / 60);
 
 socket.emit('new player');

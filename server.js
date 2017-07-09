@@ -65,9 +65,7 @@ function initializeMap()
 	// spawn NPCs
 	for (var i = 0; i < 6; i++)
 	{
-		mapEntities.push(new CPU(0, 0, "playerDown", i));
-		mapEntities[i].entity.xp = i * i;
-		mapEntities[i].entity.updateLevel();
+		mapEntities.push(new CPU(0, 0, "playerDown", i, i * i * 5));
 		killParticipation[i] = null;
 	}
 }
@@ -164,7 +162,7 @@ function updateCollisionList()
 	}
 }
 
-var CPU = function(x, y, spriteName, id)
+var CPU = function(x, y, spriteName, id, xp)
 {
 	var w = sizeOf("img//" + spriteName + ".png").width;
 	w -= w % 2;
@@ -186,6 +184,8 @@ var CPU = function(x, y, spriteName, id)
 	this.entity.depth = Math.floor(h * 0.5);
 	this.entity.height = h;
 	this.entity.id = id;
+	this.entity.xp = xp;
+	this.entity.updateLevel();
 	
 	//configure CPU specific attributes
 	this.target = null;
@@ -231,13 +231,11 @@ CPU.prototype.update = function()
 			{
 				if (Math.abs(this.entity.y - e.y) < this.entity.depth * 2)
 				{
-					this.entity.attack = 1;
-					this.entity.attack_counter = this.entity.attack1_frame_length;
+					this.entity.createAttack(1);
 				}
 				else
 				{
-					this.entity.attack = 2;
-					this.entity.attack_counter = this.entity.attack2_frame_length;
+					this.entity.createAttack(2);
 				}
 			}
 			// check if you should attack left or right
@@ -245,13 +243,11 @@ CPU.prototype.update = function()
 			{
 				if (Math.abs(this.entity.x - e.x) < this.entity.width * 2)
 				{
-					this.entity.attack = 1;
-					this.entity.attack_counter = this.entity.attack1_frame_length;
+					this.entity.createAttack(1);
 				}
 				else
 				{
-					this.entity.attack = 2;
-					this.entity.attack_counter = this.entity.attack2_frame_length;
+					this.entity.createAttack(2);
 				}
 			}
 		}
@@ -271,8 +267,7 @@ CPU.prototype.update = function()
 	this.entity.move(this.x_direction * 0.5, this.y_direction * 0.5);
 	
 	if (e != null && (this.entity.attack_counter <= 5
-		|| (this.entity.attack_counter == this.entity.attack1_frame_length && this.entity.attack == 1) //let them change direction in the first attack frame
-		|| (this.entity.attack_counter == this.entity.attack2_frame_length && this.entity.attack == 2)))
+		|| (this.entity.attack_counter == this.entity.attack_length))) //let them change direction in the first attack frame
 	{
 		console.log((e.x - this.entity.x) + " " + (e.y - this.entity.y));
 		
@@ -360,7 +355,7 @@ setInterval(function()
 			id = mapEntities[i].entity.id;
 			entityDeath(id, mapEntities[i].entity.lvl);
 			clearAgro(id);
-			mapEntities[i] = new CPU(0,0,spriteName,id);
+			mapEntities[i] = new CPU(0,0,spriteName,id,id * id * 5);
 		}
 	}
 	
@@ -651,17 +646,20 @@ setInterval(function()
 		io.to(i).emit('players', players); 	
 	}  
 	
-	var p = [];
-	
-	for (var i in projectileList)
+	if (projectileList.length > 0)
 	{
-		if (new Date().getTime() >= projectileList[i].spawn_time)
+		var p = [];
+		
+		for (var i in projectileList)
 		{
-			p.push(projectileList[i]);
+			if (new Date().getTime() >= projectileList[i].spawn_time)
+			{
+				p.push(projectileList[i]);
+			}
 		}
+		
+		io.emit('projectiles', p);
 	}
-	
-	io.emit('projectiles', p);
 	
 }, 1000/60);
 

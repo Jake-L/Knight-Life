@@ -1,8 +1,16 @@
 (function(exports)
-{
+{	
+var attackFrameLength = [];
+attackFrameLength["punch"] = 60;
+attackFrameLength["snowball"] = 90;
+
+var damageFrame = [];
+damageFrame["punch"] = 30;
+damageFrame["snowball"] = 45;
+
 //initialize an entity
 exports.Entity = function(x,y,spriteName)
-{
+{	
 	this.x = x; // X is the center of the sprite (in-game measurement units)
 	this.y = y; // Y is the bottom of the sprite (in-game measurement units)
 	this.z = 0; // Z is the sprite's height off the ground (in-game measurement units)
@@ -21,17 +29,19 @@ exports.Entity = function(x,y,spriteName)
 	this.spriteName = spriteName;
 	this.id;
 	
+	// stats
 	this.max_health = 100;
 	this.current_health = 100;
 	this.display_name = "CPU";
 	this.xp = 0;
 	this.lvl = 1;
+	this.attack_damage = 10; 
+	this.attack_speed = 1; // attack speed of 1 means one attack per second
+	this.defence = 10;
 	
+	// variables for performing attacks
 	this.attack_counter = 0;
-	this.attack1_frame_length = 60;
-	this.attack2_frame_length = 60;
-	this.attack1_damage_frame = 30;
-	this.attack2_damage_frame = 30;
+	this.attack_length = 0;
 	this.attack = 0;
 	this.attack1 = "punch";
 	this.attack2 = "snowball";
@@ -52,8 +62,20 @@ exports.Entity = function(x,y,spriteName)
 	
 	this.updateLevel = function()
 	{
+		var old_lvl = this.lvl;
 		this.lvl = Math.floor(Math.sqrt(this.xp / 5)) + 1
+		while (old_lvl < this.lvl)
+		{
+			old_lvl++;
+			this.defence++;
+			this.attack_damage++;
+			this.attack_speed += 0.01 / this.attack_speed;
+			this.max_health += 5;
+			this.current_health = this.max_health;
+		}
+		console.log(this.defence, this.attack_damage, this.attack_speed, this.max_health);
 	}
+
 	
 	this.move = function(x_direction, y_direction)
 	{
@@ -212,22 +234,35 @@ exports.Entity.prototype.renderHealthBar = function()
 			(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 1.5) + 1) * graphics_scaling,
 			Math.ceil((this.current_health / this.max_health) * (healthBarSprite.width - 2) * graphics_scaling), 
 			(healthBarSprite.height - 2) * graphics_scaling);
-			
-	/* display the entity's name */
-	context.font = "bold " + 4 * graphics_scaling + "px sans-serif";
 	
-	// display the black outline
-	context.strokeStyle = "#000000";
-	context.lineWidth = 2;
-	context.strokeText(this.display_name + " LVL" + this.lvl,
-		((this.x - x_offset) * graphics_scaling) - (context.measureText(this.display_name).width/2), 
-		(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 2)) * graphics_scaling);
+	/* display the entity's name */
+	// show coloured nameplates on most screens
+	if (graphics_scaling > 1)
+	{
+		context.font = "bold " + 4 * graphics_scaling + "px sans-serif";
 		
-	// display the coloured text
-	this.setColour();
-	context.fillText(this.display_name + " LVL" + this.lvl,
+		// display the black outline
+		context.strokeStyle = "#000000";
+		context.lineWidth = 2;
+		context.strokeText(this.display_name + " LVL" + this.lvl,
+			((this.x - x_offset) * graphics_scaling) - (context.measureText(this.display_name).width/2), 
+			(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 2)) * graphics_scaling);
+			
+		// display the coloured text
+		this.setColour();
+		context.fillText(this.display_name + " LVL" + this.lvl,
+			((this.x - x_offset) * graphics_scaling) - (context.measureText(this.display_name).width/2), 
+			(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 2)) * graphics_scaling);
+	}
+	// show only black text on tiny screens
+	else
+	{
+		context.font = "bold " + 6 + "px sans-serif";
+		context.fillStyle = "#000000";
+		context.fillText(this.display_name + " LVL" + this.lvl,
 		((this.x - x_offset) * graphics_scaling) - (context.measureText(this.display_name).width/2), 
 		(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 2)) * graphics_scaling);
+	}
 };
 
 // animate the entities sprite and change it based on their action
@@ -237,7 +272,7 @@ exports.Entity.prototype.updateSprite = function()
 	
 	if (this.attack_counter > 0)
 	{
-		this.sprite = playerAttackSprite[this.spriteName][getDirNum(this.direction)][Math.floor(this.attack_counter / 20)]
+		this.sprite = playerAttackSprite[this.spriteName][getDirNum(this.direction)][Math.floor(this.attack_counter / (this.attack_length / 3))]
 	}
 	else if ((this.x_speed == 0 && this.y_speed == 0) || this.z_speed != 0)
 	{
@@ -361,7 +396,7 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 		&& (e1.y > e2.y - e2.depth && e1.y - e1.depth < e2.y) // check for y-axis interception
 	)
 		{
-			console.log("e1: " + "( " + e1.x + "," + e1.y + "," + e1.z + ")" + "e2: " + "( " + e2.x + "," + e2.y + "," + e2.z + ")");
+			//console.log("e1: " + "( " + e1.x + "," + e1.y + "," + e1.z + ")" + "e2: " + "( " + e2.x + "," + e2.y + "," + e2.z + ")");
 
 			// check if there is space below you to move
 			if (Math.floor(e1.z) >= Math.floor(e2.z) && Math.floor(e1.z) <= Math.floor(e2.z) + Math.floor(e2.height * 0.8))
@@ -385,13 +420,11 @@ exports.Entity.prototype.update = function()
 	// reduce the time before they can attack again
 	if (this.attack_counter > 0)
 	{
-		//console.log(this.attack + " " + this.attack_counter + " " + this.attack1_damage_frame);
-		
-		if (this.attack == 1 && this.attack_counter == this.attack1_damage_frame + 2)
+		if (this.attack == 1 && this.attack_counter == Math.ceil(damageFrame[this.attack1] / this.attack_speed) + 2)
 		{
 			this.createAttack();
 		}
-		else if (this.attack == 2 && this.attack_counter == this.attack2_damage_frame + 2)
+		else if (this.attack == 2 && this.attack_counter == Math.ceil(damageFrame[this.attack2] / this.attack_speed) + 2)
 		{
 			this.createAttack();
 		}
@@ -409,7 +442,6 @@ exports.Entity.prototype.update = function()
 	{
 		this.z += this.z_speed;
 		this.z_speed -= 0.15;
-		//console.log(this.entity.z + " " + this.entity.z_speed);
 	
 		if (this.z <= 0) //if on the ground, no gravity
 		{
@@ -438,20 +470,9 @@ exports.Entity.prototype.update = function()
 	}
 	// if they are not being knockbacked, apply their movement normally
 	else
-	{
-		/*
-		if (this.attack == 0)
-		{
-			if (this.x_speed > 0) {this.direction = "Right";}
-			else if (this.x_speed < 0) {this.direction = "Left";}
-			else if (this.y_speed > 0) {this.direction = "Down";}
-			else if (this.y_speed < 0) {this.direction = "Up";}
-		}*/
-				
+	{				
 		this.x += this.x_speed;
 		this.y += this.y_speed;
-		//this.x_speed = 0;
-		//this.y_speed = 0;
 	}
 };
 
@@ -459,6 +480,8 @@ exports.Entity.prototype.takeDamage = function(x, y, damage)
 {
 	if (this.spawn_time + 100 < new Date().getTime()) // don't take damage in the first 0.1 seconds you're alive
 	{
+		var damage_reduction = Math.max((-1 * Math.pow(0.5,(0.05 * (this.defence - 123))) + 67), 0);
+		
 		this.current_health -= damage;
 
 		if (this.current_health < 0)
@@ -469,12 +492,29 @@ exports.Entity.prototype.takeDamage = function(x, y, damage)
 	
 	if(typeof(module) === 'undefined')
 	{
-	flyTextList.push(new flyText(this.x, this.y - (this.height * 1.5), "-" + damage + " health", "#C00000"));
+		flyTextList.push(new flyText(this.x, this.y - (this.height * 1.5), "-" + damage + " health", "#C00000"));
 	}
 };
 
-exports.Entity.prototype.createAttack = function()
+exports.Entity.prototype.createAttack = function(n)
 {
+	if (this.attack_counter <= 0)
+	{
+		if (n == 1)
+		{
+			this.attack = 1;
+			this.attack_counter = Math.ceil(attackFrameLength[this.attack1] / this.attack_speed);
+			this.attack_length = this.attack_counter;
+		}
+		else if (n == 2)
+		{
+			this.attack = 2;
+			this.attack_counter = Math.ceil(attackFrameLength[this.attack2] / this.attack_speed);
+			this.attack_length = this.attack_counter;
+		}
+	}
+	else // at the damage frame
+	{
 		if (this.attack == 1)
 		{
 			this.createAttackAux();
@@ -487,6 +527,7 @@ exports.Entity.prototype.createAttack = function()
 		{
 			this.attack = 0;
 		}
+	}
 };
 
 exports.Entity.prototype.createAttackAux = function()
@@ -517,11 +558,11 @@ exports.Entity.prototype.createAttackAux = function()
 	
 	if(typeof(module) === 'undefined')
 	{
-		socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), 10);
+		socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), this.attack_damage);
 	}
 	else
 	{
-		damageList.push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), 10));
+		damageList.push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), this.attack_damage));
 	}
 }
 
@@ -564,12 +605,12 @@ exports.Entity.prototype.createProjectileAux = function()
 	if(typeof(module) === 'undefined')
 	{
 		socket.emit('createProjectile', x + (this.x_speed * 2), y + (this.y_speed * 2), x_speed, y_speed, 
-			 new Date().getTime() + (2000/60), 10, this.attack2);
+			 new Date().getTime() + (2000/60), Math.round(this.attack_damage * 0.75), this.attack2);
 	}
 	else
 	{
 		projectileList.push(new Projectile(x + (this.x_speed * 2), y + (this.y_speed * 2), x_speed, y_speed, 
-			this.id, new Date().getTime() + (2000/60), 10, this.attack2));
+			this.id, new Date().getTime() + (2000/60), Math.round(this.attack_damage * 0.75), this.attack2));
 	}
 };
 
