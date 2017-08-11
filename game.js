@@ -1,5 +1,5 @@
-// play background music	
-var audio; 
+// play background music
+var audio;
 
 // create the graphics canvas
 var canvas = document.createElement('canvas');
@@ -77,7 +77,7 @@ function getDirName(n)
 	{
 		return "Down";
 	}
-	
+
 	return "";
 }
 
@@ -106,23 +106,27 @@ mapObject = share.mapObject;
 Entity = shareEntity.Entity;
 
 var player;
+var missions = [];
+var achievements = [];
 
-window.onload = function() 
+window.onload = function()
 {
   document.body.appendChild(canvas);
-	
+
 	//get the player's username
 	username = getUsername();
-	
+
 	spawnPlayer();
 	loadMap(mapId);
 	audio.play(); //must come after loadMap
-	loadSprite();
-	
+	loadSprite("player");
+	loadSprite("iceman");
+	achievements.push(new Objective(0));
+
 	frameTime = new Date().getTime();
 	startTime = frameTime;
 	step();
-	
+
 };
 
 // create the player
@@ -139,7 +143,7 @@ function loadMap(mapId)
 {
 	if (mapId == 0)
 	{
-		audio = new Audio("audio//track1.mp3");
+		audio = new Audio("audio//track2.mp3");
 		backgroundSprite.src = "img//grass1.png";
 		backgroundSpriteTop.src = "img//grass1top.png";
 	}
@@ -152,8 +156,8 @@ function loadMap(mapId)
 }
 
 //load sprites
-function loadSprite()
-{	
+function loadSprite(spriteName)
+{
 	// load player movement sprites
 	var a = [];
 	var img;
@@ -161,37 +165,37 @@ function loadSprite()
 	for (var i = 0; i < 4; i++)
 	{
 		var s = [];
-		
+
 		for (var j = 0; j < 4; j++)
 		{
 			img = new Image();
-			img.src = "img//player" + getDirName(i) + j + ".png";
-			s[j] = img;		
+			img.src = "img//" + spriteName + getDirName(i) + j + ".png";
+			s[j] = img;
 		}
-		
+
 		a[i] = s;
-	}	
-	
-	playerSprite["playerDown"] = a;
-	
+	}
+
+	playerSprite[spriteName] = a;
+
 	// load player attack sprites
 	var a = [];
-	
+
 	for (var i = 0; i < 4; i++)
 	{
 		var s = [];
-		
+
 		for (var j = 0; j < 3; j++)
 		{
 			img = new Image();
-			img.src = "img//playerAttack" + getDirName(i) + j + ".png";
-			s[j] = img;		
+			img.src = "img//" + spriteName + "Attack" + getDirName(i) + j + ".png";
+			s[j] = img;
 		}
-		
+
 		a[i] = s;
 	}
-	
-	playerAttackSprite["playerDown"] = a;
+
+	playerAttackSprite[spriteName] = a;
 }
 
 var ucounter = 0;
@@ -217,14 +221,14 @@ function step()
 		ucounter += 1;
 	}
 	context.fillStyle = "#ADD8E6";
-	
+
   render();
 	rcounter += 1;
 	//renderBackground();
-	
+
 	if (rcounter >= 100)
 	{
-		
+
 		rfps = Math.round(rcounter / ((new Date().getTime() - startTime)/1000));
 		ufps = Math.round(ucounter / ((new Date().getTime() - startTime)/1000));
 		startTime = new Date().getTime();
@@ -243,17 +247,17 @@ function getUsername()
 {
 	var username;
 	var c = decodeURIComponent(document.cookie).split(';');
-	
+
 	// read username from a cookie
 	if (c != null && c[0].substr(0,8) == "username" && c[0].length > 9)
 	{
 		username = c[0].substr(9,c[0].length - 1);
 		console.log(username);
 	}
-	
+
 	// get username from user
 	else
-	{	
+	{
 		username = prompt("Please enter your username:");
 		if (username == null || username == "")
 		{
@@ -266,7 +270,7 @@ function getUsername()
 			notificationList.push(new Notification("Default Controls","Press 1 to jump;Press 2 for basic attack;Press 3 for ranged attack"));
 		}
 	}
-	
+
 	return username;
 }
 
@@ -274,7 +278,7 @@ function getUsername()
 function updateCollisionList()
 {
 	var collisionList = [];
-	
+
 	for (var i in playerList)
 	{
 		if (Math.abs(playerList[i].x - player.entity.x) <= 120 && Math.abs(playerList[i].y - player.entity.y) <= 120)
@@ -282,7 +286,7 @@ function updateCollisionList()
 			collisionList.push(playerList[i]);
 		}
 	}
-	
+
 	for (var j in mapObjects)
 	{
 		if (Math.abs(mapObjects[j].x - player.entity.x) <= 120 && Math.abs(mapObjects[j].y - player.entity.y) <= 120)
@@ -290,26 +294,26 @@ function updateCollisionList()
 			collisionList.push(mapObjects[j]);
 		}
 	}
-	
+
 	player.entity.collisionList = collisionList;
 }
 
 
 // run the main functions that must be updated based on time events
 // when the tab is inactive assume this function runs at 1 fps
-var update = function() 
+var update = function()
 {
 	//restart background music at the end of the song
 	if (audio.currentTime + (8/60) > audio.duration)
 	{
 		audio.currentTime = 0;
-		
+
 		if (audio.ended == true)
 		{
 			audio.play();
 		}
 	}
-	
+
 
 	if (player.entity.current_health <= 0)
 	{
@@ -320,15 +324,31 @@ var update = function()
 	else
 	{
 		//update player object
-		player.update();	
+		player.update();
 	}
-	
+
+	// check if any achievements have been completed
+	for (var i in achievements)
+	{
+		if (achievements[i].isComplete())
+		{
+			r = achievements[i].reward;
+
+			if (typeof(r) !== "undefined" && r != null)
+			{
+
+			}
+
+			delete achievements[i];
+		}
+	}
+
 	// update flytext and remove any that expired
 	var n = flyTextList.length;
 	for (var i = 0; i < n; i++)
 	{
 		flyTextList[i].update();
-		
+
 		if (flyTextList[i].counter <= 0)
 		{
 			flyTextList.splice(i,1);
@@ -336,30 +356,30 @@ var update = function()
 			n--;
 		}
 	}
-	
+
 	// update current notifcation and check if it expired
 	if (notificationList[0] != null)
 	{
 		notificationList[0].update();
-		
+
 		if (notificationList[0].counter <= 0)
 		{
 			notificationList.splice(0,1);
 		}
 	}
-	
+
 };
 
 //displays the background image
 function renderBackground()
 {
 	context.fillRect(0, 0, width, height);
-	
+
 	if (backgroundSprite.complete && backgroundSprite.naturalHeight !== 0)
-	{	
+	{
 		var x_counter = Math.ceil((width / graphics_scaling) / backgroundSprite.width) + 1;
 		var y_counter = Math.ceil((height / graphics_scaling) / backgroundSprite.height) + 1;
-		
+
 		for (i = 0; i <= x_counter; i++)
 		{
 			for (j = 0; j <= y_counter; j++)
@@ -367,7 +387,7 @@ function renderBackground()
 				// draw a different background rectangle at the very top of the screen
 				if (j == 0 && y_offset < backgroundSpriteTop.height)
 				{
-					context.drawImage(backgroundSpriteTop, 
+					context.drawImage(backgroundSpriteTop,
 					((backgroundSpriteTop.width * i) - (x_offset % backgroundSpriteTop.width)) * graphics_scaling, //x position
 					((backgroundSpriteTop.height * j) - (y_offset % backgroundSpriteTop.height)) * graphics_scaling, //y position
 					backgroundSpriteTop.width * graphics_scaling, //width
@@ -376,7 +396,7 @@ function renderBackground()
 				// draw the usual background rectangle
 				else
 				{
-					context.drawImage(backgroundSprite, 
+					context.drawImage(backgroundSprite,
 					((backgroundSprite.width * i) - (x_offset % backgroundSprite.width)) * graphics_scaling, //x position
 					((backgroundSprite.height * j) - (y_offset % backgroundSprite.height)) * graphics_scaling, //y position
 					backgroundSprite.width * graphics_scaling, //width
@@ -390,7 +410,7 @@ function renderBackground()
 //initialize an entity from a pre-existing entity
 function copyEntity(old)
 {
-	var p = new Entity(old.x, old.y, "playerDown");
+	var p = new Entity(old.x, old.y, old.spriteName);
 	p.x = old.x; // X is the center of the sprite (in-game measurement units)
   p.y = old.y; // Y is the bottom of the sprite (in-game measurement units)
 	p.z = old.z; // Z is the sprite's height off the ground (in-game measurement units)
@@ -414,73 +434,73 @@ function copyEntity(old)
 
 
 //initialize the player
-function Player() 
+function Player()
 {
-  this.entity = new Entity(100,100,"playerDown");	 
+  this.entity = new Entity(100,100,"player");
 	this.entity.initialize();
 	this.entity.allyState = "Player";
 	this.healthRegenCounter = 0;
 }
 
 //display the player
-Player.prototype.render = function() 
+Player.prototype.render = function()
 {
   this.entity.render();
 };
 
 //display graphics
-var render = function() 
+var render = function()
 {
 	renderBackground();
-	
+
 	//create a list of all the entities to be rendered
 	var renderList = [];
-	
+
 	for (var i in playerList)
 	{
 		playerList[i].updateSprite();
 		renderList.push(playerList[i]); // add all the other players
 	}
-	
+
 	player.entity.updateSprite();
 	renderList.push(player.entity); // add the player
-	
+
 	var entityList = [];
 	Array.prototype.push.apply(entityList, renderList);
-	
+
 	for (var j in mapObjects)
 	{
 		renderList.push(mapObjects[j]);
 	}
-	
+
 	for (var j in projectileList)
 	{
 		renderList.push(projectileList[j]);
 	}
-	
+
 	// sort the list of players
 	renderSort(renderList);
-	
+
 	for (var n in renderList)
 	{
 		renderList[n].render(); // render each player
 	}
-	
+
 	for (var i in entityList)
 	{
 		entityList[i].renderHealthBar();
 	}
-	
+
 	for (var i in flyTextList)
 	{
 		flyTextList[i].render();
 	}
-	
+
 	if (notificationList[0] != null)
 	{
 		notificationList[0].render();
 	}
-	
+
 	renderMinimap();
 };
 
@@ -488,18 +508,18 @@ var render = function()
 function renderSort(array)
 {
 	var n = array.length;
-	
+
 	for (var i = 1; i < n; i++)
 	{
 		e = array[i];
 		j = i - 1;
-		
+
 		while (j >= 0 && renderSortAux(array[j],e))
 		{
 			array[j + 1] = array[j];
 			j -= 1;
 		}
-		
+
 		array[j+1] = e;
 	}
 }
@@ -524,34 +544,34 @@ function renderSortAux(e1, e2)
 //event listeners for the keyboard
 var keysDown = {};
 
-window.addEventListener("keydown", function(event) 
+window.addEventListener("keydown", function(event)
 {
   keysDown[event.keyCode] = true;
 }
 );
 
-window.addEventListener("keyup", function(event) 
+window.addEventListener("keyup", function(event)
 {
   delete keysDown[event.keyCode];
 }
 );
 
-Player.prototype.update = function() 
+Player.prototype.update = function()
 {
 	updateCollisionList();
-	
+
 	// slowly regenerate health over time
 	if (this.entity.current_health < this.entity.max_health)
 	{
 		this.healthRegenCounter ++;
-	
+
 		if (this.healthRegenCounter >= 300)
 		{
 			this.entity.current_health ++;
 			this.healthRegenCounter = 0;
 		}
 	}
-	
+
 	if (this.entity.sprite.complete && this.entity.sprite.naturalHeight !== 0)
 	{
 		 this.entity.width = Math.floor(this.entity.sprite.width * 0.8);
@@ -559,36 +579,36 @@ Player.prototype.update = function()
 		 this.entity.depth = Math.floor(this.entity.sprite.height * 0.5);
 		 this.entity.height = this.entity.sprite.height;
 	}
-	
+
 	/* move the player based on user input */
 	var x_direction = 0;
 	var y_direction = 0;
-	
+
 	// loops through every key currently pressed and performs an action
 	if (!this.entity.knockback || (Maths.abs(y_speed) <= 3 && Math.abs(x_speed) <= 3))
-	{		
-		for(var key in keysDown) 
+	{
+		for(var key in keysDown)
 		{
 			var value = Number(key);
-			
+
 			if (value == attack_key)
 			{
 				if (this.entity.attack_counter <= 0)
 				{this.entity.createAttack(1);}
-			}		
+			}
 			else if (value == attack2_key)
 			{
 				if (this.entity.attack_counter <= 0)
 				{this.entity.createAttack(2);}
 			}
-			else if(value == left_key) 
-			{ 
+			else if(value == left_key)
+			{
 				x_direction += -1;
-			} 
-			else if (value == right_key) 
+			}
+			else if (value == right_key)
 			{
 				x_direction += 1;
-			} 
+			}
 			else if (value == up_key)
 			{
 				y_direction += -1;
@@ -596,7 +616,7 @@ Player.prototype.update = function()
 			else if (value == down_key)
 			{
 				y_direction += 1;
-			}		
+			}
 			else if (value == jump_key)
 			{
 				if (this.entity.z == 0 && this.entity.z_speed == 0) //can only jump if standing on the ground
@@ -611,13 +631,13 @@ Player.prototype.update = function()
 			}
 		}
 	}
-	
+
 	this.entity.move(x_direction, y_direction);
-	
+
 	this.entity.update();
-	
+
 	socket.emit('movement', player.entity); // transmit new location to the server
-	
+
 	get_offset();
 };
 
@@ -626,7 +646,7 @@ function get_offset()
 {
 	var left_offset = player.entity.x - (pixelWidth / 2);
 	var right_offset = player.entity.x + (pixelWidth / 2);
-	
+
 	// check if the player is moving in the middle of the map and the screen needs to be moved
 	if (left_offset > 0 && right_offset < maxX[mapId])
 	{
@@ -640,10 +660,10 @@ function get_offset()
 	{
 		x_offset = 0;
 	}
-	
+
 	var top_offset = player.entity.y - (pixelHeight / 2);
 	var bot_offset = player.entity.y + (pixelHeight / 2);
-	
+
 	if (top_offset > 0 && bot_offset < maxY[mapId])
 	{
 		y_offset = top_offset;
@@ -672,7 +692,7 @@ function Projectile(p)
 	this.spawn_time = p.spawn_time;
 	this.sprite = new Image();
 	this.sprite.src = "img//" + this.spriteName + ".png";
-	
+
 	this.render = function()
 	{
 		context.save();
@@ -680,17 +700,17 @@ function Projectile(p)
 		context.shadowBlur = 15 + this.z;
 		context.shadowOffsetX = 0;
 		context.shadowOffsetY = (3 + this.z) * graphics_scaling;
-		
+
 		var n = (new Date().getTime() - this.spawn_time)/(1000/60);
-		
+
 		context.drawImage(
-			this.sprite, (this.x - (this.sprite.width/2) - x_offset) * graphics_scaling, 
+			this.sprite, (this.x - (this.sprite.width/2) - x_offset) * graphics_scaling,
 			(this.y - this.sprite.height - this.z - y_offset) * graphics_scaling,
-			//(this.x + (n * this.x_speed) - (this.sprite.width/2) - x_offset) * graphics_scaling, 
+			//(this.x + (n * this.x_speed) - (this.sprite.width/2) - x_offset) * graphics_scaling,
 			//(this.y + (n * this.y_speed) - this.sprite.height - this.z - y_offset) * graphics_scaling,
-			this.sprite.width * graphics_scaling, 
+			this.sprite.width * graphics_scaling,
 			this.sprite.height * graphics_scaling);
-			
+
 		context.restore();
 	};
 }
@@ -700,7 +720,7 @@ function flyText(x, y, s, colour)
 	this.msg = s;
 	this.colour = colour;
 	this.counter = 100;
-	
+
 	this.update = function()
 	{
 		if (this.counter > 0)
@@ -708,14 +728,14 @@ function flyText(x, y, s, colour)
 			this.counter--;
 		}
 	}
-	
+
 	this.render = function()
 	{
-		context.fillStyle = this.colour;	
+		context.fillStyle = this.colour;
 		context.font = "bold" + 4 * graphics_scaling + "px sans-serif";
 		context.globalAlpha = this.counter / 100;
 		context.fillText(this.msg,
-		((x - x_offset) * graphics_scaling) - (context.measureText(this.msg).width/2), 
+		((x - x_offset) * graphics_scaling) - (context.measureText(this.msg).width/2),
 		(y - y_offset - ((100-this.counter) / 10)) * graphics_scaling);
 		context.globalAlpha = 1;
 	}
@@ -728,7 +748,7 @@ function Notification(header, body)
 	this.counter = 300;
 	this.x = pixelWidth / 2;
 	this.y = pixelHeight;
-	
+
 	this.update = function()
 	{
 		if (this.counter > 240)
@@ -741,7 +761,7 @@ function Notification(header, body)
 		}
 		this.counter--;
 	}
-	
+
 	this.render = function()
 	{
 		// display the header
@@ -750,7 +770,7 @@ function Notification(header, body)
 		context.fillText(this.header,
 			(this.x * graphics_scaling) - (context.measureText(this.header).width / 2),
 			(this.y + 10) * graphics_scaling);
-			
+
 		// display the body
 		context.font = "bold " + 4 * graphics_scaling + "px sans-serif";
 		for (var i in this.body)
@@ -769,7 +789,7 @@ function renderMinimap()
 	var y = height - (52 * graphics_scaling);
 	var m_x_offset = 0;
 	var m_y_offset = 0;
-	
+
 	// get x-offset
 	if (player.entity.x / minimapScale < 25 || maxX / minimapScale <= 50)
 	{
@@ -783,7 +803,7 @@ function renderMinimap()
 	{
 		m_x_offset = (player.entity.x / minimapScale) - 25;
 	}
-	
+
 	// get y-offset
 	if (player.entity.y / minimapScale <= 25 || maxY / minimapScale <= 50)
 	{
@@ -797,11 +817,11 @@ function renderMinimap()
 	{
 		m_y_offset = (player.entity.y / minimapScale) - 25;
 	}
-	
+
 	// draw the minimap background
-	context.fillStyle = "#C0C0C0";	
+	context.fillStyle = "#C0C0C0";
 	context.fillRect(x, y, 50 * graphics_scaling, 50 * graphics_scaling);
-	
+
 	// draw the NPCs
 	for (var i in playerList)
 	{
@@ -812,24 +832,24 @@ function renderMinimap()
 			playerList[i].setColour();
 			context.beginPath();
 			context.arc(
-				x + ((playerList[i].x / minimapScale) - m_x_offset) * graphics_scaling, 
+				x + ((playerList[i].x / minimapScale) - m_x_offset) * graphics_scaling,
 				y + ((playerList[i].y - 1.5) * graphics_scaling / minimapScale),
-				1.5 * graphics_scaling, 
+				1.5 * graphics_scaling,
 				0, Math.PI * 2, false);
 			context.fill();
 		}
 	}
-	
+
 	// draw the player
-	context.fillStyle = "#1E90FF";	
+	context.fillStyle = "#1E90FF";
 	context.beginPath();
 	context.arc(
-		x + (((player.entity.x / minimapScale) - m_x_offset) * graphics_scaling), 
+		x + (((player.entity.x / minimapScale) - m_x_offset) * graphics_scaling),
 		y + ((player.entity.y - m_y_offset - 1.5) * graphics_scaling / minimapScale),
-		1.5 * graphics_scaling, 
+		1.5 * graphics_scaling,
 		0, Math.PI * 2, false);
 	context.fill();
-	
+
 	// draw the minimap outline
 	context.drawImage(minimapbox, x - (2 * graphics_scaling), y - (2 * graphics_scaling), 54 * graphics_scaling, 54 * graphics_scaling);
 }
@@ -843,7 +863,7 @@ document.addEventListener("click", printMousePos);
 window.addEventListener("resize", setScreenSize);
 //document.addEventListener("fullscreenchange", setScreenSize);
 
-function setScreenSize(event) 
+function setScreenSize(event)
 {
 	canvas = document.createElement('canvas');
 	width = window.innerWidth - 20;
@@ -865,35 +885,11 @@ socket.on('mapObjects', function(a)
 	}
 });
 
-
+// update position of other players from the server
 socket.on('players', function(players)
 {
-	/*
-	// back up the old player list, so we can see who left
-	var oldList = new Array();
-	
-	for (var n in playerList)
-	{
-		oldList[n] = false;
-	}
-	
-	// if there is a player in the new list not in the current list, add them
-	for(var i in players)
-	{
-		p = copyEntity(players[i]);
-		playerList[i] = p;
-		oldList[i] = true;
-	}
-	
-	// remove any players who disconnected
-	for (var j in oldList)
-	{
-		if (oldList[j] == false)
-		{
-			delete playerList[j];
-		}
-	}*/
-	
+	playerList = [];
+
 	for (var i in players)
 	{
 		playerList[i] = copyEntity(players[i]);
@@ -910,24 +906,14 @@ socket.on('damageIn', function(x, y, damage)
 // server notifies that the player has gained xp
 socket.on('xpgain', function(xp)
 {
-	var old_lvl = player.entity.lvl;
-	player.entity.xp += xp;
-	player.entity.updateLevel();
-	
-	while (old_lvl < player.entity.lvl)
-	{
-		old_lvl++;
-		notificationList.push(new Notification("Level Up!","You reached level " + old_lvl));
-	}
-	
-	flyTextList.push(new flyText(player.entity.x, player.entity.y - (player.entity.height * 1.5), "+" + xp + " XP", "#0000C0"));
+	player.entity.addXP(xp);
 });
 
 // server sends all the projectiles currently on screen
 socket.on('projectiles', function(p)
 {
 	projectileList = [];
-	
+
 	for (var i in p)
 	{
 		projectileList.push(new Projectile(p[i]));
