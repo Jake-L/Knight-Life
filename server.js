@@ -437,8 +437,7 @@ setInterval(function()
 		mapEntities[i].update();
 		if (mapEntities[i].entity.current_health <= 0)
 		{
-			entityDeath(mapEntities[i].entity.id, mapEntities[i].entity.lvl);
-			clearAgro(mapEntities[i].entity.id);
+			entityDeath(mapEntities[i].entity);
 			var e = new CPU(0,0,mapEntities[i].entity.spriteName, mapEntities[i].entity.id, mapEntities[i].entity.xp);
 			e.entity.faction = mapEntities[i].entity.faction;
 			e.targetType = mapEntities[i].targetType;
@@ -462,18 +461,18 @@ setInterval(function()
 }, 1000/60);
 
 // when a unit dies, divide EXP across anyone who damaged them in the past 30 seconds
-function entityDeath(id, lvl)
+function entityDeath(entity)
 {
-	var a = killParticipation[id];
-	var e = 10 * lvl;
+	var xp = 10 * entity.lvl;
+	console.log(killParticipation[entity.id] + " killed " + entity.id + " and gained " + xp + " XP");
 
-		if (a != null && !Number.isInteger(a))
+		if (killParticipation[entity.id] != null && !Number.isInteger(killParticipation[entity.id]))
 		{
-			io.to(a).emit('xpgain', e);
-			console.log(a + " gained " + e + " XP");
+			io.to(killParticipation[entity.id]).emit('xpgain', xp, entity);
 		}
 
-	killParticipation[id] = null;
+	killParticipation[entity.id] = null;
+	clearAgro(entity.id);
 }
 
 // holds information about where damage will be applied
@@ -703,8 +702,7 @@ io.on('connection', function(socket)
 	socket.on('death', function()
 	{
 		console.log("player died");
-		entityDeath(socket.id, connected[socket.id].lvl);
-		clearAgro(socket.id);
+		entityDeath(connected[socket.id]);
 	});
 
 	socket.on('disconnect', function()

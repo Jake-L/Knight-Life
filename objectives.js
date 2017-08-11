@@ -1,61 +1,61 @@
-var description = [];
-description[0] = "Defeat one enemy";
-
 var initialize = [];
 initialize[0] = function(){
-	this.tracker[0] = {objectiveType: "enemy", counter: 1};
+	this.tracker[0] = {objectiveType: "enemy", counter: 1, description: "Defeat one enemy"};
 	this.reward = {xp: 10};
-}
-/*
-var defeatEnemy = [];
-defeatEnemy[0] = function(enemy){
-	this.tracker[0]--;
+	this.name = "First Blood";
 }
 
-var getItem = [];
-
-getItem[0] = function(itemId, quantity)
-{
-	if 
+initialize[1] = function(){
+	this.tracker[0] = {objectiveType: "enemy", counter: 1, description: "Defeat an enemy at least three levels about you", levelDifference: 3};
+	this.reward = {xp: 20};
+	this.name = "David and Goliath";
 }
 
-var getConversation = [];
-
-getConverstation[0] = function(conversationId)
-{
-
-}*/
+initialize[2] = function(){
+	this.tracker[0] = {objectiveType: "enemy", counter: 3, description: "Defeat three icemen", faction: "iceman"};
+	this.reward = {xp: 20};
+	this.name = "Defrosted";
+}
 
 // create the objectives class
 function Objective(id)
 {
+	console.log(player.entity.x);
+
 	this.id = id;
 	this.tracker = [];
-	this.description = [];
 	this.next_node;
 	this.reward;
+	this.name;
 
 	this.initialize = initialize[id];
 	this.initialize();
-/*
-	if (typeof(getItem[id]) !== "undefined" && getItem[id] != null)
-	{
-		this.getItem = getItem[id];
-	}
-
-	if (typeof(defeatEnemy[id]) !== "undefined" && defeatEnemy[id] != null)
-	{
-		this.defeatEnemy = defeatEnemy[id];
-	}*/
 }
 
-Objective.prototype.defeatEnemy = function(enemy)
+Objective.prototype.enemyDefeated = function(entity)
 {
 	for (var i in this.tracker)
 	{
 		if (this.tracker[i].objectiveType == "enemy")
 		{
-			this.tracker[0].counter--;
+			if (typeof(this.tracker[i].levelDifference) !== "undefined")
+			{
+				if (entity.lvl - player.entity.lvl >= 3)
+				{
+					this.tracker[i].counter--;
+				}
+			}
+			else if (typeof(this.tracker[i].faction) !== "undefined")
+			{
+				if (this.tracker[i].faction == entity.faction)
+				{
+					this.tracker[i].counter--;
+				}
+			}
+			else
+			{
+				this.tracker[i].counter--;
+			}
 		}
 	}
 }
@@ -66,7 +66,7 @@ Objective.prototype.isComplete = function()
 {
 	for (var i in this.tracker)
 	{
-		if (this.tracker[i] != 0)
+		if (this.tracker[i].counter != 0)
 		{
 			return false;
 		}

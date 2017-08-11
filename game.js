@@ -122,6 +122,8 @@ window.onload = function()
 	loadSprite("player");
 	loadSprite("iceman");
 	achievements.push(new Objective(0));
+	achievements.push(new Objective(1));
+	achievements.push(new Objective(2));
 
 	frameTime = new Date().getTime();
 	startTime = frameTime;
@@ -332,14 +334,18 @@ var update = function()
 	{
 		if (achievements[i].isComplete())
 		{
+			notificationList.push(new Notification("Achievement Complete","You completed the achievement " + achievements[i].name))
 			r = achievements[i].reward;
 
 			if (typeof(r) !== "undefined" && r != null)
 			{
-
+				if (typeof(r.xp) !== "undefined")
+				{
+					player.entity.addXP(r.xp);
+				}
 			}
 
-			delete achievements[i];
+			achievements.splice(i, 1);
 		}
 	}
 
@@ -347,13 +353,16 @@ var update = function()
 	var n = flyTextList.length;
 	for (var i = 0; i < n; i++)
 	{
-		flyTextList[i].update();
-
-		if (flyTextList[i].counter <= 0)
+		if (i == 0 || flyTextList[i].counter > flyTextList[i-1].counter + 30)
 		{
-			flyTextList.splice(i,1);
-			i--;
-			n--;
+			flyTextList[i].update();
+
+			if (flyTextList[i].counter <= 0)
+			{
+				flyTextList.splice(i,1);
+				i--;
+				n--;
+			}
 		}
 	}
 
@@ -493,7 +502,10 @@ var render = function()
 
 	for (var i in flyTextList)
 	{
-		flyTextList[i].render();
+		if (flyTextList[i].counter < 100)
+		{
+			flyTextList[i].render();
+		}
 	}
 
 	if (notificationList[0] != null)
@@ -904,8 +916,12 @@ socket.on('damageIn', function(x, y, damage)
 });
 
 // server notifies that the player has gained xp
-socket.on('xpgain', function(xp)
+socket.on('xpgain', function(xp, entity)
 {
+	for (var i in achievements)
+	{
+		achievements[i].enemyDefeated(entity);
+	}
 	player.entity.addXP(xp);
 });
 

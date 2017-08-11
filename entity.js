@@ -76,7 +76,7 @@ exports.Entity = function(x,y,spriteName)
 	this.updateLevel = function()
 	{
 		var old_lvl = this.lvl;
-		this.lvl = Math.floor(Math.sqrt(this.xp / 5)) + 1
+		this.lvl = Math.floor(Math.pow(this.xp / 5, 4/10)) + 1
 		while (old_lvl < this.lvl)
 		{
 			old_lvl++;
@@ -254,18 +254,25 @@ exports.Entity.prototype.renderHealthBar = function()
 	{
 		context.font = "bold " + 4 * graphics_scaling + "px sans-serif";
 
-		// display the black outline
+		// display the black outline of their name
 		context.strokeStyle = "#000000";
 		context.lineWidth = 2;
-		context.strokeText(this.display_name + " LVL" + this.lvl,
+		context.strokeText(this.display_name,
 			((this.x - x_offset) * graphics_scaling) - (context.measureText(this.display_name).width/2),
-			(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 2)) * graphics_scaling);
+			(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 1.75)) * graphics_scaling);
 
-		// display the coloured text
+		// display the coloured text of their name
 		this.setColour();
-		context.fillText(this.display_name + " LVL" + this.lvl,
+		context.fillText(this.display_name,
 			((this.x - x_offset) * graphics_scaling) - (context.measureText(this.display_name).width/2),
-			(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 2)) * graphics_scaling);
+			(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 1.75)) * graphics_scaling);
+
+		// display their level
+		context.font = "bold " + 3 * graphics_scaling + "px sans-serif";
+		context.fillStyle = "#000000";
+		context.fillText("LV" + this.lvl,
+			(this.x - x_offset + (healthBarSprite.width / 2) + 1) * graphics_scaling,
+			(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 0.75)) * graphics_scaling);
 	}
 	// show only black text on tiny screens
 	else
