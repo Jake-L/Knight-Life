@@ -249,6 +249,7 @@ function getUsername()
 {
 	var username;
 	var c = decodeURIComponent(document.cookie).split(';');
+	console.log(c);
 
 	// read username from a cookie
 	if (c != null && c[0].substr(0,8) == "username" && c[0].length > 9)

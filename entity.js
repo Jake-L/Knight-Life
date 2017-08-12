@@ -73,10 +73,16 @@ exports.Entity = function(x,y,spriteName)
 		flyTextList.push(new flyText(this.x, this.y - (this.height * 1.5), "+" + xp + " XP", "#0000C0"));
 	};
 
+	this.setLevel = function(lvl)
+	{
+		this.xp = Math.ceil(Math.pow(lvl-1, 10/4) * 5);
+		this.updateLevel();
+	}
+
 	this.updateLevel = function()
 	{
 		var old_lvl = this.lvl;
-		this.lvl = Math.floor(Math.pow(this.xp / 5, 4/10)) + 1
+		this.lvl = Math.floor(Math.pow(this.xp / 5, 4/10)) + 1;
 		while (old_lvl < this.lvl)
 		{
 			old_lvl++;
@@ -86,7 +92,6 @@ exports.Entity = function(x,y,spriteName)
 			this.max_health += 5;
 			this.current_health = this.max_health;
 		}
-		console.log(this.defence, this.attack_damage, this.attack_speed, this.max_health);
 	};
 
 

@@ -65,7 +65,7 @@ function initializeMap()
 	// spawn knights
 	for (var i = 0; i < 6; i++)
 	{
-		mapEntities.push(new CPU(0, 0, "player", i, i * i * 5));
+		mapEntities.push(new CPU(0, 0, "player", i, i+1));
 		killParticipation[i] = [];
 	}
 
@@ -74,7 +74,7 @@ function initializeMap()
   // spawn icemen
   for (var i = n; i < n + 3; i++)
   {
-    mapEntities.push(new CPU(0, 0, "iceman", i, 80));
+    mapEntities.push(new CPU(0, 0, "iceman", i, 5));
     mapEntities[i].entity.faction = "iceman";
     mapEntities[i].targetType = "Aggressive";
     killParticipation[i] = [];
@@ -173,7 +173,7 @@ function updateCollisionList()
 	}
 }
 
-var CPU = function(x, y, spriteName, id, xp)
+var CPU = function(x, y, spriteName, id, lvl)
 {
 	var w = sizeOf("img//" + spriteName + "Down0.png").width;
 	w -= w % 2;
@@ -195,8 +195,7 @@ var CPU = function(x, y, spriteName, id, xp)
 	this.entity.depth = Math.floor(h * 0.5);
 	this.entity.height = h;
 	this.entity.id = id;
-	this.entity.xp = xp;
-	this.entity.updateLevel();
+	this.entity.setLevel(lvl);
 
 	//configure CPU specific attributes
 	this.target = null;
@@ -438,7 +437,7 @@ setInterval(function()
 		if (mapEntities[i].entity.current_health <= 0)
 		{
 			entityDeath(mapEntities[i].entity);
-			var e = new CPU(0,0,mapEntities[i].entity.spriteName, mapEntities[i].entity.id, mapEntities[i].entity.xp);
+			var e = new CPU(0,0,mapEntities[i].entity.spriteName, mapEntities[i].entity.id, mapEntities[i].entity.lvl);
 			e.entity.faction = mapEntities[i].entity.faction;
 			e.targetType = mapEntities[i].targetType;
 			mapEntities[i] = e;

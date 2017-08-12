@@ -12,7 +12,7 @@ initialize[1] = function(){
 }
 
 initialize[2] = function(){
-	this.tracker[0] = {objectiveType: "enemy", counter: 3, description: "Defeat three icemen", faction: "iceman"};
+	this.tracker[0] = {objectiveType: "enemy", counter: 5, description: "Defeat five icemen", faction: "iceman"};
 	this.reward = {xp: 20};
 	this.name = "Defrosted";
 }
