@@ -20,8 +20,6 @@ initialize[2] = function(){
 // create the objectives class
 function Objective(id)
 {
-	console.log(player.entity.x);
-
 	this.id = id;
 	this.tracker = [];
 	this.next_node;

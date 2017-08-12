@@ -45,7 +45,7 @@ var mapEntities = []; // all the CPUs
 var mapObjects = []; // non-moving map objects like rocks
 var connected = []; // connected players
 var collisionList = [];
-var killParticipation = []; // keep track of players who recently attacked an enemy
+var killParticipation = {}; // keep track of players who recently attacked an enemy
 
 function initializeMap()
 {
@@ -66,7 +66,7 @@ function initializeMap()
 	for (var i = 0; i < 6; i++)
 	{
 		mapEntities.push(new CPU(0, 0, "player", i, i * i * 5));
-		killParticipation[i] = null;
+		killParticipation[i] = [];
 	}
 
   var n = mapEntities.length;
@@ -77,7 +77,7 @@ function initializeMap()
     mapEntities.push(new CPU(0, 0, "iceman", i, 80));
     mapEntities[i].entity.faction = "iceman";
     mapEntities[i].targetType = "Aggressive";
-    killParticipation[i] = null;
+    killParticipation[i] = [];
   }
 }
 
@@ -291,7 +291,7 @@ CPU.prototype.update = function()
 		}
 
 		/* check if you can attack the target */
-		if (this.entity.attack_counter <= 0)
+		if (this.entity.attack_counter <= 1)
 		{
 			// check if you should attack up or down
 			if (this.entity.x <= e.x + (e.width / 2) && this.entity.x >= e.x - (e.width / 2))
@@ -452,26 +452,81 @@ setInterval(function()
 
     if (connected[i].disconnect_counter > 600)
     {
-      // remove the disconnected player
-      delete connected[i];
-			clearAgro(i);
+      	// remove the disconnected player
+     	delete connected[i];
+		clearAgro(i);
     }
   }
 
 }, 1000/60);
 
+// add the attacker to the list of people who have damaged the victim
+function addKillParticipation(victim, attacker)
+{
+	
+	if (typeof(killParticipation[victim]) === "undefined" || killParticipation[victim] == null)
+	{
+		killParticipation[victim] = [];
+	}
+	
+	// add the attacker to the list of people who have damaged the victim
+	killParticipation[victim].unshift(attacker);
+
+	// remove any previous instances of the attacker in the array
+	var i = 1;
+	while (i < killParticipation[victim].length)
+	{
+		if (killParticipation[victim][i] == attacker)
+		{
+			killParticipation[victim].splice(i, 1);
+		}
+		else
+		{
+			i++;
+		}
+	}
+}
+
 // when a unit dies, divide EXP across anyone who damaged them in the past 30 seconds
 function entityDeath(entity)
 {
-	var xp = 10 * entity.lvl;
-	console.log(killParticipation[entity.id] + " killed " + entity.id + " and gained " + xp + " XP");
+	
 
-		if (killParticipation[entity.id] != null && !Number.isInteger(killParticipation[entity.id]))
+	if (typeof(killParticipation[entity.id]) !== "undefined" && killParticipation[entity.id] != null && killParticipation[entity.id].length > 0)
+	{
+		// if others assisted in the kill they get a fraction of the XP
+		if (killParticipation[entity.id].length > 1)
 		{
-			io.to(killParticipation[entity.id]).emit('xpgain', xp, entity);
+			var n = Math.min(4, killParticipation[entity.id].length - 1);
+			var xp = Math.ceil(5 * entity.lvl / n);
+
+			for (i = 1; i < killParticipation[entity.id].length; i++)
+			{
+				if (!Number.isInteger(killParticipation[entity.id][i]))
+				{
+					io.to(killParticipation[entity.id][i]).emit('xpgain', xp, entity);
+				}
+			}
+
+			// player who dealt the killing blow get half XP if others participated
+			xp = 5 * entity.lvl;
 		}
 
-	killParticipation[entity.id] = null;
+		// if only one person participated in the kill they get full XP
+		else
+		{
+			var xp = 10 * entity.lvl;
+		}
+
+		console.log(killParticipation[entity.id][0] + " killed " + entity.id + " and gained " + xp + " XP");
+
+		if (!Number.isInteger(killParticipation[entity.id][0]))
+		{
+			io.to(killParticipation[entity.id][0]).emit('xpgain', xp, entity);
+		}
+	}
+
+	killParticipation[entity.id] = [];
 	clearAgro(entity.id);
 }
 
@@ -566,7 +621,7 @@ function checkDamage()
 					io.to(connected[j].id).emit('damageIn', damageList[i].x, damageList[i].y, damageList[i].damage);
 
 					// track most recent attackers
-					killParticipation[connected[j].id] = damageList[i].source;
+					addKillParticipation(connected[j].id, damageList[i].source);
 
 					console.log(connected[j].display_name + " took " + damageList[i].damage + " damage");
 				}
@@ -584,7 +639,7 @@ function checkDamage()
 					mapEntities[j].setTarget(damageList[i].source);
 
 					// track most recent attackers
-					killParticipation[mapEntities[j].entity.id] = damageList[i].source;
+					addKillParticipation(mapEntities[j].entity.id, damageList[i].source);
 
 					console.log(mapEntities[j].entity.display_name + mapEntities[j].entity.id + " took " + damageList[i].damage + " damage");
 				}
@@ -630,7 +685,7 @@ function checkDamage()
 						io.to(connected[j].id).emit('damageIn', projectileList[i].x, projectileList[i].y, projectileList[i].damage);
 
 						// track most recent attackers
-						killParticipation[connected[j].id] = projectileList[i].source;
+						addKillParticipation(connected[j].id, projectileList[i].source);
 
 						console.log(connected[j].display_name + " took " + projectileList[i].damage + " damage");
 						dmg = true;
@@ -649,7 +704,7 @@ function checkDamage()
 						mapEntities[j].setTarget(projectileList[i].source);
 
 						// track most recent attackers
-						killParticipation[mapEntities[j].entity.id] = projectileList[i].source;
+						addKillParticipation(mapEntities[j].entity.id, projectileList[i].source);
 
 						console.log(mapEntities[j].entity.display_name + mapEntities[j].entity.id + " took " + projectileList[i].damage + " damage");
 						dmg = true;
@@ -675,7 +730,7 @@ io.on('connection', function(socket)
 	socket.on('new player', function()
 		{
 			io.to(socket.id).emit('mapObjects', mapObjects);
-			killParticipation[socket.id] = null;
+			killParticipation[socket.id] = [];
 		}
   );
 
@@ -685,7 +740,7 @@ io.on('connection', function(socket)
 		{
 			player.id = socket.id;
 			connected[socket.id] = player;
-      connected[socket.id].disconnect_counter = 0;
+      		connected[socket.id].disconnect_counter = 0;
 		}
   });
 
@@ -707,7 +762,7 @@ io.on('connection', function(socket)
 
 	socket.on('disconnect', function()
 	{
-    console.log(socket.id + " disconnected");
+    	console.log(socket.id + " disconnected");
 		delete connected[socket.id];
 		clearAgro(socket.id);
 		displayPlayerCount();

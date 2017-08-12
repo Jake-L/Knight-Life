@@ -605,12 +605,12 @@ Player.prototype.update = function()
 
 			if (value == attack_key)
 			{
-				if (this.entity.attack_counter <= 0)
+				if (this.entity.attack_counter <= 1)
 				{this.entity.createAttack(1);}
 			}
 			else if (value == attack2_key)
 			{
-				if (this.entity.attack_counter <= 0)
+				if (this.entity.attack_counter <= 1)
 				{this.entity.createAttack(2);}
 			}
 			else if(value == left_key)

@@ -440,13 +440,14 @@ exports.Entity.prototype.update = function()
 	// reduce the time before they can attack again
 	if (this.attack_counter > 0)
 	{
+		
 		if (this.attack == 1 && this.attack_counter == Math.ceil(damageFrame[this.attack1] / this.attack_speed) + 2)
 		{
-			this.createAttack();
+			this.createAttackAux();
 		}
 		else if (this.attack == 2 && this.attack_counter == Math.ceil(damageFrame[this.attack2] / this.attack_speed) + 2)
 		{
-			this.createAttack();
+			this.createProjectileAux();
 		}
 
 		this.attack_counter--;
@@ -518,7 +519,7 @@ exports.Entity.prototype.takeDamage = function(x, y, damage)
 
 exports.Entity.prototype.createAttack = function(n)
 {
-	if (this.attack_counter <= 0)
+	if (this.attack_counter <= 1)
 	{
 		if (n == 1)
 		{
@@ -531,21 +532,6 @@ exports.Entity.prototype.createAttack = function(n)
 			this.attack = 2;
 			this.attack_counter = Math.ceil(attackFrameLength[this.attack2] / this.attack_speed);
 			this.attack_length = this.attack_counter;
-		}
-	}
-	else // at the damage frame
-	{
-		if (this.attack == 1)
-		{
-			this.createAttackAux();
-		}
-		else if (this.attack == 2)
-		{
-			this.createProjectileAux();
-		}
-		else
-		{
-			this.attack = 0;
 		}
 	}
 };
