@@ -9,11 +9,12 @@ damageFrame["punch"] = 30;
 damageFrame["snowball"] = 45;
 
 //initialize an entity
-exports.Entity = function(x,y,spriteName)
+exports.Entity = function(x,y,spriteName,mapId)
 {
 	this.x = x; // X is the center of the sprite (in-game measurement units)
 	this.y = y; // Y is the bottom of the sprite (in-game measurement units)
 	this.z = 0; // Z is the sprite's height off the ground (in-game measurement units)
+	this.mapId = mapId;	
 
 	this.x_speed = 0;
 	this.y_speed = 0;
@@ -47,7 +48,6 @@ exports.Entity = function(x,y,spriteName)
 	this.attack2 = "snowball";
 	this.spawn_time = new Date().getTime();
 
-	this.mapId = 0;
 	this.allyState = "Neutral";
 	this.faction;
 
@@ -569,11 +569,11 @@ exports.Entity.prototype.createAttackAux = function()
 
 	if(typeof(module) === 'undefined')
 	{
-		socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), this.attack_damage);
+		socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), this.attack_damage, this.mapId);
 	}
 	else
 	{
-		damageList.push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), this.attack_damage));
+		damageList[this.mapId].push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), this.attack_damage, this.mapId));
 	}
 }
 
@@ -616,12 +616,12 @@ exports.Entity.prototype.createProjectileAux = function()
 	if(typeof(module) === 'undefined')
 	{
 		socket.emit('createProjectile', x + (this.x_speed * 2), y + (this.y_speed * 2), x_speed, y_speed,
-			 new Date().getTime() + (2000/60), Math.round(this.attack_damage * 0.75), this.attack2);
+			 new Date().getTime() + (2000/60), Math.round(this.attack_damage * 0.75), this.attack2, this.mapId);
 	}
 	else
 	{
-		projectileList.push(new Projectile(x + (this.x_speed * 2), y + (this.y_speed * 2), x_speed, y_speed,
-			this.id, new Date().getTime() + (2000/60), Math.round(this.attack_damage * 0.75), this.attack2));
+		projectileList[this.mapId].push(new Projectile(x + (this.x_speed * 2), y + (this.y_speed * 2), x_speed, y_speed,
+			this.id, new Date().getTime() + (2000/60), Math.round(this.attack_damage * 0.75), this.attack2, this.mapId));
 	}
 };
 

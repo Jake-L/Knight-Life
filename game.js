@@ -23,6 +23,7 @@ context.imageSmoothingEnabled = false;
 context.fillStyle = "#ADD8E6";
 var backgroundSprite = new Image();
 var backgroundSpriteTop = new Image();
+var weatherSprite = [];
 var healthBarSprite = new Image();
 healthBarSprite.src = "img//healthbar.png";
 var healthBarGreenSprite = new Image();
@@ -42,10 +43,10 @@ var attack2_key = 51;
 var frameTime = 0;
 var startTime = 0;
 
-var mapId = 0;
-var maxX = [1000];
-var minY = [30];
-var maxY = [500];
+var mapId = 1;
+var maxX = [1000,1000];
+var minY = [30,30];
+var maxY = [500,800];
 
 var playerList = [];
 var mapObjects = [];
@@ -111,12 +112,15 @@ var achievements = [];
 
 window.onload = function()
 {
-  document.body.appendChild(canvas);
+	document.body.appendChild(canvas);
+	console.log("passing mapId " + mapId);
+	socket.emit('new player', mapId);
 
 	//get the player's username
 	username = getUsername();
 
 	spawnPlayer();
+	
 	loadMap(mapId);
 	audio.play(); //must come after loadMap
 	loadSprite("player");
@@ -124,6 +128,7 @@ window.onload = function()
 	achievements.push(new Objective(0));
 	achievements.push(new Objective(1));
 	achievements.push(new Objective(2));
+	achievements.push(new Objective(3));
 
 	frameTime = new Date().getTime();
 	startTime = frameTime;
@@ -134,11 +139,11 @@ window.onload = function()
 // create the player
 function spawnPlayer()
 {
-	 player = new Player();
-	 player.entity.display_name = username;
-	 player.entity.xp = playerXP;
-	 player.entity.updateLevel();
-	 get_offset();
+	player = new Player();
+	player.entity.display_name = username;
+	player.entity.xp = playerXP;
+	player.entity.updateLevel();
+	get_offset();
 }
 
 function loadMap(mapId)
@@ -151,9 +156,15 @@ function loadMap(mapId)
 	}
 	else if (mapId == 1)
 	{
-		audio = new Audio("audio//track3.mp3");
-		backgroundSprite.src = "img//grass1.png";
-		backgroundSpriteTop.src = "img//grass1top.png";
+		audio = new Audio("audio//track1.mp3");
+		backgroundSprite.src = "img//snow1.png";
+		backgroundSpriteTop.src = "img//snow1top.png";
+
+		for (var i = 0; i < 4; i++)
+		{
+			weatherSprite[i] = new Image();
+			weatherSprite[i].src = "img//snowfall" + i + ".png";
+		}
 	}
 }
 
@@ -218,6 +229,7 @@ function step()
 	if (new Date().getTime() > frameTime)
 	{
 		update();
+		console.log("passing movement");
 		socket.emit('movement', player.entity); //send new location to server
 		frameTime += 16.6;
 		ucounter += 1;
@@ -417,10 +429,36 @@ function renderBackground()
 	}
 }
 
+// display the current weather (snow, rain, etc.) if there is any
+function renderWeather()
+{
+	if (weatherSprite.length > 0 && weatherSprite[0].complete && weatherSprite[0].naturalHeight !== 0)
+	{
+		var img = weatherSprite[Math.floor((new Date().getTime() % 400) / 100)];
+		var x_counter = Math.ceil((width / graphics_scaling) / img.width) + 1;
+		var y_counter = Math.ceil((height / graphics_scaling) / img.height) + 1;
+
+		for (i = 0; i <= x_counter; i++)
+		{
+			for (j = 0; j <= y_counter; j++)
+			{
+				// draw the usual background rectangle
+				context.drawImage(img,
+				((img.width * i) - (x_offset % img.width)) * graphics_scaling + Math.floor(((new Date().getTime() % 400) / 100)/graphics_scaling), //x position
+				((img.height * j) - (y_offset % img.height)) * graphics_scaling + Math.floor(((new Date().getTime() % 400) / 100)/graphics_scaling), //y position
+				img.width * graphics_scaling, //width
+				img.height * graphics_scaling); //height
+			}
+		}
+
+		console.log(((img.width * 1) - (x_offset % img.width)) * graphics_scaling + Math.floor(((new Date().getTime() % 400) / 100)/graphics_scaling));
+	}
+}
+
 //initialize an entity from a pre-existing entity
 function copyEntity(old)
 {
-	var p = new Entity(old.x, old.y, old.spriteName);
+	var p = new Entity(old.x, old.y, old.spriteName, old.mapId);
 	p.x = old.x; // X is the center of the sprite (in-game measurement units)
   p.y = old.y; // Y is the bottom of the sprite (in-game measurement units)
 	p.z = old.z; // Z is the sprite's height off the ground (in-game measurement units)
@@ -446,7 +484,7 @@ function copyEntity(old)
 //initialize the player
 function Player()
 {
-  this.entity = new Entity(100,100,"player");
+  	this.entity = new Entity(100,100,"player",mapId);
 	this.entity.initialize();
 	this.entity.allyState = "Player";
 	this.healthRegenCounter = 0;
@@ -495,6 +533,9 @@ var render = function()
 	{
 		renderList[n].render(); // render each player
 	}
+
+	//display weather if there is any
+	renderWeather();
 
 	for (var i in entityList)
 	{
@@ -648,8 +689,6 @@ Player.prototype.update = function()
 	this.entity.move(x_direction, y_direction);
 
 	this.entity.update();
-
-	socket.emit('movement', player.entity); // transmit new location to the server
 
 	get_offset();
 };
@@ -937,4 +976,3 @@ socket.on('projectiles', function(p)
 	}
 });
 
-socket.emit('new player');

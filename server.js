@@ -29,9 +29,9 @@ server.listen(5000, function() {
 });
 
 // Constants
-global.maxX = [1000];
-global.minY = [30];
-global.maxY = [500];
+global.maxX = [1000,1000];
+global.minY = [30,30];
+global.maxY = [500,800];
 
 // other shared variables
 global.projectileList = []; // keep track of all active projectiles
@@ -44,70 +44,102 @@ var sizeOf = require('image-size');
 var mapEntities = []; // all the CPUs
 var mapObjects = []; // non-moving map objects like rocks
 var connected = []; // connected players
-var collisionList = [];
-var killParticipation = {}; // keep track of players who recently attacked an enemy
+var connection = []; 
+var killParticipation = []; // keep track of players who recently attacked an enemy
 
 function initializeMap()
 {
+	for (var mapId in maxX)
+	{
+		projectileList[mapId] = [];
+		damageList[mapId] = [];
+		mapObjects[mapId] = [];
+		mapEntities[mapId] = [];
+		killParticipation[mapId] = {};
+		connected[mapId] = {};
+	}
+
 	// load Map 1
 	// load map objects (rocks, etc.)
-	mapObjects.push(new mapObject(100,200,"rock1"));
-	mapObjects.push(new mapObject(700,350,"bigrock"));
-	mapObjects.push(new mapObject(400,400,"rock1"));
+	mapObjects[0].push(new mapObject(100,200,"rock1"));
+	mapObjects[0].push(new mapObject(700,350,"bigrock"));
+	mapObjects[0].push(new mapObject(400,400,"rock1"));
 
-	for (var i in mapObjects)
+	for (var i in mapObjects[0])
 	{
-		mapObjects[i].width = sizeOf("img//" + mapObjects[i].spriteName + ".png").width;
-		mapObjects[i].height = sizeOf("img//" + mapObjects[i].spriteName + ".png").height;
-		mapObjects[i].depth = sizeOf("img//" + mapObjects[i].spriteName + ".png").height;
+		mapObjects[0][i].width = sizeOf("img//" + mapObjects[0][i].spriteName + ".png").width;
+		mapObjects[0][i].height = sizeOf("img//" + mapObjects[0][i].spriteName + ".png").height;
+		mapObjects[0][i].depth = sizeOf("img//" + mapObjects[0][i].spriteName + ".png").height;
 	}
 
 	// spawn knights
 	for (var i = 0; i < 6; i++)
 	{
-		mapEntities.push(new CPU(0, 0, "player", i, i+1));
-		killParticipation[i] = [];
+		mapEntities[0][i] = new CPU(0, 0, "player", i, i+1, 0);    
+		killParticipation[0][i] = [];
 	}
 
-  var n = mapEntities.length;
+	var n = mapEntities[0].length;
 
-  // spawn icemen
-  for (var i = n; i < n + 3; i++)
-  {
-    mapEntities.push(new CPU(0, 0, "iceman", i, 5));
-    mapEntities[i].entity.faction = "iceman";
-    mapEntities[i].targetType = "Aggressive";
-    killParticipation[i] = [];
-  }
+	// spawn icemen
+	for (var i = n; i < n + 3; i++)
+	{
+		mapEntities[0][i] = new CPU(0, 0, "iceman", i, 5, 0);
+		mapEntities[0][i].entity.faction = "iceman";
+		mapEntities[0][i].targetType = "Aggressive";
+		killParticipation[0][i] = [];
+	}
+
+	// load Map 2
+	// load map objects (rocks, etc.)
+	mapObjects[1].push(new mapObject(100,200,"snowman"));
+	mapObjects[1].push(new mapObject(700,350,"snowman"));
+	mapObjects[1].push(new mapObject(400,400,"snowman"));
+
+	for (var i in mapObjects[1])
+	{
+		mapObjects[1][i].width = sizeOf("img//" + mapObjects[0][i].spriteName + ".png").width;
+		mapObjects[1][i].height = sizeOf("img//" + mapObjects[0][i].spriteName + ".png").height;
+		mapObjects[1][i].depth = sizeOf("img//" + mapObjects[0][i].spriteName + ".png").height;
+	}
+
+	// spawn icemen
+	for (var i = 0; i < 3; i++)
+	{
+		mapEntities[1][i] = new CPU(0, 0, "iceman", i, 5, 1);
+		mapEntities[1][i].entity.faction = "iceman";
+		mapEntities[1][i].targetType = "Aggressive";
+		killParticipation[1][i] = [];
+	}
 }
 
 // get x,y coordinates of a valid spawn point for an object of the given height and width
-function getSpawn(h, w)
+function getSpawn(h, w, mapId)
 {
 	var c = {x: 0, y: 0};
 	var count = 0;
 
 	while (c.x + c.y == 0 && count < 100)
 	{
-		c.x = Math.ceil(Math.random() * maxX[0]);
-		c.y = Math.ceil((Math.random() * (maxY[0] - minY[0])) + minY[0]);
+		c.x = Math.ceil(Math.random() * maxX[mapId]);
+		c.y = Math.ceil((Math.random() * (maxY[mapId] - minY[mapId])) + minY[mapId]);
 		count++;
 
 		var blocked = false;
 
-		for (var i in connected)
+		for (var i in connected[mapId])
 		{
-			if (c.y > connected[i].y - connected[i].depth && c.y - h < connected[i].y
-				&& c.x + (w/2) > connected[i].x - (connected[i].width/2) && c.x - (w/2) < connected[i].x + (connected[i].width/2))
+			if (c.y > connected[mapId][i].y - connected[mapId][i].depth && c.y - h < connected[mapId][i].y
+				&& c.x + (w/2) > connected[mapId][i].x - (connected[mapId][i].width/2) && c.x - (w/2) < connected[mapId][i].x + (connected[mapId][i].width/2))
 			{
 				blocked = true;
 			}
 		}
 
-		for (var i in mapEntities)
+		for (var i in mapEntities[mapId])
 		{
-			if (c.y > mapEntities[i].y - mapEntities[i].depth && c.y - h < mapEntities[i].y
-				&& c.x + (w/2) > mapEntities[i].x - (mapEntities[i].width/2) && c.x - (w/2) < mapEntities[i].x + (mapEntities[i].width/2))
+			if (c.y > mapEntities[mapId][i].y - mapEntities[mapId][i].depth && c.y - h < mapEntities[mapId][i].y
+				&& c.x + (w/2) > mapEntities[mapId][i].x - (mapEntities[mapId][i].width/2) && c.x - (w/2) < mapEntities[mapId][i].x + (mapEntities[mapId][i].width/2))
 			{
 				blocked = true;
 			}
@@ -127,9 +159,9 @@ function getSpawn(h, w)
 // output is only used for collision detection, so visual attributes don't matter
 function copyEntity(old)
 {
-	var p = new Entity(old.x, old.y, old.spriteName);
+	var p = new Entity(old.x, old.y, old.spriteName, old.mapId);
 	p.x = old.x; // X is the center of the sprite (in-game measurement units)
-  p.y = old.y; // Y is the bottom of the sprite (in-game measurement units)
+  	p.y = old.y; // Y is the bottom of the sprite (in-game measurement units)
 	p.z = old.z; // Z is the sprite's height off the ground (in-game measurement units)
 	p.width = old.width;
 	p.depth = old.depth;
@@ -141,39 +173,42 @@ function copyEntity(old)
 // update the NPC collision lists (nearby enemies)
 function updateCollisionList()
 {
-	for (var i in mapEntities)
+	for (var mapId in mapEntities)
 	{
-		var c = [];
-
-		for (var j in mapEntities)
+		for (var i in mapEntities[mapId])
 		{
-			if (i != j)
-			{
-				c.push(copyEntity(mapEntities[j].entity));
-			}
-		}
+			var c = [];
 
-		for (var j in connected)
-		{
-			if (Math.abs(connected[j].x - mapEntities[i].entity.x) <= 120 && Math.abs(connected[j].y - mapEntities[i].entity.y) <= 120)
+			for (var j in mapEntities[mapId])
 			{
-				c.push(copyEntity(connected[j]));
+				if (i != j)
+				{
+					c.push(copyEntity(mapEntities[mapId][j].entity));
+				}
 			}
-		}
 
-		for (var j in mapObjects)
-		{
-			if (Math.abs(mapObjects[j].x - mapEntities[i].entity.x) <= 60 && Math.abs(mapObjects[j].y - mapEntities[i].entity.y) <= 60)
+			for (var j in connected[mapId])
 			{
-				c.push(copyEntity(mapObjects[j]));
+				if (Math.abs(connected[mapId][j].x - mapEntities[mapId][i].entity.x) <= 120 && Math.abs(connected[mapId][j].y - mapEntities[mapId][i].entity.y) <= 120)
+				{
+					c.push(copyEntity(connected[mapId][j]));
+				}
 			}
-		}
 
-		mapEntities[i].entity.collisionList = c;
+			for (var j in mapObjects[mapId])
+			{
+				if (Math.abs(mapObjects[mapId][j].x - mapEntities[mapId][i].entity.x) <= 60 && Math.abs(mapObjects[mapId][j].y - mapEntities[mapId][i].entity.y) <= 60)
+				{
+					c.push(copyEntity(mapObjects[mapId][j]));
+				}
+			}
+
+			mapEntities[mapId][i].entity.collisionList = c;
+		}
 	}
 }
 
-var CPU = function(x, y, spriteName, id, lvl)
+var CPU = function(x, y, spriteName, id, lvl, mapId)
 {
 	var w = sizeOf("img//" + spriteName + "Down0.png").width;
 	w -= w % 2;
@@ -182,14 +217,14 @@ var CPU = function(x, y, spriteName, id, lvl)
 
 	if (x + y == 0)
 	{
-		var c = getSpawn(h, w);
+		var c = getSpawn(h, w, mapId);
 
 		x = c.x;
 		y = c.y;
 	}
 
 	//configure the entity
-	this.entity = new Entity(x, y, spriteName);
+	this.entity = new Entity(x, y, spriteName, mapId);
 	console.log("Spawning entity at (" + x + "," + y + ")");
 	this.entity.width = w;
 	this.entity.depth = Math.floor(h * 0.5);
@@ -204,11 +239,11 @@ var CPU = function(x, y, spriteName, id, lvl)
 	this.x_direction = 0;
 	this.y_direction = 0;
 
-  this.getTarget = function(targetList)
-  {
-    var nearest_target;
-    for (var i in targetList)
-    {
+	this.getTarget = function(targetList)
+	{
+	    var nearest_target;
+	    for (var i in targetList)
+	    {
 			// only target enemies not in your faction
 			if (targetList[i].faction == null || targetList[i].faction != this.entity.faction)
 			{
@@ -227,42 +262,44 @@ var CPU = function(x, y, spriteName, id, lvl)
 					nearest_target = i;
 				}
 			}
-    }
+    	}
 		if (nearest_target == null)
 		{
-			return null
+			return null;
 		}
 		else
 		{
 			return targetList[nearest_target].id;
 		}
-  };
+	};
 };
 
 CPU.prototype.update = function()
 {
 	// if an entity is aggressive, check once every 2 seconds if there are any nearby entities for them to fight
-  if (new Date().getTime() % 2000 < 20 && this.targetType == "Aggressive")
-  {
-    var targetList = [];
-    for (var i in connected)
-    {
-      if (connected[i].faction == null || connected[i].faction != this.entity.faction)
-      {
-        targetList.push(connected[i]);
-      }
-    }
-    for (var i in mapEntities)
-    {
-      if (mapEntities[i].entity.faction == null || mapEntities[i].entity.faction != this.entity.function)
-      {
-        targetList.push(mapEntities[i].entity);
-      }
-    }
-    this.target = this.getTarget(targetList);
-  }
+	if (new Date().getTime() % 2000 < 20 && this.targetType == "Aggressive")
+	{
+		var targetList = [];
+		for (var i in connected[this.entity.mapId])
+		{
+			if (connected[this.entity.mapId][i].faction == null || connected[this.entity.mapId][i].faction != this.entity.faction)
+			{
+				targetList.push(connected[this.entity.mapId][i]);
+			}
+		}
+		for (var i in mapEntities[this.entity.mapId])
+		{
+			if (mapEntities[this.entity.mapId][i].entity.faction == null || mapEntities[this.entity.mapId][i].entity.faction != this.entity.faction)
+			{
+				targetList.push(mapEntities[this.entity.mapId][i].entity);
+			}
+		}
 
-	var e = getEntity(this.target);
+		this.target = this.getTarget(targetList);
+		
+	}
+
+	var e = getEntity(this.target, this.entity.mapId);
 
 	if (e != null)
 	{
@@ -290,6 +327,7 @@ CPU.prototype.update = function()
 		}
 
 		/* check if you can attack the target */
+		
 		if (this.entity.attack_counter <= 1)
 		{
 			// check if you should attack up or down
@@ -366,24 +404,30 @@ CPU.prototype.update = function()
 
 CPU.prototype.setTarget = function(id)
 {
-	var e = getEntity(id);
-	
-	// make sure the target is not on your side
-	if (e.faction == null || e.faction != this.entity.faction)
+	if (this.target != id)
 	{
-		// if you have no existing target, target the new entity
-		if (this.target == null)
+		var e = getEntity(id, this.entity.mapId);
+		
+		// make sure the target is not on your side
+		if (e.faction == null || e.faction != this.entity.faction)
 		{
-			this.target = id;
-		}
-		// if you already have an existing target, target the closer entity
-		else
-		{
-			var t = getEntity(this.target);
-			
-			if (Math.abs(e.x - this.entity.x) + Math.abs(e.y - this.entity.y) < Math.abs(t.x - this.entity.x) + Math.abs(e.y - this.entity.y))
+			// if you have no existing target, target the new entity
+			if (this.target == null)
 			{
 				this.target = id;
+			}
+			// if you already have an existing target, target the closer entity
+			else
+			{
+				var t = getEntity(this.target, this.entity.mapId);
+
+				if (t != null)
+				{
+					if (Math.abs(e.x - this.entity.x) + Math.abs(e.y - this.entity.y) < Math.abs(t.x - this.entity.x) + Math.abs(t.y - this.entity.y))
+					{
+						this.target = id;
+					}
+				}
 			}
 		}
 	}
@@ -391,19 +435,20 @@ CPU.prototype.setTarget = function(id)
 
 // returns the entity with the given ID
 // may be a player or CPU
-function getEntity(id)
+function getEntity(id, mapId)
 {
+
 	if (id == null)
 	{
 		return null;
 	}
-	else if (typeof connected[id] !== 'undefined')
+	else if (typeof connected[mapId][id] !== 'undefined')
 	{
-		return connected[id];
+		return connected[mapId][id];
 	}
-	else if (typeof mapEntities[id] !== 'undefined')
+	else if (typeof mapEntities[mapId][id] !== 'undefined')
 	{
-		return mapEntities[id].entity;
+		return mapEntities[mapId][id].entity;
 	}
 	else
 	{
@@ -412,13 +457,13 @@ function getEntity(id)
 }
 
 // CPUs should stop targeting someone after they die
-function clearAgro(id)
+function clearAgro(id, mapId)
 {
-	for (var i in mapEntities)
+	for (var i in mapEntities[mapId])
 	{
-		if (mapEntities[i].target == id)
+		if (mapEntities[mapId][i].target == id)
 		{
-			mapEntities[i].target = null;
+			mapEntities[mapId][i].target = null;
 		}
 	}
 }
@@ -427,57 +472,60 @@ function clearAgro(id)
 setInterval(function()
 {
 	updateCollisionList();
-
 	checkDamage();
 
-// update all the entities on the map
-	for (var i in mapEntities)
+	// update all the entities on the map
+	for (var mapId in mapEntities)
 	{
-		mapEntities[i].update();
-		if (mapEntities[i].entity.current_health <= 0)
+		for (var i in mapEntities[mapId])
 		{
-			entityDeath(mapEntities[i].entity);
-			var e = new CPU(0,0,mapEntities[i].entity.spriteName, mapEntities[i].entity.id, mapEntities[i].entity.lvl);
-			e.entity.faction = mapEntities[i].entity.faction;
-			e.targetType = mapEntities[i].targetType;
-			mapEntities[i] = e;
+
+			mapEntities[mapId][i].update();
+			
+			if (mapEntities[mapId][i].entity.current_health <= 0)
+			{
+				entityDeath(mapEntities[mapId][i].entity);
+				var e = new CPU(0,0,mapEntities[mapId][i].entity.spriteName, mapEntities[mapId][i].entity.id, mapEntities[mapId][i].entity.lvl, mapId);
+				e.entity.faction = mapEntities[mapId][i].entity.faction;
+				e.targetType = mapEntities[mapId][i].targetType;
+				mapEntities[mapId][i] = e;
+			}
 		}
 	}
 
-  // check if any players have been disconnected for 10 seconds
-  for (var i in connected)
-  {
-    connected[i].disconnect_counter++;
-
-    if (connected[i].disconnect_counter > 600)
-    {
-      	// remove the disconnected player
-     	delete connected[i];
-		clearAgro(i);
-    }
-  }
-
+  	// remove players who haven't updated their position in over 3 seconds
+	for (var id in connection)
+	{
+		if (connection[id].last_update + 3000 < new Date().getTime())
+		{
+			console.log(socket.id + " was kicked for inactivity");
+			delete connected[connection[socket.id].mapId][socket.id];
+			clearAgro(socket.id, connection[socket.id].mapId);
+			delete connection[socket.id];
+		}
+	}
 }, 1000/60);
 
+
 // add the attacker to the list of people who have damaged the victim
-function addKillParticipation(victim, attacker)
+function addKillParticipation(victim, attacker, mapId)
 {
 	
-	if (typeof(killParticipation[victim]) === "undefined" || killParticipation[victim] == null)
+	if (typeof(killParticipation[mapId][victim]) === "undefined" || killParticipation[mapId][victim] == null)
 	{
-		killParticipation[victim] = [];
+		killParticipation[mapId][victim] = [];
 	}
 	
 	// add the attacker to the list of people who have damaged the victim
-	killParticipation[victim].unshift(attacker);
+	killParticipation[mapId][victim].unshift(attacker);
 
 	// remove any previous instances of the attacker in the array
 	var i = 1;
-	while (i < killParticipation[victim].length)
+	while (i < killParticipation[mapId][victim].length)
 	{
-		if (killParticipation[victim][i] == attacker)
+		if (killParticipation[mapId][victim][i] == attacker)
 		{
-			killParticipation[victim].splice(i, 1);
+			delete killParticipation[mapId][victim][i];
 		}
 		else
 		{
@@ -489,21 +537,19 @@ function addKillParticipation(victim, attacker)
 // when a unit dies, divide EXP across anyone who damaged them in the past 30 seconds
 function entityDeath(entity)
 {
-	
-
-	if (typeof(killParticipation[entity.id]) !== "undefined" && killParticipation[entity.id] != null && killParticipation[entity.id].length > 0)
+	if (typeof(killParticipation[entity.mapId][entity.id]) !== "undefined" && killParticipation[entity.mapId][entity.id] != null && killParticipation[entity.mapId][entity.id].length > 0)
 	{
 		// if others assisted in the kill they get a fraction of the XP
-		if (killParticipation[entity.id].length > 1)
+		if (killParticipation[entity.mapId][entity.id].length > 1)
 		{
-			var n = Math.min(4, killParticipation[entity.id].length - 1);
+			var n = Math.min(4, killParticipation[entity.mapId][entity.id].length - 1);
 			var xp = Math.ceil(5 * entity.lvl / n);
 
-			for (i = 1; i < killParticipation[entity.id].length; i++)
+			for (i = 1; i < killParticipation[entity.mapId][entity.id].length; i++)
 			{
-				if (!Number.isInteger(killParticipation[entity.id][i]))
+				if (!Number.isInteger(killParticipation[entity.mapId][entity.id][i]))
 				{
-					io.to(killParticipation[entity.id][i]).emit('xpgain', xp, entity);
+					io.to(killParticipation[entity.mapId][entity.id][i]).emit('xpgain', xp, entity);
 				}
 			}
 
@@ -517,26 +563,27 @@ function entityDeath(entity)
 			var xp = 10 * entity.lvl;
 		}
 
-		console.log(killParticipation[entity.id][0] + " killed " + entity.id + " and gained " + xp + " XP");
+		console.log(killParticipation[entity.mapId][entity.id][0] + " killed " + entity.id + " and gained " + xp + " XP");
 
-		if (!Number.isInteger(killParticipation[entity.id][0]))
+		if (!Number.isInteger(killParticipation[entity.mapId][entity.id][0]))
 		{
-			io.to(killParticipation[entity.id][0]).emit('xpgain', xp, entity);
+			io.to(killParticipation[entity.mapId][entity.id][0]).emit('xpgain', xp, entity);
 		}
 	}
 
-	killParticipation[entity.id] = [];
-	clearAgro(entity.id);
+	killParticipation[entity.mapId][entity.id] = [];
+	clearAgro(entity.id, entity.mapId);
 }
 
 // holds information about where damage will be applied
-global.Damage = function(x, y, source, damage_time, damage)
+global.Damage = function(x, y, source, damage_time, damage, mapId)
 {
 	this.x = x;
 	this.y = y;
 	this.source = source;
 	this.damage_time = damage_time;
 	this.damage = damage;
+	this.mapId = mapId;
 
 	this.collisionCheck = function(e)
 	{
@@ -553,7 +600,7 @@ global.Damage = function(x, y, source, damage_time, damage)
 };
 
 // holds information about projectiles on-screen
-global.Projectile = function(x, y, x_speed, y_speed, source, spawn_time, damage, spriteName)
+global.Projectile = function(x, y, x_speed, y_speed, source, spawn_time, damage, spriteName, mapId)
 {
 	this.x = x;
 	this.y = y;
@@ -569,6 +616,7 @@ global.Projectile = function(x, y, x_speed, y_speed, source, spawn_time, damage,
 	this.width = sizeOf("img//" + this.spriteName + ".png").width;
 	this.depth = 6;
 	this.spawn_time = spawn_time;
+	this.mapId = mapId;
 
 	this.update = function()
 	{
@@ -591,130 +639,139 @@ global.Projectile = function(x, y, x_speed, y_speed, source, spawn_time, damage,
 
 	this.offscreen = function()
 	{
-		if (this.x - this.width > maxX[0] || this.x + this.width < 0 || this.y < 0 || this.y - this.height > maxY[0])
+		if (this.x - this.width > maxX[this.mapId] || this.x + this.width < 0 || this.y < 0 || this.y - this.height > maxY[this.mapId])
 		{
 			return true;
 		}
-		else false;
+		else 
+		{
+			return false;
+		}
 	};
 };
 
-/* check if an attack damaged any entities */
+// check if an attack damaged any entities
 function checkDamage()
 {
 	var currentTime = new Date();
-	var n = damageList.length;
-
-	// go through every active attack
-	for (var i = 0; i < n; i++)
+	for (var mapId in damageList)
 	{
-		// check if the animation reached the frame where it does damage
-		if (currentTime.getTime() >= damageList[i].damage_time)
+		var n = damageList[mapId].length;
+
+		// go through every active attack
+		for (var i = 0; i < n; i++)
 		{
-			// check every connected player to see if they were hit
-			for (var j in connected)
+			// check if the animation reached the frame where it does damage
+			if (currentTime.getTime() >= damageList[mapId][i].damage_time)
 			{
-				if (damageList[i].source != connected[j].id && damageList[i].collisionCheck(connected[j]))
-				{
-					// tell the client that they took damage
-					io.to(connected[j].id).emit('damageIn', damageList[i].x, damageList[i].y, damageList[i].damage);
-
-					// track most recent attackers
-					addKillParticipation(connected[j].id, damageList[i].source);
-
-					console.log(connected[j].display_name + " took " + damageList[i].damage + " damage");
-				}
-			}
-
-			// check every cpu to see if they were hit
-			for (var j in mapEntities)
-			{
-				if (damageList[i].source != mapEntities[j].entity.id && damageList[i].collisionCheck(mapEntities[j].entity))
-				{
-					// damage the entity
-					mapEntities[j].entity.takeDamage(damageList[i].x, damageList[i].y, damageList[i].damage);
-
-					// tell the CPU to target that entity
-					mapEntities[j].setTarget(damageList[i].source);
-
-					// track most recent attackers
-					addKillParticipation(mapEntities[j].entity.id, damageList[i].source);
-
-					console.log(mapEntities[j].entity.display_name + mapEntities[j].entity.id + " took " + damageList[i].damage + " damage");
-				}
-			}
-
-		damageList.splice(i,1);
-		i--;
-		n--;
-		}
-	}
-
-	// go through every active projectile
-	n = projectileList.length;
-
-	for (var i = 0; i < n; i++)
-	{
-		if (currentTime.getTime() >= projectileList[i].spawn_time)
-		{
-			if (projectileList[i].x == projectileList[i].spawn_x && projectileList[i].y == projectileList[i].spawn_y)
-			{
-				projectileList[i].spawn_time = currentTime.getTime();
-			}
-
-			projectileList[i].update();
-
-			if (projectileList[i].offscreen())
-			{
-				projectileList.splice(i, 1);
-				i--;
-				n--;
-			}
-
-			else
-			{
-				var dmg = false;
-
 				// check every connected player to see if they were hit
-				for (var j in connected)
+				for (var j in connected[mapId])
 				{
-					if (projectileList[i].source != connected[j].id && projectileList[i].collisionCheck(connected[j]))
+					if (damageList[mapId][i].source != connected[mapId][j].id && damageList[mapId][i].collisionCheck(connected[mapId][j]))
 					{
 						// tell the client that they took damage
-						io.to(connected[j].id).emit('damageIn', projectileList[i].x, projectileList[i].y, projectileList[i].damage);
+						io.to(connected[mapId][j].id).emit('damageIn', damageList[mapId][i].x, damageList[mapId][i].y, damageList[mapId][i].damage);
 
 						// track most recent attackers
-						addKillParticipation(connected[j].id, projectileList[i].source);
+						addKillParticipation(connected[mapId][j].id, damageList[mapId][i].source, mapId);
 
-						console.log(connected[j].display_name + " took " + projectileList[i].damage + " damage");
-						dmg = true;
+						console.log(connected[mapId][j].display_name + " took " + damageList[mapId][i].damage + " damage");
 					}
 				}
 
 				// check every cpu to see if they were hit
-				for (var j in mapEntities)
+				for (var j in mapEntities[mapId])
 				{
-					if (projectileList[i].source != mapEntities[j].entity.id && projectileList[i].collisionCheck(mapEntities[j].entity))
+					if (damageList[mapId][i].source != mapEntities[mapId][j].entity.id && damageList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
 					{
 						// damage the entity
-						mapEntities[j].entity.takeDamage(projectileList[i].x, projectileList[i].y, projectileList[i].damage);
+						mapEntities[mapId][j].entity.takeDamage(damageList[mapId][i].x, damageList[mapId][i].y, damageList[mapId][i].damage);
 
 						// tell the CPU to target that entity
-						mapEntities[j].setTarget(projectileList[i].source);
+						mapEntities[mapId][j].setTarget(damageList[mapId][i].source);
 
 						// track most recent attackers
-						addKillParticipation(mapEntities[j].entity.id, projectileList[i].source);
+						addKillParticipation(mapEntities[mapId][j].entity.id, damageList[mapId][i].source, mapId);
 
-						console.log(mapEntities[j].entity.display_name + mapEntities[j].entity.id + " took " + projectileList[i].damage + " damage");
-						dmg = true;
+						console.log(mapEntities[mapId][j].entity.display_name + mapEntities[mapId][j].entity.id + " took " + damageList[mapId][i].damage + " damage");
 					}
 				}
 
-				if (dmg)
+			damageList[mapId].splice(i,1);
+			i--;
+			n--;
+			}
+		}
+	}
+
+	// go through every active projectile
+	for (var mapId in projectileList)
+	{
+		n = projectileList[mapId].length;
+
+		for (var i = 0; i < n; i++)
+		{
+			if (currentTime.getTime() >= projectileList[mapId][i].spawn_time)
+			{
+				if (projectileList[mapId][i].x == projectileList[mapId][i].spawn_x && projectileList[mapId][i].y == projectileList[mapId][i].spawn_y)
 				{
-					projectileList.splice(i, 1);
+					projectileList[mapId][i].spawn_time = currentTime.getTime();
+				}
+
+				projectileList[mapId][i].update();
+
+				if (projectileList[mapId][i].offscreen())
+				{
+					projectileList[mapId].splice(i, 1);
 					i--;
 					n--;
+				}
+
+				else
+				{
+					var dmg = false;
+
+					// check every connected player to see if they were hit
+					for (var j in connected[mapId])
+					{
+						if (projectileList[mapId][i].source != connected[mapId][j].id && projectileList[mapId][i].collisionCheck(connected[mapId][j]))
+						{
+							// tell the client that they took damage
+							io.to(connected[mapId][j].id).emit('damageIn', projectileList[mapId][i].x, projectileList[mapId][i].y, projectileList[mapId][i].damage);
+
+							// track most recent attackers
+							addKillParticipation(connected[mapId][j].id, projectileList[mapId][i].source, mapId);
+
+							console.log(connected[mapId][j].display_name + " took " + projectileList[mapId][i].damage + " damage");
+							dmg = true;
+						}
+					}
+
+					// check every cpu to see if they were hit
+					for (var j in mapEntities[mapId])
+					{
+						if (projectileList[mapId][i].source != mapEntities[mapId][j].entity.id && projectileList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
+						{
+							// damage the entity
+							mapEntities[mapId][j].entity.takeDamage(projectileList[mapId][i].x, projectileList[mapId][i].y, projectileList[mapId][i].damage);
+
+							// tell the CPU to target that entity
+							mapEntities[mapId][j].setTarget(projectileList[mapId][i].source);
+
+							// track most recent attackers
+							addKillParticipation(mapEntities[mapId][j].entity.id, projectileList[mapId][i].source, mapId);
+
+							console.log(mapEntities[mapId][j].entity.display_name + mapEntities[mapId][j].entity.id + " took " + projectileList[mapId][i].damage + " damage");
+							dmg = true;
+						}
+					}
+
+					if (dmg)
+					{
+						projectileList[mapId].splice(i, 1);
+						i--;
+						n--;
+					}
 				}
 			}
 		}
@@ -726,44 +783,56 @@ io.on('connection', function(socket)
 {
 	console.log(socket.id + " connected");
 
-	socket.on('new player', function()
+	socket.on('new player', function(mapId)
 		{
-			io.to(socket.id).emit('mapObjects', mapObjects);
-			killParticipation[socket.id] = [];
+			connection[socket.id] = {mapId: mapId, last_update: new Date().getTime()};
+			io.to(socket.id).emit('mapObjects', mapObjects[connection[socket.id].mapId]);
+			killParticipation[connection[socket.id].mapId][socket.id] = [];
 		}
-  );
+  	);
 
-  socket.on('movement', function(player)
+  	socket.on('movement', function(player)
 	{
 		if (player != null)// && player.entity.x != null)
 		{
 			player.id = socket.id;
-			connected[socket.id] = player;
-      		connected[socket.id].disconnect_counter = 0;
+			connected[player.mapId][socket.id] = player;
+			if (connection[socket.id] != null)
+			{
+				connection[socket.id].last_update = new Date().getTime();
+			}
+			else
+			{
+				connection[socket.id] = {mapId: player.mapId, last_update: new Date().getTime()};
+				io.to(socket.id).emit('mapObjects', mapObjects[connection[socket.id].mapId]);
+				killParticipation[connection[socket.id].mapId][socket.id] = [];
+			}
 		}
-  });
+  	});
 
-	socket.on('damageOut', function(x, y, damage_time, damage)
+	socket.on('damageOut', function(x, y, damage_time, damage, mapId)
 	{
-		damageList.push(new Damage(x, y, socket.id, damage_time, damage));
+		damageList[mapId].push(new Damage(x, y, socket.id, damage_time, damage, mapId));
 	});
 
-	socket.on('createProjectile', function(x, y, x_speed, y_speed, spawn_time, damage, spriteName)
+	socket.on('createProjectile', function(x, y, x_speed, y_speed, spawn_time, damage, spriteName, mapId)
 	{
-		projectileList.push(new Projectile(x, y, x_speed, y_speed, socket.id, spawn_time, damage, spriteName));
+		projectileList[mapId].push(new Projectile(x, y, x_speed, y_speed, socket.id, spawn_time, damage, spriteName, mapId));
 	});
 
 	socket.on('death', function()
 	{
 		console.log("player died");
-		entityDeath(connected[socket.id]);
+		entityDeath(connected[connection[socket.id].mapId][socket.id]);
+		connection[socket.id].last_update = new Date().getTime();
 	});
 
 	socket.on('disconnect', function()
 	{
     	console.log(socket.id + " disconnected");
-		delete connected[socket.id];
-		clearAgro(socket.id);
+		delete connected[connection[socket.id].mapId][socket.id];
+		clearAgro(socket.id, connection[socket.id].mapId);
+		delete connection[socket.id];
 		displayPlayerCount();
 	});
 });
@@ -771,54 +840,59 @@ io.on('connection', function(socket)
 // trasfer data to the client
 setInterval(function()
 {
-	// send all entities on the map to the client
-	for(var i in connected)
+	
+	for (var mapId in connected)
 	{
-		var players = new Array();
+		// get all active projectiles
+		var p = [];
 
-		// send the other connected players
-		for(var j in connected)
+		for (var i in projectileList[mapId])
 		{
-			if (j != i)
+			if (new Date().getTime() >= projectileList[mapId][i].spawn_time)
 			{
-				players.push(connected[j]);
+				p.push(projectileList[mapId][i]);
 			}
 		}
 
-		// send the CPUs
-		for (var j in mapEntities)
+		
+
+		// send all entities on the map to the client
+		for(var i in connected[mapId])
 		{
-		    if (mapEntities[j].target == i)
-		    {
-		      	mapEntities[j].entity.allyState = "Enemy";
-		    }
-		    else
-		    {
-		      	mapEntities[j].entity.allyState = "Neutral";
-		    }
+			var players = [];
 
-			players.push(mapEntities[j].entity);
+			// send the other connected players
+			for(var j in connected[mapId])
+			{
+				if (j != i)
+				{
+					players.push(connected[mapId][j]);
+				}
+			}
+
+			// send the CPUs
+			for (var j in mapEntities[mapId])
+			{
+			    if (mapEntities[mapId][j].target == i)
+			    {
+			      	mapEntities[mapId][j].entity.allyState = "Enemy";
+			    }
+			    else
+			    {
+			      	mapEntities[mapId][j].entity.allyState = "Neutral";
+			    }
+
+				players.push(mapEntities[mapId][j].entity);
+			}
+
+			io.to(i).emit('players', players);
+			io.to(i).emit('projectiles', p);
 		}
-
-		io.to(i).emit('players', players);
 	}
-
-  	// send all projectiles to the player
-	var p = [];
-
-	for (var i in projectileList)
-	{
-		if (new Date().getTime() >= projectileList[i].spawn_time)
-		{
-			p.push(projectileList[i]);
-		}
-	}
-
-	io.emit('projectiles', p);
 
 }, 1000/60);
 
-// update server status every 5 seconds
+// update server status every 30 seconds
 setInterval(function()
 {
 	displayPlayerCount();
@@ -829,7 +903,7 @@ function displayPlayerCount()
 {
 	var n = 0;
 
-	for (var i in connected)
+	for (var i in connection)
 	{
 		n++;
 	}

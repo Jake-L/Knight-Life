@@ -17,6 +17,12 @@ initialize[2] = function(){
 	this.name = "Defrosted";
 }
 
+initialize[3] = function(){
+	this.tracker[0] = {objectiveType: "enemy", counter: 25, description: "Defeat 25 enemies"};
+	this.reward = {xp: 50};
+	this.name = "Itchy Trigger Finger";
+}
+
 // create the objectives class
 function Objective(id)
 {
