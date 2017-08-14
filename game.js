@@ -43,7 +43,6 @@ var attack2_key = 51;
 var frameTime = 0;
 var startTime = 0;
 
-var mapId = 1;
 var maxX = [1000,1000];
 var minY = [30,30];
 var maxY = [500,800];
@@ -53,6 +52,7 @@ var mapObjects = [];
 var projectileList = [];
 var flyTextList = [];
 var notificationList = [];
+var portalList = [];
 
 var playerSprite = [];
 var playerAttackSprite = [];
@@ -106,6 +106,7 @@ function getDirNum(s)
 mapObject = share.mapObject;
 Entity = shareEntity.Entity;
 
+var defaultmapId = 1;
 var player;
 var missions = [];
 var achievements = [];
@@ -113,15 +114,13 @@ var achievements = [];
 window.onload = function()
 {
 	document.body.appendChild(canvas);
-	console.log("passing mapId " + mapId);
-	socket.emit('new player', mapId);
+	loadMap(defaultmapId);
+	//socket.emit('new player', defaultmapId);
 
 	//get the player's username
 	username = getUsername();
-
 	spawnPlayer();
 	
-	loadMap(mapId);
 	audio.play(); //must come after loadMap
 	loadSprite("player");
 	loadSprite("iceman");
@@ -148,17 +147,25 @@ function spawnPlayer()
 
 function loadMap(mapId)
 {
+	console.log("loading map " + mapId);
+	backgroundSprite = new Image();
+	backgroundSpriteTop = new Image();
+
 	if (mapId == 0)
 	{
 		audio = new Audio("audio//track2.mp3");
 		backgroundSprite.src = "img//grass1.png";
 		backgroundSpriteTop.src = "img//grass1top.png";
+		portalList[0] = new Portal(990, 300, 20, 20, 1, 10, 300);
+		weatherSprite = [];
 	}
 	else if (mapId == 1)
 	{
 		audio = new Audio("audio//track1.mp3");
 		backgroundSprite.src = "img//snow1.png";
 		backgroundSpriteTop.src = "img//snow1top.png";
+		portalList[0] = new Portal(10, 300, 20, 20, 0, 990, 300);
+		weatherSprite = [];
 
 		for (var i = 0; i < 4; i++)
 		{
@@ -229,7 +236,6 @@ function step()
 	if (new Date().getTime() > frameTime)
 	{
 		update();
-		console.log("passing movement");
 		socket.emit('movement', player.entity); //send new location to server
 		frameTime += 16.6;
 		ucounter += 1;
@@ -342,6 +348,30 @@ var update = function()
 		player.update();
 	}
 
+
+	// check if you are standing on a portal and need to switch maps
+	if (player.portalCounter <= 0)
+	{
+		for (var i in portalList)
+		{
+			if (portalList[i].collisionCheck(player.entity))
+			{
+				console.log(portalList);
+				console.log("moving to map " + portalList[i].destination_mapId)
+				player.entity.x = portalList[i].destination_x;
+				player.entity.y = portalList[i].destination_y;
+				player.entity.mapId = portalList[i].destination_mapId;
+				loadMap(portalList[i].destination_mapId);
+				player.portalCounter = 90;
+				break;
+			}
+		}
+	}
+	else
+	{
+		player.portalCounter--;
+	}
+
 	// check if any achievements have been completed
 	for (var i in achievements)
 	{
@@ -432,26 +462,28 @@ function renderBackground()
 // display the current weather (snow, rain, etc.) if there is any
 function renderWeather()
 {
-	if (weatherSprite.length > 0 && weatherSprite[0].complete && weatherSprite[0].naturalHeight !== 0)
+	if (typeof(weatherSprite) !== "undefined" && weatherSprite.length > 0)
 	{
 		var img = weatherSprite[Math.floor((new Date().getTime() % 400) / 100)];
-		var x_counter = Math.ceil((width / graphics_scaling) / img.width) + 1;
-		var y_counter = Math.ceil((height / graphics_scaling) / img.height) + 1;
 
-		for (i = 0; i <= x_counter; i++)
+		if (img.complete && img.naturalHeight !== 0)
 		{
-			for (j = 0; j <= y_counter; j++)
+			var x_counter = Math.ceil((width / graphics_scaling) / img.width) + 1;
+			var y_counter = Math.ceil((height / graphics_scaling) / img.height) + 1;
+
+			for (i = 0; i <= x_counter; i++)
 			{
-				// draw the usual background rectangle
-				context.drawImage(img,
-				((img.width * i) - (x_offset % img.width)) * graphics_scaling + Math.floor(((new Date().getTime() % 400) / 100)/graphics_scaling), //x position
-				((img.height * j) - (y_offset % img.height)) * graphics_scaling + Math.floor(((new Date().getTime() % 400) / 100)/graphics_scaling), //y position
-				img.width * graphics_scaling, //width
-				img.height * graphics_scaling); //height
+				for (j = 0; j <= y_counter; j++)
+				{
+					// draw the usual background rectangle
+					context.drawImage(img,
+					((img.width * i) - (x_offset % img.width)) * graphics_scaling + Math.floor(((new Date().getTime() % (graphics_scaling * 100)) / 100) / graphics_scaling), //x position
+					((img.height * j) - (y_offset % img.height)) * graphics_scaling + Math.floor(((new Date().getTime() % (graphics_scaling * 100)) / 100) / graphics_scaling), //y position
+					img.width * graphics_scaling, //width
+					img.height * graphics_scaling); //height
+				}
 			}
 		}
-
-		console.log(((img.width * 1) - (x_offset % img.width)) * graphics_scaling + Math.floor(((new Date().getTime() % 400) / 100)/graphics_scaling));
 	}
 }
 
@@ -484,10 +516,11 @@ function copyEntity(old)
 //initialize the player
 function Player()
 {
-  	this.entity = new Entity(100,100,"player",mapId);
+  	this.entity = new Entity(100,100,"player",defaultmapId);
 	this.entity.initialize();
 	this.entity.allyState = "Player";
 	this.healthRegenCounter = 0;
+	this.portalCounter = 0;
 }
 
 //display the player
@@ -700,13 +733,13 @@ function get_offset()
 	var right_offset = player.entity.x + (pixelWidth / 2);
 
 	// check if the player is moving in the middle of the map and the screen needs to be moved
-	if (left_offset > 0 && right_offset < maxX[mapId])
+	if (left_offset > 0 && right_offset < maxX[player.entity.mapId])
 	{
 		x_offset = left_offset;
 	}
-	else if (left_offset > 0 && right_offset >= maxX[mapId])
+	else if (left_offset > 0 && right_offset >= maxX[player.entity.mapId])
 	{
-		x_offset = maxX[mapId] - pixelWidth;
+		x_offset = maxX[player.entity.mapId] - pixelWidth;
 	}
 	else
 	{
@@ -716,13 +749,13 @@ function get_offset()
 	var top_offset = player.entity.y - (pixelHeight / 2);
 	var bot_offset = player.entity.y + (pixelHeight / 2);
 
-	if (top_offset > 0 && bot_offset < maxY[mapId])
+	if (top_offset > 0 && bot_offset < maxY[player.entity.mapId])
 	{
 		y_offset = top_offset;
 	}
-	else if (top_offset > 0 && bot_offset >= maxY[mapId])
+	else if (top_offset > 0 && bot_offset >= maxY[player.entity.mapId])
 	{
-		y_offset = maxY[mapId] - pixelHeight;
+		y_offset = maxY[player.entity.mapId] - pixelHeight;
 	}
 	else
 	{
@@ -847,9 +880,9 @@ function renderMinimap()
 	{
 		m_x_offset = 0;
 	}
-	else if ((maxX[mapId] - player.entity.x) / minimapScale < 25)
+	else if ((maxX[player.entity.mapId] - player.entity.x) / minimapScale < 25)
 	{
-		m_x_offset = (maxX[mapId] / minimapScale) -50;
+		m_x_offset = (maxX[player.entity.mapId] / minimapScale) -50;
 	}
 	else
 	{
@@ -861,9 +894,9 @@ function renderMinimap()
 	{
 		m_y_offset = 0;
 	}
-	else if ((maxY[mapId] - player.entity.y) / minimapScale <= 25)
+	else if ((maxY[player.entity.mapId] - player.entity.y) / minimapScale <= 25)
 	{
-		m_y_offset = (maxY[mapId] / minimapScale) - 50;
+		m_y_offset = (maxY[player.entity.mapId] / minimapScale) - 50;
 	}
 	else
 	{
@@ -915,6 +948,8 @@ document.addEventListener("click", printMousePos);
 window.addEventListener("resize", setScreenSize);
 //document.addEventListener("fullscreenchange", setScreenSize);
 
+
+
 function setScreenSize(event)
 {
 	canvas = document.createElement('canvas');
@@ -922,13 +957,15 @@ function setScreenSize(event)
 	height = window.innerHeight - 20;
 	canvas.width = width;
 	canvas.height = height;
-  graphics_scaling = Math.ceil(Math.min(height,width)/250);
+  	graphics_scaling = Math.ceil(Math.min(height,width)/250);
 	pixelWidth = Math.ceil(width / graphics_scaling);
 	pixelHeight = Math.ceil(height / graphics_scaling);
 };
 
 socket.on('mapObjects', function(a)
 {
+	mapObjects = [];
+
 	for (var i in a)
 	{
 		p = new mapObject(a[i].x, a[i].y, a[i].spriteName);

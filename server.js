@@ -225,7 +225,7 @@ var CPU = function(x, y, spriteName, id, lvl, mapId)
 
 	//configure the entity
 	this.entity = new Entity(x, y, spriteName, mapId);
-	console.log("Spawning entity at (" + x + "," + y + ")");
+	console.log("Spawning entity at (" + x + "," + y + ") on map " + mapId);
 	this.entity.width = w;
 	this.entity.depth = Math.floor(h * 0.5);
 	this.entity.height = h;
@@ -358,6 +358,7 @@ CPU.prototype.update = function()
 	}
 	else
 	{
+		this.target = null;
 		if (this.directionCounter <= 0)
 		{
 			this.x_direction = Math.round(Math.random() * 2)-1;
@@ -409,7 +410,7 @@ CPU.prototype.setTarget = function(id)
 		var e = getEntity(id, this.entity.mapId);
 		
 		// make sure the target is not on your side
-		if (e.faction == null || e.faction != this.entity.faction)
+		if (e != null && (e.faction == null || e.faction != this.entity.faction))
 		{
 			// if you have no existing target, target the new entity
 			if (this.target == null)
@@ -459,6 +460,7 @@ function getEntity(id, mapId)
 // CPUs should stop targeting someone after they die
 function clearAgro(id, mapId)
 {
+	console.log("clearing agro");
 	for (var i in mapEntities[mapId])
 	{
 		if (mapEntities[mapId][i].target == id)
@@ -466,13 +468,18 @@ function clearAgro(id, mapId)
 			mapEntities[mapId][i].target = null;
 		}
 	}
+
+	killParticipation[mapId][id] = [];
 }
 
 // move computer controlled NPCs
 setInterval(function()
 {
+	console.log("restarting loop -> updating collision lists");
 	updateCollisionList();
+	console.log("checking for damage");
 	checkDamage();
+	console.log("updating entities");
 
 	// update all the entities on the map
 	for (var mapId in mapEntities)
@@ -493,43 +500,50 @@ setInterval(function()
 		}
 	}
 
+	console.log("checking connection");
+
   	// remove players who haven't updated their position in over 3 seconds
 	for (var id in connection)
 	{
 		if (connection[id].last_update + 3000 < new Date().getTime())
 		{
-			console.log(socket.id + " was kicked for inactivity");
-			delete connected[connection[socket.id].mapId][socket.id];
-			clearAgro(socket.id, connection[socket.id].mapId);
-			delete connection[socket.id];
+			console.log(id + " was kicked for inactivity");
+			delete connected[connection[id].mapId][id];
+			clearAgro(id, connection[id].mapId);
+			delete connection[id];
 		}
 	}
+	
+	console.log("finished main loop");
 }, 1000/60);
 
 
 // add the attacker to the list of people who have damaged the victim
 function addKillParticipation(victim, attacker, mapId)
 {
-	
-	if (typeof(killParticipation[mapId][victim]) === "undefined" || killParticipation[mapId][victim] == null)
+	console.log("adding kill participation");
+	if(getEntity(attacker, mapId) != null)
 	{
-		killParticipation[mapId][victim] = [];
-	}
-	
-	// add the attacker to the list of people who have damaged the victim
-	killParticipation[mapId][victim].unshift(attacker);
-
-	// remove any previous instances of the attacker in the array
-	var i = 1;
-	while (i < killParticipation[mapId][victim].length)
-	{
-		if (killParticipation[mapId][victim][i] == attacker)
+		if (typeof(killParticipation[mapId][victim]) === "undefined" || killParticipation[mapId][victim] == null)
 		{
-			delete killParticipation[mapId][victim][i];
+			killParticipation[mapId][victim] = [];
 		}
-		else
+		
+		// add the attacker to the list of people who have damaged the victim
+		killParticipation[mapId][victim].unshift(attacker);
+
+		// remove any previous instances of the attacker in the array
+		var i = 1;
+		while (i < killParticipation[mapId][victim].length)
 		{
-			i++;
+			if (killParticipation[mapId][victim][i] == attacker)
+			{
+				delete killParticipation[mapId][victim][i];
+			}
+			else
+			{
+				i++;
+			}
 		}
 	}
 }
@@ -778,6 +792,7 @@ function checkDamage()
 	}
 }
 
+
 // retrieve data from the client
 io.on('connection', function(socket)
 {
@@ -785,9 +800,10 @@ io.on('connection', function(socket)
 
 	socket.on('new player', function(mapId)
 		{
+			console.log("new player on map " + mapId);
 			connection[socket.id] = {mapId: mapId, last_update: new Date().getTime()};
-			io.to(socket.id).emit('mapObjects', mapObjects[connection[socket.id].mapId]);
-			killParticipation[connection[socket.id].mapId][socket.id] = [];
+			io.to(socket.id).emit('mapObjects', mapObjects[mapId]);
+			killParticipation[mapId][socket.id] = [];
 		}
   	);
 
@@ -800,6 +816,18 @@ io.on('connection', function(socket)
 			if (connection[socket.id] != null)
 			{
 				connection[socket.id].last_update = new Date().getTime();
+
+				// update the player lists and kill participation lists if a player changes maps
+				if (connection[socket.id].mapId != player.mapId)
+				{
+					console.log("player changed maps from " + connection[socket.id].mapId + " to " + player.mapId);
+					clearAgro(socket.id, connection[socket.id].mapId);
+					delete killParticipation[connection[socket.id].mapId][socket.id];
+					killParticipation[player.mapId][socket.id] = [];
+					delete connected[connection[socket.id].mapId][socket.id];
+					connection[socket.id] = {mapId: player.mapId, last_update: new Date().getTime()};
+					io.to(socket.id).emit('mapObjects', mapObjects[player.mapId]);
+				}
 			}
 			else
 			{
@@ -840,7 +868,6 @@ io.on('connection', function(socket)
 // trasfer data to the client
 setInterval(function()
 {
-	
 	for (var mapId in connected)
 	{
 		// get all active projectiles
@@ -853,8 +880,6 @@ setInterval(function()
 				p.push(projectileList[mapId][i]);
 			}
 		}
-
-		
 
 		// send all entities on the map to the client
 		for(var i in connected[mapId])
@@ -901,36 +926,39 @@ setInterval(function()
 // display current number of players connected
 function displayPlayerCount()
 {
-	var n = 0;
-
-	for (var i in connection)
+	for (var mapId in connected)
 	{
-		n++;
+		var n = 0;
+
+		for (var i in connected[mapId])
+		{
+			n++;
+		}
+
+		var currentTime = new Date();
+		var t = "";
+
+		if (currentTime.getHours() < 10)
+		{
+			t = "0";
+		}
+
+		t += currentTime.getHours() + ":";
+
+		if (currentTime.getMinutes() < 10)
+		{
+			t += "0";
+		}
+
+		t += currentTime.getMinutes() + ":";
+
+		if (currentTime.getSeconds() < 10)
+		{
+			t += "0";
+		}
+
+		t += currentTime.getSeconds();
+
+		console.log(t + " - " + n + " players connected and " + mapEntities[mapId].length + " CPUs on map " + mapId);
 	}
-
-	var currentTime = new Date();
-	var t = "";
-
-	if (currentTime.getHours() < 10)
-	{
-		t = "0";
-	}
-
-	t += currentTime.getHours() + ":";
-
-	if (currentTime.getMinutes() < 10)
-	{
-		t += "0";
-	}
-
-	t += currentTime.getMinutes() + ":";
-
-	if (currentTime.getSeconds() < 10)
-	{
-		t += "0";
-	}
-
-	t += currentTime.getSeconds();
-
-	console.log(t + " - " + n + " players connected");
 }
