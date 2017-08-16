@@ -263,13 +263,14 @@ var CPU = function(x, y, spriteName, id, lvl, mapId)
 				}
 			}
     	}
-		if (nearest_target == null)
+		if (nearest_target == null || targetList[nearest_target].id == this.target)
 		{
-			return null;
+			// keep the same target
 		}
 		else
 		{
-			return targetList[nearest_target].id;
+			this.directionCounter = 0;
+			this.target = targetList[nearest_target].id;
 		}
 	};
 };
@@ -282,58 +283,67 @@ CPU.prototype.update = function()
 		var targetList = [];
 		for (var i in connected[this.entity.mapId])
 		{
-			if (connected[this.entity.mapId][i].faction == null || connected[this.entity.mapId][i].faction != this.entity.faction)
+			if (connected[this.entity.mapId][i].faction == null || connected[this.entity.mapId][i].faction != this.entity.faction || connected[this.entity.mapId][i].id == this.target)
 			{
 				targetList.push(connected[this.entity.mapId][i]);
 			}
 		}
 		for (var i in mapEntities[this.entity.mapId])
 		{
-			if (mapEntities[this.entity.mapId][i].entity.faction == null || mapEntities[this.entity.mapId][i].entity.faction != this.entity.faction)
+			if (mapEntities[this.entity.mapId][i].entity.faction == null || mapEntities[this.entity.mapId][i].entity.faction != this.entity.faction || mapEntities[this.entity.mapId][i].id == this.target)
 			{
 				targetList.push(mapEntities[this.entity.mapId][i].entity);
 			}
 		}
 
-		this.target = this.getTarget(targetList);
+		this.getTarget(targetList);
 		
 	}
 
 	var e = getEntity(this.target, this.entity.mapId);
 
+	if (new Date().getTime() % 2000 < 20 && e != null && (Math.max(Math.abs(e.x - this.entity.x), Math.abs(e.y - this.entity.y)) > 200))
+	{
+		e = null;
+		this.target = null;
+	}
+
 	if (e != null)
 	{
-		this.x_direction = 0;
-		this.y_direction = 0;
 
-		// move along the x-axis toward your target
-		if (this.entity.x < e.x)
+		if (this.directionCounter <= 0)
 		{
-			this.x_direction = 1;
-		}
-		else if (this.entity.x > e.x)
-		{
-			this.x_direction = -1;
-		}
+			this.x_direction = 0;
+			this.y_direction = 0;
 
-		// move along the y-axis toward your target
-		if (this.entity.y < e.y)
-		{
-			this.y_direction = 1;
-		}
-		else if (this.entity.y > e.y)
-		{
-			this.y_direction = -1;
+			// move along the x-axis toward your target
+			if (this.entity.x < e.x)
+			{
+				this.x_direction = 1;
+			}
+			else if (this.entity.x > e.x)
+			{
+				this.x_direction = -1;
+			}
+
+			// move along the y-axis toward your target
+			if (this.entity.y < e.y - (e.depth / 2))
+			{
+				this.y_direction = 1;
+			}
+			else if (this.entity.y > e.y)
+			{
+				this.y_direction = -1;
+			}
 		}
 
 		/* check if you can attack the target */
-		
 		if (this.entity.attack_counter <= 1)
 		{
 			// check if you should attack up or down
 			if (this.entity.x <= e.x + (e.width / 2) && this.entity.x >= e.x - (e.width / 2))
 			{
-				if (Math.abs(this.entity.y - e.y) < this.entity.depth * 2)
+				if (Math.abs(this.entity.y - e.y) < this.entity.depth * 1.5)
 				{
 					this.entity.createAttack(1);
 				}
@@ -345,7 +355,7 @@ CPU.prototype.update = function()
 			// check if you should attack left or right
 			else if (this.entity.y > e.y - e.depth && this.entity.y - this.entity.depth < e.y)
 			{
-				if (Math.abs(this.entity.x - e.x) < this.entity.width * 2)
+				if (Math.abs(this.entity.x - e.x) < this.entity.width * 1.5)
 				{
 					this.entity.createAttack(1);
 				}
@@ -369,7 +379,102 @@ CPU.prototype.update = function()
 
 	this.directionCounter--;
 
-	this.entity.move(this.x_direction * 0.5, this.y_direction * 0.5);
+	var blocked_directions = this.entity.move(this.x_direction * 0.5, this.y_direction * 0.5);
+
+	// check if something is blocking your path from reaching your target
+	if (e != null && this.entity.y_speed == 0 && this.entity.x_speed == 0 && this.entity.attack != 1 && this.directionCounter <= 1)
+	{
+		// if you need to chase your target along the x-axis
+		if (this.x_direction != 0 && this.y_direction == 0 && Math.abs(this.entity.x - e.x) >= this.entity.width * 1.5)
+		{
+			console.log("enhanced targeting on x-axis");
+			// check if they should walk up
+			if (blocked_directions[1] == 0 && blocked_directions[3] == 1)
+			{
+				this.y_direction = -1;
+			}
+			// check if they should walk down
+			else if (blocked_directions[1] == 1 && blocked_directions[3] == 0)
+			{
+				this.y_direction = 1;
+			}
+			// check if they could move in either direction
+			else if (blocked_directions[1] == 0 && blocked_directions[3] == 0)
+			{
+				if (this.directionCounter == 1)
+				{
+					this.y_direction *= -1;
+					console.log("reversing direction");
+				}
+				else if (this.entity.y > e.y || e.y_speed > 0)
+				{
+					this.y_direction = 1;
+				}
+				else
+				{
+					this.y_direction = -1;
+				}
+			}
+			// if they can't move up or down, then change x-directions
+			else
+			{
+				this.x_direction *= -1;
+			}
+
+			this.directionCounter =  (Math.abs(this.entity.y - e.y) + this.entity.depth + (e.depth / 2)) * 2;
+		}
+		// if you need to chase your target along the y-axis
+		else if (this.x_direction == 0 && this.y_direction != 0 && Math.abs(this.entity.y - e.y) >= this.entity.depth * 1.5)
+		{
+			console.log("enhanced targeting on y-axis");
+			// check if they should walk left
+			if (blocked_directions[0] == 0 && blocked_directions[2] == 1)
+			{
+				this.x_direction = -1;
+			}
+			// check if they should walk right
+			else if (blocked_directions[0] == 1 && blocked_directions[2] == 0)
+			{
+				this.x_direction = 1;
+			}
+			// check if they could move in either direction
+			else if (blocked_directions[0] == 0 && blocked_directions[2] == 0)
+			{
+				if (this.directionCounter == 1)
+				{
+					this.x_direction *= -1;
+					console.log("reversing direction");
+				}
+				if (this.entity.x > e.x || e.x_speed > 0)
+				{
+					this.x_direction = 1;
+				}
+				else
+				{
+					this.x_direction = 1;
+				}
+			}
+			// if they can't move up or down, then change x-directions
+			else
+			{
+				this.y_direction *= -1;
+				this.x_direction *= -1;
+			}
+
+			this.directionCounter = (Math.abs(this.entity.x - e.x) + this.entity.width + (e.width / 2)) * 2;
+		}
+		// need to chase them along both axis
+		else if (Math.abs(this.entity.x - e.x) >= this.entity.width * 1.5 && Math.abs(this.entity.y - e.y) >= this.entity.depth * 1.5)
+		{
+			console.log("enhanced targeting on both axis");
+			this.directionCounter = (Math.abs(this.entity.x - e.x) + Math.abs(this.entity.y - e.y) + (e.depth / 2) + (e.width / 2)) * 2;
+		}
+
+		if (this.directionCounter > 1)
+		{
+			this.entity.move(this.x_direction * 0.5, this.y_direction * 0.5);
+		}
+	}
 
 	if (e != null && (this.entity.attack_counter <= 5
 		|| (this.entity.attack_counter == this.entity.attack_length))) //let them change direction in the first attack frame
@@ -416,6 +521,7 @@ CPU.prototype.setTarget = function(id)
 			if (this.target == null)
 			{
 				this.target = id;
+				this.directionCounter = 0;
 			}
 			// if you already have an existing target, target the closer entity
 			else
@@ -427,6 +533,7 @@ CPU.prototype.setTarget = function(id)
 					if (Math.abs(e.x - this.entity.x) + Math.abs(e.y - this.entity.y) < Math.abs(t.x - this.entity.x) + Math.abs(t.y - this.entity.y))
 					{
 						this.target = id;
+						this.directionCounter = 0;
 					}
 				}
 			}
@@ -460,7 +567,6 @@ function getEntity(id, mapId)
 // CPUs should stop targeting someone after they die
 function clearAgro(id, mapId)
 {
-	console.log("clearing agro");
 	for (var i in mapEntities[mapId])
 	{
 		if (mapEntities[mapId][i].target == id)
@@ -475,11 +581,8 @@ function clearAgro(id, mapId)
 // move computer controlled NPCs
 setInterval(function()
 {
-	console.log("restarting loop -> updating collision lists");
 	updateCollisionList();
-	console.log("checking for damage");
 	checkDamage();
-	console.log("updating entities");
 
 	// update all the entities on the map
 	for (var mapId in mapEntities)
@@ -500,8 +603,6 @@ setInterval(function()
 		}
 	}
 
-	console.log("checking connection");
-
   	// remove players who haven't updated their position in over 3 seconds
 	for (var id in connection)
 	{
@@ -513,15 +614,12 @@ setInterval(function()
 			delete connection[id];
 		}
 	}
-	
-	console.log("finished main loop");
 }, 1000/60);
 
 
 // add the attacker to the list of people who have damaged the victim
 function addKillParticipation(victim, attacker, mapId)
 {
-	console.log("adding kill participation");
 	if(getEntity(attacker, mapId) != null)
 	{
 		if (typeof(killParticipation[mapId][victim]) === "undefined" || killParticipation[mapId][victim] == null)

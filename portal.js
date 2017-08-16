@@ -1,5 +1,5 @@
 // create the portal class
-function Portal(x, y, height, width, destination_mapId, destination_x, destination_y)
+function Portal(x, y, height, width, destination_mapId, destination_x, destination_y, direction)
 {
 	this.x = x;
 	this.y = y;
@@ -8,6 +8,7 @@ function Portal(x, y, height, width, destination_mapId, destination_x, destinati
 	this.destination_x = destination_x;
 	this.destination_y = destination_y;
 	this.destination_mapId = destination_mapId;
+	this.direction = direction;
 
 	if (height == null)
 	{
@@ -21,7 +22,7 @@ function Portal(x, y, height, width, destination_mapId, destination_x, destinati
 
 Portal.prototype.collisionCheck = function(e)
 {
-	if (e.x < this.x + (this.width / 2) && e.x > this.x - (this.width / 2) && e.y > this.y - (this.height / 2) && e.y < this.y + (this.height / 2))
+	if (e.x < this.x + (this.width / 2) && e.x > this.x - (this.width / 2) && e.y > this.y - (this.height / 2) && e.y < this.y + (this.height / 2) && e.direction == this.direction)
 	{
 		return true;
 	}

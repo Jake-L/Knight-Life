@@ -13,7 +13,7 @@ initialize[1] = function(){
 
 initialize[2] = function(){
 	this.tracker[0] = {objectiveType: "enemy", counter: 5, description: "Defeat five icemen", faction: "iceman"};
-	this.reward = {xp: 20};
+	this.reward = {xp: 25};
 	this.name = "Defrosted";
 }
 
@@ -21,6 +21,12 @@ initialize[3] = function(){
 	this.tracker[0] = {objectiveType: "enemy", counter: 25, description: "Defeat 25 enemies"};
 	this.reward = {xp: 50};
 	this.name = "Itchy Trigger Finger";
+}
+
+initialize[4] = function(){
+	this.tracker[0] = {objectiveType: "enemy", counter: 100, description: "Defeat 100 enemies"};
+	this.reward = {xp: 100};
+	this.name = "Punisher";
 }
 
 // create the objectives class

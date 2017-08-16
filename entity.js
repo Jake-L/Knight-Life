@@ -164,7 +164,7 @@ exports.Entity = function(x,y,spriteName,mapId)
 			this.y_speed = 0;
 		}
 
-		this.collisionCheck();
+		var blocked_directions = this.collisionCheck();
 
 		if (this.attack_counter <= 5)
 		{
@@ -179,6 +179,8 @@ exports.Entity = function(x,y,spriteName,mapId)
 				else if (y_direction < 0) {this.direction = "Up";}
 			}
 		}
+
+		return blocked_directions;
 	};
 };
 
@@ -313,6 +315,8 @@ exports.Entity.prototype.updateSprite = function()
 // in the future, maintain a list of entities within 100 units of the entity for faster checking
 exports.Entity.prototype.collisionCheck = function()
 {
+	var blocked_directions = [0,0,0,0];
+
 	for (var i in this.collisionList)
 	{
 		// if the entity isn't trying to move, stop checking for collisions
@@ -327,20 +331,24 @@ exports.Entity.prototype.collisionCheck = function()
 		if (c[0] == 1 && this.x_speed < 0)
 		{
 			this.x_speed = 0;
+			blocked_directions[0] = 1;
 		}
 		else if (c[0] == -1 && this.x_speed > 0)
 		{
 			this.x_speed = 0;
+			blocked_directions[2] = 1;
 		}
 
 		// check if their movement is blocked on the y-axis
 		if (c[1] == 1 && this.y_speed < 0)
 		{
 			this.y_speed = 0;
+			blocked_directions[1] = 1;
 		}
 		else if (c[1] == -1 && this.y_speed > 0)
 		{
 			this.y_speed = 0;
+			blocked_directions[3] = 1;
 		}
 
 		// check if their movement is blocked on the z-axis
@@ -355,6 +363,8 @@ exports.Entity.prototype.collisionCheck = function()
 			this.z = Math.floor(this.z);
 		}
 	}
+
+	return blocked_directions;
 };
 
 /* checks for a collision between two entities
@@ -373,8 +383,8 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 	// check what x-directions the player can move (left / right)
 	if
 	(
-		e1.x_speed != 0 //check that they are moving on the x-axis
-		&& (e1.y + e1.y_speed > e2.y - e2.depth && e1.y - e1.depth + e1.y_speed < e2.y) // check for y-axis interception
+		//e1.x_speed != 0 //check that they are moving on the x-axis
+		(e1.y + e1.y_speed > e2.y - e2.depth && e1.y - e1.depth + e1.y_speed < e2.y) // check for y-axis interception
 		&& (Math.floor(e1.z) < Math.floor(e2.z) + Math.floor(e2.height * 0.5)
 			&& Math.floor(e1.z) + Math.floor(e1.height * 0.5) > Math.floor(e2.z)) // check for z-axis interception
 		&& e1.x != e2.x //if they have the same x-position, don't restrict their movement on the x-axis
@@ -395,8 +405,8 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 	// check what y-directions the player can move (forward / backward)
 	if
 	(
-		e1.y_speed != 0 // check that they are actually moving on the y-axis
-		&& (e1.x + (e1.width/2) + e1.x_speed > e2.x - (e2.width/2) && e1.x - (e1.width/2) + e1.x_speed < e2.x + (e2.width/2)) // check for x-axis interception
+		//e1.y_speed != 0 // check that they are actually moving on the y-axis
+		(e1.x + (e1.width/2) + e1.x_speed > e2.x - (e2.width/2) && e1.x - (e1.width/2) + e1.x_speed < e2.x + (e2.width/2)) // check for x-axis interception
 		&& (Math.floor(e1.z) < Math.floor(e2.z) + Math.floor(e2.height * 0.5)
 			&& Math.floor(e1.z) + Math.floor(e1.height * 0.5) > Math.floor(e2.z)) // check for z-axis interception
 		&& e1.y != e2.y //if they have the same y-position, don't restrict their movement on the y-axis

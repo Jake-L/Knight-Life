@@ -106,7 +106,7 @@ function getDirNum(s)
 mapObject = share.mapObject;
 Entity = shareEntity.Entity;
 
-var defaultmapId = 1;
+var defaultmapId = 0;
 var player;
 var missions = [];
 var achievements = [];
@@ -119,15 +119,16 @@ window.onload = function()
 
 	//get the player's username
 	username = getUsername();
-	spawnPlayer();
+	spawnPlayer(defaultmapId);
 	
 	audio.play(); //must come after loadMap
 	loadSprite("player");
 	loadSprite("iceman");
-	achievements.push(new Objective(0));
-	achievements.push(new Objective(1));
-	achievements.push(new Objective(2));
-	achievements.push(new Objective(3));
+
+	for (var i in initialize)
+	{
+		achievements.push(new Objective(i));
+	}
 
 	frameTime = new Date().getTime();
 	startTime = frameTime;
@@ -136,9 +137,9 @@ window.onload = function()
 };
 
 // create the player
-function spawnPlayer()
+function spawnPlayer(mapId)
 {
-	player = new Player();
+	player = new Player(mapId);
 	player.entity.display_name = username;
 	player.entity.xp = playerXP;
 	player.entity.updateLevel();
@@ -156,7 +157,7 @@ function loadMap(mapId)
 		audio = new Audio("audio//track2.mp3");
 		backgroundSprite.src = "img//grass1.png";
 		backgroundSpriteTop.src = "img//grass1top.png";
-		portalList[0] = new Portal(990, 300, 20, 20, 1, 10, 300);
+		portalList[0] = new Portal(990, 300, 20, 20, 1, 10, 300, "Right");
 		weatherSprite = [];
 	}
 	else if (mapId == 1)
@@ -164,7 +165,7 @@ function loadMap(mapId)
 		audio = new Audio("audio//track1.mp3");
 		backgroundSprite.src = "img//snow1.png";
 		backgroundSpriteTop.src = "img//snow1top.png";
-		portalList[0] = new Portal(10, 300, 20, 20, 0, 990, 300);
+		portalList[0] = new Portal(10, 300, 20, 20, 0, 990, 300, "Left");
 		weatherSprite = [];
 
 		for (var i = 0; i < 4; i++)
@@ -340,7 +341,7 @@ var update = function()
 	{
 		playerXP = player.entity.xp;
 		socket.emit('death');
-		spawnPlayer();
+		spawnPlayer(player.entity.mapId);
 	}
 	else
 	{
@@ -350,7 +351,7 @@ var update = function()
 
 
 	// check if you are standing on a portal and need to switch maps
-	if (player.portalCounter <= 0)
+	if (player.portalCounter == 0)
 	{
 		for (var i in portalList)
 		{
@@ -362,12 +363,12 @@ var update = function()
 				player.entity.y = portalList[i].destination_y;
 				player.entity.mapId = portalList[i].destination_mapId;
 				loadMap(portalList[i].destination_mapId);
-				player.portalCounter = 90;
+				player.portalCounter = 30;
 				break;
 			}
 		}
 	}
-	else
+	else if (player.portalCounter > 0)
 	{
 		player.portalCounter--;
 	}
@@ -514,9 +515,9 @@ function copyEntity(old)
 
 
 //initialize the player
-function Player()
+function Player(mapId)
 {
-  	this.entity = new Entity(100,100,"player",defaultmapId);
+  	this.entity = new Entity(100,100,"player",mapId);
 	this.entity.initialize();
 	this.entity.allyState = "Player";
 	this.healthRegenCounter = 0;
