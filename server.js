@@ -5,6 +5,7 @@
  */
 
 // Dependencies
+process.env.NODE_ENV = 'production';
 var express = require('express');
 var http = require('http');
 var path = require('path');
@@ -46,6 +47,9 @@ var mapObjects = []; // non-moving map objects like rocks
 var connected = []; // connected players
 var connection = []; 
 var killParticipation = []; // keep track of players who recently attacked an enemy
+
+var updateCounter = 0;
+var updateTime = new Date().getTime();
 
 function initializeMap()
 {
@@ -614,6 +618,8 @@ setInterval(function()
 			delete connection[id];
 		}
 	}
+	updateCounter++;
+
 }, 1000/60);
 
 
@@ -718,22 +724,26 @@ global.Projectile = function(x, y, x_speed, y_speed, source, spawn_time, damage,
 	this.y = y;
 	this.spawn_x = x;
 	this.spawn_y = y;
-	this.z = 5;
+	this.z = 4;
 	this.x_speed = x_speed;
 	this.y_speed = y_speed;
 	this.source = source;
 	this.damage = damage;
 	this.spriteName = spriteName;
-	this.height = sizeOf("img//" + this.spriteName + ".png").height;
-	this.width = sizeOf("img//" + this.spriteName + ".png").width;
+	this.height = 8;
+	this.width = 8;
 	this.depth = 6;
 	this.spawn_time = spawn_time;
 	this.mapId = mapId;
 
 	this.update = function()
 	{
-		this.x += this.x_speed;
-		this.y += this.y_speed;
+		if(new Date().getTime() > this.spawn_time)
+		{
+			var n = Math.floor((new Date().getTime() - this.spawn_time)/(1000/60));
+			this.x = this.spawn_x + (n * this.x_speed);
+			this.y = this.spawn_y + (n * this.y_speed);
+		}
 	};
 
 	this.collisionCheck = function(e)
@@ -825,11 +835,6 @@ function checkDamage()
 		{
 			if (currentTime.getTime() >= projectileList[mapId][i].spawn_time)
 			{
-				if (projectileList[mapId][i].x == projectileList[mapId][i].spawn_x && projectileList[mapId][i].y == projectileList[mapId][i].spawn_y)
-				{
-					projectileList[mapId][i].spawn_time = currentTime.getTime();
-				}
-
 				projectileList[mapId][i].update();
 
 				if (projectileList[mapId][i].offscreen())
@@ -887,7 +892,10 @@ function checkDamage()
 				}
 			}
 		}
+
 	}
+
+
 }
 
 
@@ -943,7 +951,7 @@ io.on('connection', function(socket)
 
 	socket.on('createProjectile', function(x, y, x_speed, y_speed, spawn_time, damage, spriteName, mapId)
 	{
-		projectileList[mapId].push(new Projectile(x, y, x_speed, y_speed, socket.id, spawn_time, damage, spriteName, mapId));
+		projectileList[mapId].push(new Projectile(x, y, x_speed, y_speed, socket.id, Math.max(spawn_time, new Date().getTime()), damage, spriteName, mapId));
 	});
 
 	socket.on('death', function()
@@ -968,7 +976,7 @@ setInterval(function()
 {
 	for (var mapId in connected)
 	{
-		// get all active projectiles
+		// send all active projectiles to the client
 		var p = [];
 
 		for (var i in projectileList[mapId])
@@ -1015,6 +1023,11 @@ setInterval(function()
 
 }, 1000/60);
 
+setInterval(function()
+{
+	io.emit('ping',new Date().getTime());
+}, 1000);
+
 // update server status every 30 seconds
 setInterval(function()
 {
@@ -1024,6 +1037,9 @@ setInterval(function()
 // display current number of players connected
 function displayPlayerCount()
 {
+	console.log("FPS: " + updateCounter / (new Date().getTime() - updateTime));
+	updateTime = new Date().getTime();
+	updateCounter = 0;
 	for (var mapId in connected)
 	{
 		var n = 0;

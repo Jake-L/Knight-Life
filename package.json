@@ -16,5 +16,10 @@
   "bugs": {
     "url": "https://github.com/Jake-L/Knight-Life/issues"
   },
-  "homepage": "https://github.com/Jake-L/Knight-Life#readme"
+  "homepage": "https://github.com/Jake-L/Knight-Life#readme",
+  "dependencies": {
+    "express": "^4.15.4",
+    "image-size": "^0.6.1",
+    "socket.io": "^2.0.3"
+  }
 }

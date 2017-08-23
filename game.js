@@ -16,6 +16,7 @@ var y_offset = 0;
 
 // retrieve data from the server
 var socket = io();
+var ping = 0;
 
 // create the player's graphics
 var context = canvas.getContext('2d');
@@ -56,6 +57,7 @@ var portalList = [];
 
 var playerSprite = [];
 var playerAttackSprite = [];
+var weaponSprite = {};
 var username = "";
 var playerXP = 0;
 var minimapScale = 16;
@@ -115,15 +117,15 @@ window.onload = function()
 {
 	document.body.appendChild(canvas);
 	loadMap(defaultmapId);
-	//socket.emit('new player', defaultmapId);
+	loadSprite("player",["Punch","Arrow"]);
+	loadSprite("iceman",["Punch","Snowball"]);
+	loadWeapons();
 
 	//get the player's username
 	username = getUsername();
 	spawnPlayer(defaultmapId);
 	
 	audio.play(); //must come after loadMap
-	loadSprite("player");
-	loadSprite("iceman");
 
 	for (var i in initialize)
 	{
@@ -177,7 +179,7 @@ function loadMap(mapId)
 }
 
 //load sprites
-function loadSprite(spriteName)
+function loadSprite(spriteName, attacks)
 {
 	// load player movement sprites
 	var a = [];
@@ -200,23 +202,60 @@ function loadSprite(spriteName)
 	playerSprite[spriteName] = a;
 
 	// load player attack sprites
-	var a = [];
+	playerAttackSprite[spriteName] = {};
 
-	for (var i = 0; i < 4; i++)
+	for (var k in attacks)
 	{
-		var s = [];
-
-		for (var j = 0; j < 3; j++)
+		var a = [];
+		console.log(attacks[k]);
+		for (var i = 0; i < 4; i++)
 		{
-			img = new Image();
-			img.src = "img//" + spriteName + "Attack" + getDirName(i) + j + ".png";
-			s[j] = img;
+			var s = [];
+
+			for (var j = 0; j < 3; j++)
+			{
+				img = new Image();
+				img.src = "img//" + spriteName + "Attack" + attacks[k] + getDirName(i) + j + ".png";
+				s[j] = img;
+			}
+
+			a[i] = s;
 		}
 
-		a[i] = s;
+		playerAttackSprite[spriteName][attacks[k]] = a;
+	}
+}
+
+function loadWeapons()
+{
+	weaponSprite["Snowball"] = [];
+	weaponSprite["Arrow"] = [];
+
+	for (var i in weaponSprite)
+	{
+		// arrays of sprites for each direction
+		for (var j = 0; j < 4; j++)
+		{
+			weaponSprite[i][j] = [];
+		}
 	}
 
-	playerAttackSprite[spriteName] = a;
+	for (var j in weaponSprite["Snowball"])
+	{
+		weaponSprite["Snowball"][j][0] = new Image();
+		weaponSprite["Snowball"][j][0].src = "img//snowball.png";
+	}
+
+	for (var j in weaponSprite["Arrow"])
+	{
+		weaponSprite["Arrow"][j][0] = new Image();
+		weaponSprite["Arrow"][j][0].src = "img//attackArrow" + getDirName(j) + "0.png";
+		weaponSprite["Arrow"][j][1] = new Image();
+		weaponSprite["Arrow"][j][1].src = "img//attackArrow" + getDirName(j) + "1.png";
+	}
+
+	weaponSprite["Arrow"][3][0].y_offset = 6;
+	weaponSprite["Arrow"][3][1].y_offset = 3;
 }
 
 var ucounter = 0;
@@ -260,6 +299,7 @@ function step()
 	context.fillStyle = "#000000";
 	context.fillText("FPS: " + rfps,10,10);
 	context.fillText("FPS: " + ufps,10,20);
+	context.fillText("Ping: " + ping,10,30);
 	//console.log("Render FPS: " + Math.round(rcounter / ((new Date().getTime() - startTime)/1000)) + " Update FPS: " + Math.round(ucounter / ((new Date().getTime() - startTime)/1000)));
 	setTimeout(step, 4);
 }
@@ -493,7 +533,7 @@ function copyEntity(old)
 {
 	var p = new Entity(old.x, old.y, old.spriteName, old.mapId);
 	p.x = old.x; // X is the center of the sprite (in-game measurement units)
-  p.y = old.y; // Y is the bottom of the sprite (in-game measurement units)
+  	p.y = old.y; // Y is the bottom of the sprite (in-game measurement units)
 	p.z = old.z; // Z is the sprite's height off the ground (in-game measurement units)
 	p.width = old.width;
 	p.depth = old.depth;
@@ -507,6 +547,9 @@ function copyEntity(old)
 	p.current_health = old.current_health;
 	p.attack_counter = old.attack_counter;
 	p.attack_length = old.attack_length;
+	p.attack = old.attack;
+	p.attack1 = old.attack1;
+	p.attack2 = old.attack2;
 	p.lvl = old.lvl;
 	p.allyState = old.allyState;
 	p.initialize();
@@ -767,37 +810,65 @@ function get_offset()
 // holds information about projectiles on-screen
 function Projectile(p)
 {
-	this.x = p.x;
-	this.y = p.y;
-	//this.x = p.spawn_x;
-	//this.y = p.spawn_y;
+	//this.x = p.x;
+	//this.y = p.y;
+	this.x = p.spawn_x;
+	this.y = p.spawn_y;
 	this.z = p.z;
 	this.x_speed = p.x_speed;
 	this.y_speed = p.y_speed;
 	this.spriteName = p.spriteName;
 	this.spawn_time = p.spawn_time;
 	this.sprite = new Image();
-	this.sprite.src = "img//" + this.spriteName + ".png";
+
+	if (this.spriteName == "Snowball")
+	{
+		this.sprite.src = "img//" + this.spriteName + ".png";
+	}
+	else
+	{
+		if (this.x_speed > 0)
+		{
+			this.sprite.src = "img//" + this.spriteName + "Right.png";
+		}
+		else if (this.x_speed < 0)
+		{
+			this.sprite.src = "img//" + this.spriteName + "Left.png";
+		}
+		else if (this.y_speed > 0)
+		{
+			this.sprite.src = "img//" + this.spriteName + "Down.png";
+		}
+		else if (this.y_speed < 0)
+		{
+			this.sprite.src = "img//" + this.spriteName + "Up.png";
+		}
+	}
 
 	this.render = function()
 	{
-		context.save();
-		context.shadowColor = "rgba(80, 80, 80, .4)";
-		context.shadowBlur = 15 + this.z;
-		context.shadowOffsetX = 0;
-		context.shadowOffsetY = (3 + this.z) * graphics_scaling;
-
 		var n = (new Date().getTime() - this.spawn_time)/(1000/60);
 
-		context.drawImage(
-			this.sprite, (this.x - (this.sprite.width/2) - x_offset) * graphics_scaling,
-			(this.y - this.sprite.height - this.z - y_offset) * graphics_scaling,
-			//(this.x + (n * this.x_speed) - (this.sprite.width/2) - x_offset) * graphics_scaling,
-			//(this.y + (n * this.y_speed) - this.sprite.height - this.z - y_offset) * graphics_scaling,
-			this.sprite.width * graphics_scaling,
-			this.sprite.height * graphics_scaling);
+		if (n > 0)
+		{
+			context.save();
+			context.shadowColor = "rgba(80, 80, 80, .4)";
+			context.shadowBlur = 15 + this.z;
+			context.shadowOffsetX = 0;
+			context.shadowOffsetY = (3 + this.z) * graphics_scaling;
+			console.log((this.x + (n * this.x_speed) - (this.sprite.width/2) - x_offset) * graphics_scaling);
 
-		context.restore();
+			context.drawImage(
+				this.sprite, 
+				//(this.x - (this.sprite.width/2) - x_offset) * graphics_scaling,
+				//(this.y - this.sprite.height - this.z - y_offset) * graphics_scaling,
+				(this.x + (n * this.x_speed) - (this.sprite.width/2) - x_offset) * graphics_scaling,
+				(this.y + (n * this.y_speed) - this.sprite.height - this.z - y_offset) * graphics_scaling,
+				this.sprite.width * graphics_scaling,
+				this.sprite.height * graphics_scaling);
+
+			context.restore();
+		}
 	};
 }
 
@@ -1012,5 +1083,11 @@ socket.on('projectiles', function(p)
 	{
 		projectileList.push(new Projectile(p[i]));
 	}
+});
+
+// check current ping
+socket.on('ping', function(serverTime)
+{
+	ping = new Date().getTime() - serverTime;
 });
 

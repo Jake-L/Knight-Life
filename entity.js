@@ -1,12 +1,14 @@
 (function(exports)
 {
-var attackFrameLength = [];
-attackFrameLength["punch"] = 60;
-attackFrameLength["snowball"] = 90;
+var attackFrameLength = {};
+attackFrameLength["Punch"] = 60;
+attackFrameLength["Snowball"] = 60;
+attackFrameLength["Arrow"] = 60;
 
-var damageFrame = [];
-damageFrame["punch"] = 30;
-damageFrame["snowball"] = 45;
+var damageFrame = {};
+damageFrame["Punch"] = 30;
+damageFrame["Snowball"] = 40;
+damageFrame["Arrow"] = 40;
 
 //initialize an entity
 exports.Entity = function(x,y,spriteName,mapId)
@@ -44,9 +46,18 @@ exports.Entity = function(x,y,spriteName,mapId)
 	this.attack_counter = 0;
 	this.attack_length = 0;
 	this.attack = 0;
-	this.attack1 = "punch";
-	this.attack2 = "snowball";
 	this.spawn_time = new Date().getTime();
+
+	if (spriteName == "iceman")
+	{
+		this.attack1 = "Punch";
+		this.attack2 = "Snowball";
+	}
+	else
+	{
+		this.attack1 = "Punch";
+		this.attack2 = "Arrow";
+	}
 
 	this.allyState = "Neutral";
 	this.faction;
@@ -56,6 +67,7 @@ exports.Entity = function(x,y,spriteName,mapId)
 	this.initialize = function()
 	{
 		this.sprite = new Image();
+		this.weaponSprite = new Image();
 	};
 
 	this.addXP = function(xp)
@@ -216,7 +228,45 @@ exports.Entity.prototype.render = function()
 			this.sprite.height * graphics_scaling);
 		context.restore();
 	}
+
+	this.renderWeapon();
 };
+
+// display the entities current weapon
+exports.Entity.prototype.renderWeapon = function()
+{
+	var x;
+	var y;
+
+	if (this.attack == 2 && typeof(weaponSprite[this.attack2]) !== "undefined" && weaponSprite[this.attack2][getDirNum(this.direction)][0].complete)
+	{
+		var n = Math.floor((attackFrameLength[this.attack2] - this.attack_counter) / (attackFrameLength[this.attack2] / playerAttackSprite[this.spriteName][this.attack2][0].length)) % playerAttackSprite[this.spriteName][this.attack2][0].length;
+
+		if (n < weaponSprite[this.attack2][getDirNum(this.direction)].length)
+		{
+			var img = weaponSprite[this.attack2][getDirNum(this.direction)][n];
+			if (typeof(img.y_offset) !== "undefined" && img.y_offset != null)
+			{
+				context.drawImage(
+				img,
+				(this.x - (img.width / 2) - x_offset) * graphics_scaling,
+				(this.y - img.height + img.y_offset - y_offset) * graphics_scaling,
+				img.width * graphics_scaling,
+				img.height * graphics_scaling);
+			}
+			else
+			{
+				context.drawImage(
+					img,
+					(this.x - (img.width / 2) - x_offset) * graphics_scaling,
+					(this.y - img.height - y_offset) * graphics_scaling,
+					img.width * graphics_scaling,
+					img.height * graphics_scaling);
+			}
+		}
+	}
+}
+
 
 // set the colour for an entity's nameplate or map icon
 exports.Entity.prototype.setColour = function()
@@ -299,7 +349,14 @@ exports.Entity.prototype.updateSprite = function()
 
 	if (this.attack_counter > 0)
 	{
-		this.sprite = playerAttackSprite[this.spriteName][getDirNum(this.direction)][Math.floor(this.attack_counter / (this.attack_length / 3))]
+		if (this.attack == 1)
+		{
+			this.sprite = playerAttackSprite[this.spriteName][this.attack1][getDirNum(this.direction)][Math.floor(this.attack_counter / (this.attack_length / 3))];
+		}
+		else
+		{
+			this.sprite = playerAttackSprite[this.spriteName][this.attack2][getDirNum(this.direction)][Math.floor(this.attack_counter / (this.attack_length / 3))];
+		}
 	}
 	else if ((this.x_speed == 0 && this.y_speed == 0) || this.z_speed != 0)
 	{
@@ -456,18 +513,18 @@ exports.Entity.prototype.update = function()
 	if (this.attack_counter > 0)
 	{
 		
-		if (this.attack == 1 && this.attack_counter == Math.ceil(damageFrame[this.attack1] / this.attack_speed) + 2)
+		if (this.attack == 1 && attackFrameLength[this.attack1] - this.attack_counter == Math.ceil(damageFrame[this.attack1] / this.attack_speed) - 2)
 		{
 			this.createAttackAux();
 		}
-		else if (this.attack == 2 && this.attack_counter == Math.ceil(damageFrame[this.attack2] / this.attack_speed) + 2)
+		else if (this.attack == 2 && attackFrameLength[this.attack2] - this.attack_counter == Math.ceil(damageFrame[this.attack2] / this.attack_speed) - 2)
 		{
 			this.createProjectileAux();
 		}
 
 		this.attack_counter--;
 
-		if (this.attack_counter == 0)
+		if (this.attack_counter <= 0)
 		{
 			this.attack = 0;
 		}
@@ -596,30 +653,30 @@ exports.Entity.prototype.createProjectileAux = function()
 
 	if (this.direction == "Down")
 	{
-		x = this.x;
+		x = this.x - (this.width / 4);
 		y = this.y;
 		x_speed = 0;
-		y_speed = 1.5;
+		y_speed = 3;
 	}
 	else if (this.direction == "Up")
 	{
-		x = this.x;
+		x = this.x + (this.width / 4);
 		y = this.y - (this.depth);
 		x_speed = 0;
-		y_speed = -1.5;
+		y_speed = -3;
 	}
 	else if (this.direction == "Left")
 	{
 		x = this.x - (this.width / 2);
 		y = this.y;
-		x_speed = -1.5;
+		x_speed = -3;
 		y_speed = 0;
 	}
 		else if (this.direction == "Right")
 	{
 		x = this.x + (this.width / 2);
 		y = this.y;
-		x_speed = 1.5;
+		x_speed = 3;
 		y_speed = 0;
 	}
 
