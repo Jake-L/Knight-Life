@@ -351,11 +351,11 @@ exports.Entity.prototype.updateSprite = function()
 	{
 		if (this.attack == 1)
 		{
-			this.sprite = playerAttackSprite[this.spriteName][this.attack1][getDirNum(this.direction)][Math.floor(this.attack_counter / (this.attack_length / 3))];
+			this.sprite = playerAttackSprite[this.spriteName][this.attack1][getDirNum(this.direction)][Math.floor((this.attack_length - this.attack_counter) / (this.attack_length / 3))];
 		}
 		else
 		{
-			this.sprite = playerAttackSprite[this.spriteName][this.attack2][getDirNum(this.direction)][Math.floor(this.attack_counter / (this.attack_length / 3))];
+			this.sprite = playerAttackSprite[this.spriteName][this.attack2][getDirNum(this.direction)][Math.floor((this.attack_length - this.attack_counter) / (this.attack_length / 3))];
 		}
 	}
 	else if ((this.x_speed == 0 && this.y_speed == 0) || this.z_speed != 0)
