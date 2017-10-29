@@ -1,0 +1,107 @@
+html, body {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-weight: 300;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+body {
+  font-family: sans-serif;
+  background-color: #E7CEB8
+}
+
+a {
+  color: #204156;
+  text-decoration: none;
+}
+
+.page-title {
+  margin-top: 50px;
+  text-align: center;
+  font-weight: 100;
+  font-family: 'Old English Text MT', sans-serif;
+}
+
+.page-description {
+  border: 1px solid #000;
+  margin: 2px;
+  text-align: center;
+  padding: 30px;
+}
+
+/* FOOTER NAVIGATION */
+
+.navbar {
+  background-color: #CB925F;
+  display: block;
+  top: 0px;
+  left: 0px;
+  position: fixed;
+  width: 100%
+}
+
+.navbar li {
+  display: inline;
+  margin: 0;
+  padding: 10px;
+}
+
+.navbar ul {
+  display: inline;
+  line-height: 20px;
+}
+
+.btn {
+  float: right;
+  
+}
+
+.btn a {
+  cursor: pointer;
+  margin-right: 30px;
+  padding: 8px 18px;
+  border: 1px solid #204156;
+  border-radius: 5px;
+  position: relative;
+	
+}
+
+.btn a:active {
+	top: 2px;
+}
+
+.navbar a {
+  height: 60px;
+  line-height: 60px;
+  color: #204156;
+  text-decoration: none;
+}
+
+.form{
+  display: none;
+  position: fixed;
+  z-index: 1;
+  padding-top: 60px;
+  overflow: auto;
+  text-align: center;
+  width: 100%;
+}
+.formelements{
+  padding: 10px;
+  background-color: #FFFFFF;
+  border: 1px solid #888;
+  display: inline-block;
+  text-align: left;
+}
+button{
+  display: inline;
+  text-align: center;
+}
+.exitbtn{
+  padding: 10px;
+  cursor: pointer;
+  display: inline-block;
+  float: right;
+}

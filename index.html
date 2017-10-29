@@ -2,11 +2,62 @@
 <html>
     <head>
 				<title>Knight Life Game</title>
+				<link rel="stylesheet" type="text/css" href="main.css">
     </head>
-		<body>
-		Welcome to Knight Life! This is a Javascript game I have been working on to learn web development. I have coded the entire game from scratch, and even created the graphics and composed the background music. I hope you enjoy playing it!
-		<script src="displayname.js"></script>
-		<A HREF="game.html">PLAY GAME</A>
-		<A HREF="faq.html">FAQ</A>
-		</body>
+		  <body>
+	<!-- the navbar shown at the top of the page -->
+    <div class="navbar">
+      <ul>
+        <li><a href="#">Home Page</a></li>
+        <li><a href="game.html">Play Game</a></li>
+        <li><a href="faq.html">FAQ</a></li>
+      </ul>
+	  <!-- clicking the login button opens the login form -->
+      <div class="btn" onclick="document.getElementById('loginform').style.display='block'"><a>Log In</a></div>
+	  <div class="btn" onclick="document.getElementById('registrationform').style.display='block'"><a>Register</a></div>
+    </div>
+	
+	<!-- The login form where users enter their username and password -->
+	<div id="loginform" class="form">
+		<div class="formelements">
+			<div class="exitbtn" onclick="document.getElementById('loginform').style.display='none'">
+			<a>&times;</a>
+			</div>
+			<p>Username</p>
+			<input type="text" placeholder="Enter Username" id="loginusername">
+			<p>Password</p>
+			<input type="password" placeholder="Enter Password" id="loginpassword">
+			<br/>
+			<br/>
+			<!-- div used to center the submit button -->
+			<div style="text-align:center">
+			<button type="button" onclick="document.getElementById('loginform').style.display='none'">Submit</button>
+			</div>
+		</div>
+	</div>
+	
+	<!-- The user registration form where users enter their username and password -->
+	<div id="registrationform" class="form">
+		<div class="formelements">
+			<div class="exitbtn" onclick="document.getElementById('registrationform').style.display='none'">
+			<a>&times;</a>
+			</div>
+			<p>Username</p>
+			<input type="text" placeholder="Enter Username" id="registrationusername">
+			<p>Password</p>
+			<input type="password" placeholder="Enter Password" id="registrationpassword">
+			<br/>
+			<br/>
+			<!-- div used to center the submit button -->
+			<div style="text-align:center">
+			<button type="button" onclick="document.getElementById('registrationform').style.display='none'">Submit</button>
+			</div>
+		</div>
+	</div>
+
+    <header>
+      <h1 class="page-title">Knight Life</h1>
+      <p class="page-description">Hello, welcome to Knight Life! Knight Life is a game where you can explore the world, fight enemies, level up, and much more. This game offers a fully multiplayer experience, with a world full of other players. You may choose to fight these players or team up with them to battle difficult enemies.</p>
+    </header>
+		<!--<script src="displayname.js"></script>-->
 </html>
