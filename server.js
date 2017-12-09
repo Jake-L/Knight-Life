@@ -39,12 +39,13 @@ global.projectileList = []; // keep track of all active projectiles
 global.damageList = []; // keep track of all upcoming attacks
 
 var mapObject = require('./mapobject.js').mapObject;
+global.Attack = require('./attack.js').Attack; 
 var Entity = require('./entity.js').Entity;
 var sizeOf = require('image-size');
 
-var mapEntities = []; // all the CPUs
-var mapObjects = []; // non-moving map objects like rocks
-var connected = []; // connected players
+global.mapEntities = []; // all the CPUs
+global.mapObjects = []; // non-moving map objects like rocks
+global.connected = []; // connected players
 var connection = []; 
 var killParticipation = []; // keep track of players who recently attacked an enemy
 
@@ -63,18 +64,11 @@ function initializeMap()
 		connected[mapId] = {};
 	}
 
-	// load Map 1
+	// load Map 0
 	// load map objects (rocks, etc.)
 	mapObjects[0].push(new mapObject(100,200,"rock1"));
 	mapObjects[0].push(new mapObject(700,350,"bigrock"));
 	mapObjects[0].push(new mapObject(400,400,"rock1"));
-
-	for (var i in mapObjects[0])
-	{
-		mapObjects[0][i].width = sizeOf("img//" + mapObjects[0][i].spriteName + ".png").width;
-		mapObjects[0][i].height = sizeOf("img//" + mapObjects[0][i].spriteName + ".png").height;
-		mapObjects[0][i].depth = sizeOf("img//" + mapObjects[0][i].spriteName + ".png").height;
-	}
 
 	// spawn knights
 	for (var i = 0; i < 6; i++)
@@ -94,18 +88,11 @@ function initializeMap()
 		killParticipation[0][i] = [];
 	}
 
-	// load Map 2
+	// load Map 1
 	// load map objects (rocks, etc.)
 	mapObjects[1].push(new mapObject(100,200,"snowman"));
 	mapObjects[1].push(new mapObject(700,350,"snowman"));
 	mapObjects[1].push(new mapObject(400,400,"snowman"));
-
-	for (var i in mapObjects[1])
-	{
-		mapObjects[1][i].width = sizeOf("img//" + mapObjects[0][i].spriteName + ".png").width;
-		mapObjects[1][i].height = sizeOf("img//" + mapObjects[0][i].spriteName + ".png").height;
-		mapObjects[1][i].depth = sizeOf("img//" + mapObjects[0][i].spriteName + ".png").height;
-	}
 
 	// spawn icemen
 	for (var i = 0; i < 3; i++)
@@ -114,6 +101,18 @@ function initializeMap()
 		mapEntities[1][i].entity.faction = "iceman";
 		mapEntities[1][i].targetType = "Aggressive";
 		killParticipation[1][i] = [];
+	}
+
+	// ALL MAPS
+	// set dimensions of map objects for each mapId
+	for (var mapId in mapObjects)
+	{
+		for (var i in mapObjects[mapId])
+		{
+			mapObjects[mapId][i].width = sizeOf("img//" + mapObjects[mapId][i].spriteName + ".png").width;
+			mapObjects[mapId][i].height = sizeOf("img//" + mapObjects[mapId][i].spriteName + ".png").height;
+			mapObjects[mapId][i].depth = sizeOf("img//" + mapObjects[mapId][i].spriteName + ".png").height;
+		}
 	}
 }
 
@@ -175,7 +174,7 @@ function copyEntity(old)
 }
 
 // update the NPC collision lists (nearby enemies)
-function updateCollisionList()
+function updateNearbyObjects()
 {
 	for (var mapId in mapEntities)
 	{
@@ -183,33 +182,62 @@ function updateCollisionList()
 		{
 			var c = [];
 
+			// find nearby CPUs
 			for (var j in mapEntities[mapId])
 			{
 				if (i != j)
 				{
-					c.push(copyEntity(mapEntities[mapId][j].entity));
+					c.push({id: j, type: "cpu"});
 				}
 			}
 
+			// find nearby players
 			for (var j in connected[mapId])
 			{
 				if (Math.abs(connected[mapId][j].x - mapEntities[mapId][i].entity.x) <= 120 && Math.abs(connected[mapId][j].y - mapEntities[mapId][i].entity.y) <= 120)
 				{
-					c.push(copyEntity(connected[mapId][j]));
+					c.push({id: j, type: "player"});
 				}
 			}
 
+			// find nearby map objects (rocks, etc.)
 			for (var j in mapObjects[mapId])
 			{
 				if (Math.abs(mapObjects[mapId][j].x - mapEntities[mapId][i].entity.x) <= 60 && Math.abs(mapObjects[mapId][j].y - mapEntities[mapId][i].entity.y) <= 60)
 				{
-					c.push(copyEntity(mapObjects[mapId][j]));
+					c.push({id: j, type: "mapObject"});
 				}
 			}
 
-			mapEntities[mapId][i].entity.collisionList = c;
+			mapEntities[mapId][i].entity.nearbyObjects = c;
 		}
 	}
+}
+
+Entity.prototype.getNearbyObjects = function()
+{
+	var objectList = [];
+
+	for (var i in this.nearbyObjects)
+	{
+		// retrive CPUs
+		if (this.nearbyObjects[i].type == "cpu" && typeof(mapEntities[this.mapId][this.nearbyObjects[i].id]) !== 'undefined')
+		{
+			objectList.push(mapEntities[this.mapId][this.nearbyObjects[i].id].entity);
+		}
+		// retrieve players
+		else if (this.nearbyObjects[i].type == "player" && typeof(connected[this.mapId][this.nearbyObjects[i].id]) !== 'undefined')
+		{
+			objectList.push(connected[this.mapId][this.nearbyObjects[i].id]);
+		}
+		// retrieve mapObjects
+		else if (this.nearbyObjects[i].type == "mapObject" && typeof(mapObjects[this.mapId][this.nearbyObjects[i].id]) !== 'undefined')
+		{
+			objectList.push(mapObjects[this.mapId][this.nearbyObjects[i].id]);
+		}
+	}
+
+	return objectList;
 }
 
 var CPU = function(x, y, spriteName, id, lvl, mapId)
@@ -349,11 +377,11 @@ CPU.prototype.update = function()
 			{
 				if (Math.abs(this.entity.y - e.y) < this.entity.depth * 1.5)
 				{
-					this.entity.createAttack(1);
+					this.entity.setAttack(0);
 				}
 				else
 				{
-					this.entity.createAttack(2);
+					this.entity.setAttack(1);
 				}
 			}
 			// check if you should attack left or right
@@ -361,11 +389,11 @@ CPU.prototype.update = function()
 			{
 				if (Math.abs(this.entity.x - e.x) < this.entity.width * 1.5)
 				{
-					this.entity.createAttack(1);
+					this.entity.setAttack(0);
 				}
 				else
 				{
-					this.entity.createAttack(2);
+					this.entity.setAttack(1);
 				}
 			}
 		}
@@ -480,8 +508,7 @@ CPU.prototype.update = function()
 		}
 	}
 
-	if (e != null && (this.entity.attack_counter <= 5
-		|| (this.entity.attack_counter == this.entity.attack_length))) //let them change direction in the first attack frame
+	if (e != null && (this.entity.attack_counter <= 5 || (this.entity.current_attack >= 0 && this.entity.attack_counter == this.entity.attacks[this.entity.current_attack].frame_length))) //let them change direction in the first attack frame
 	{
 		// check if you should face left / right
 		if (Math.abs(e.x - this.entity.x) >= Math.abs(e.y - this.entity.y))
@@ -585,7 +612,10 @@ function clearAgro(id, mapId)
 // move computer controlled NPCs
 setInterval(function()
 {
-	updateCollisionList();
+	if (updateCounter % 15 == 0)
+	{
+		updateNearbyObjects();
+	}
 	checkDamage();
 
 	// update all the entities on the map
@@ -593,7 +623,6 @@ setInterval(function()
 	{
 		for (var i in mapEntities[mapId])
 		{
-
 			mapEntities[mapId][i].update();
 			
 			if (mapEntities[mapId][i].entity.current_health <= 0)
@@ -956,17 +985,24 @@ io.on('connection', function(socket)
 
 	socket.on('death', function()
 	{
-		console.log("player died");
 		entityDeath(connected[connection[socket.id].mapId][socket.id]);
 		connection[socket.id].last_update = new Date().getTime();
 	});
 
 	socket.on('disconnect', function()
 	{
-    	console.log(socket.id + " disconnected");
-		delete connected[connection[socket.id].mapId][socket.id];
-		clearAgro(socket.id, connection[socket.id].mapId);
-		delete connection[socket.id];
+		console.log(socket.id + " disconnected");
+		console.log("Connection entry: " + connection[socket.id]);
+		console.log("Connected entry: " + connected[0][socket.id]);
+
+		if (typeof(connection[socket.id]) !== "undefined")
+		{
+			clearAgro(socket.id, connection[socket.id].mapId);
+			delete killParticipation[connection[socket.id].mapId][socket.id];
+			delete connected[connection[socket.id].mapId][socket.id];
+			delete connection[socket.id];
+		}
+
 		displayPlayerCount();
 	});
 });
@@ -974,6 +1010,7 @@ io.on('connection', function(socket)
 // trasfer data to the client
 setInterval(function()
 {
+	console.log("transmitting players and projects to client");
 	for (var mapId in connected)
 	{
 		// send all active projectiles to the client

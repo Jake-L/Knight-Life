@@ -48,8 +48,8 @@ var maxX = [1000,1000];
 var minY = [30,30];
 var maxY = [500,800];
 
-var playerList = [];
-var mapObjects = [];
+var playerList = {};
+var mapObjects = {};
 var projectileList = [];
 var flyTextList = [];
 var notificationList = [];
@@ -106,6 +106,7 @@ function getDirNum(s)
 
 //functions from external files
 mapObject = share.mapObject;
+Attack = shareAttack.Attack;
 Entity = shareEntity.Entity;
 
 var defaultmapId = 0;
@@ -211,8 +212,14 @@ function loadSprite(spriteName, attacks)
 		for (var i = 0; i < 4; i++)
 		{
 			var s = [];
+			var n = 3;
 
-			for (var j = 0; j < 3; j++)
+			if (attacks[k] == "Sword")
+			{
+				n = 4;
+			}
+
+			for (var j = 0; j < n; j++)
 			{
 				img = new Image();
 				img.src = "img//" + spriteName + "Attack" + attacks[k] + getDirName(i) + j + ".png";
@@ -230,34 +237,41 @@ function loadWeapons()
 {
 	weaponSprite["Snowball"] = [];
 	weaponSprite["Arrow"] = [];
+	weaponSprite["Sword"] = [];
 
-	for (var i in weaponSprite)
+	// loop through all 4 directions
+	for (var j = 0; j < 4; j++)
 	{
-		// arrays of sprites for each direction
-		for (var j = 0; j < 4; j++)
+		// create the blank array for each weapon
+		for (var i in weaponSprite)
 		{
 			weaponSprite[i][j] = [];
 		}
-	}
 
-	for (var j in weaponSprite["Snowball"])
-	{
+		// load snowball sprites
 		weaponSprite["Snowball"][j][0] = new Image();
 		weaponSprite["Snowball"][j][0].src = "img//attackSnowball" + getDirName(j) + "0.png";
 		weaponSprite["Snowball"][j][1] = new Image();
 		weaponSprite["Snowball"][j][1].src = "img//attackSnowball" + getDirName(j) + "1.png";
-	}
 
-	for (var j in weaponSprite["Arrow"])
-	{
+		// load arrow sprites
 		weaponSprite["Arrow"][j][0] = new Image();
 		weaponSprite["Arrow"][j][0].src = "img//attackArrow" + getDirName(j) + "0.png";
 		weaponSprite["Arrow"][j][1] = new Image();
 		weaponSprite["Arrow"][j][1].src = "img//attackArrow" + getDirName(j) + "1.png";
+
+		// load sword sprites
+		for (var k = 0; k < 4; k++)
+		{
+			weaponSprite["Sword"][j][k] = new Image();
+			weaponSprite["Sword"][j][k].src = "img//attackSword" + getDirName(j) + k + ".png";
+		}
 	}
 
+	// set sprite specific y-offsets, for images that need to be displayed below the entity
 	weaponSprite["Arrow"][3][0].y_offset = 6;
 	weaponSprite["Arrow"][3][1].y_offset = 3;
+	weaponSprite["Sword"][0][3].y_offset = 7;
 }
 
 var ucounter = 0;
@@ -277,14 +291,19 @@ function step()
 {
 	if (new Date().getTime() > frameTime)
 	{
+		if (ucounter / 15 == 0)
+		{
+			updateNearbyObjects();
+		}
 		update();
 		socket.emit('movement', player.entity); //send new location to server
 		frameTime += 16.6;
 		ucounter += 1;
+		
 	}
 	context.fillStyle = "#ADD8E6";
 
-  render();
+  	render();
 	rcounter += 1;
 	//renderBackground();
 
@@ -339,15 +358,15 @@ function getUsername()
 }
 
 // update the list of nearby entities once a second
-function updateCollisionList()
+function updateNearbyObjects()
 {
-	var collisionList = [];
+	player.entity.nearbyObjects = [];
 
 	for (var i in playerList)
 	{
 		if (Math.abs(playerList[i].x - player.entity.x) <= 120 && Math.abs(playerList[i].y - player.entity.y) <= 120)
 		{
-			collisionList.push(playerList[i]);
+			player.entity.nearbyObjects.push({id: playerList[i].id, type: "player"});
 		}
 	}
 
@@ -355,11 +374,37 @@ function updateCollisionList()
 	{
 		if (Math.abs(mapObjects[j].x - player.entity.x) <= 120 && Math.abs(mapObjects[j].y - player.entity.y) <= 120)
 		{
-			collisionList.push(mapObjects[j]);
+			player.entity.nearbyObjects.push({id: mapObjects[j].id, type: "mapObject"});
+		}
+	}
+}
+
+Entity.prototype.getNearbyObjects = function()
+{
+	var objectList = [];
+
+	for (var i in this.nearbyObjects)
+	{
+		// retrieve players / CPUs
+		if (this.nearbyObjects[i].type == "player") 
+		{
+			if (typeof(playerList[this.nearbyObjects[i].id]) !== 'undefined')
+			{
+				objectList.push(playerList[this.nearbyObjects[i].id]);
+			}
+			else
+			{
+				//delete player.entity.nearbyObjects[i];
+			}
+		}
+		// retrieve mapObjects
+		else if (this.nearbyObjects[i].type == "mapObject" && typeof(mapObjects[this.nearbyObjects[i].id]) !== 'undefined')
+		{
+			objectList.push(mapObjects[this.nearbyObjects[i].id]);
 		}
 	}
 
-	player.entity.collisionList = collisionList;
+	return objectList;
 }
 
 
@@ -533,9 +578,7 @@ function renderWeather()
 //initialize an entity from a pre-existing entity
 function copyEntity(old)
 {
-	var p = new Entity(old.x, old.y, old.spriteName, old.mapId);
-	p.x = old.x; // X is the center of the sprite (in-game measurement units)
-  	p.y = old.y; // Y is the bottom of the sprite (in-game measurement units)
+	var p = new Entity(old.x, old.y, old.spriteName, old.mapId);//create a new entity object
 	p.z = old.z; // Z is the sprite's height off the ground (in-game measurement units)
 	p.width = old.width;
 	p.depth = old.depth;
@@ -548,16 +591,13 @@ function copyEntity(old)
 	p.max_health = old.max_health;
 	p.current_health = old.current_health;
 	p.attack_counter = old.attack_counter;
-	p.attack_length = old.attack_length;
-	p.attack = old.attack;
-	p.attack1 = old.attack1;
-	p.attack2 = old.attack2;
+	p.current_attack = old.current_attack;
+	p.attacks = old.attacks
 	p.lvl = old.lvl;
 	p.allyState = old.allyState;
-	p.initialize();
+	p.id = old.id;
 	return p;
 }
-
 
 //initialize the player
 function Player(mapId)
@@ -691,8 +731,6 @@ window.addEventListener("keyup", function(event)
 
 Player.prototype.update = function()
 {
-	updateCollisionList();
-
 	// slowly regenerate health over time
 	if (this.entity.current_health < this.entity.max_health)
 	{
@@ -727,12 +765,12 @@ Player.prototype.update = function()
 			if (value == attack_key)
 			{
 				if (this.entity.attack_counter <= 1)
-				{this.entity.createAttack(1);}
+				{this.entity.setAttack(0);}
 			}
 			else if (value == attack2_key)
 			{
 				if (this.entity.attack_counter <= 1)
-				{this.entity.createAttack(2);}
+				{this.entity.setAttack(1);}
 			}
 			else if(value == left_key)
 			{
@@ -858,7 +896,6 @@ function Projectile(p)
 			context.shadowBlur = 15 + this.z;
 			context.shadowOffsetX = 0;
 			context.shadowOffsetY = (3 + this.z) * graphics_scaling;
-			console.log((this.x + (n * this.x_speed) - (this.sprite.width/2) - x_offset) * graphics_scaling);
 
 			context.drawImage(
 				this.sprite, 
@@ -1038,20 +1075,20 @@ function setScreenSize(event)
 
 socket.on('mapObjects', function(a)
 {
-	mapObjects = [];
+	mapObjects = {};
 
 	for (var i in a)
 	{
 		p = new mapObject(a[i].x, a[i].y, a[i].spriteName);
 		p.initialize();
-		mapObjects.push(p);
+		mapObjects[p.id] = p;
 	}
 });
 
 // update position of other players from the server
 socket.on('players', function(players)
 {
-	playerList = [];
+	playerList = {};
 
 	for (var i in players)
 	{

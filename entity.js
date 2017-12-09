@@ -1,15 +1,5 @@
 (function(exports)
 {
-var attackFrameLength = {};
-attackFrameLength["Punch"] = 60;
-attackFrameLength["Snowball"] = 60;
-attackFrameLength["Arrow"] = 60;
-
-var damageFrame = {};
-damageFrame["Punch"] = 30;
-damageFrame["Snowball"] = 40;
-damageFrame["Arrow"] = 40;
-
 //initialize an entity
 exports.Entity = function(x,y,spriteName,mapId)
 {
@@ -30,6 +20,7 @@ exports.Entity = function(x,y,spriteName,mapId)
 	this.direction = "Down";
 	this.sprite;
 	this.spriteName = spriteName;
+	this.weaponSprite;
 	this.id;
 
 	// stats
@@ -44,44 +35,20 @@ exports.Entity = function(x,y,spriteName,mapId)
 
 	// variables for performing attacks
 	this.attack_counter = 0;
-	this.attack_length = 0;
-	this.attack = 0;
+	this.current_attack = -1;
+	this.attacks = [];
 	this.spawn_time = new Date().getTime();
-
-	if (spriteName == "iceman")
-	{
-		this.attack1 = "Punch";
-		this.attack2 = "Snowball";
-	}
-	else
-	{
-		this.attack1 = "Punch";
-		this.attack2 = "Arrow";
-	}
 
 	this.allyState = "Neutral";
 	this.faction;
 
-	this.collisionList = [];
-
-	this.initialize = function()
-	{
-		this.sprite = new Image();
-		this.weaponSprite = new Image();
-	};
+	this.nearbyObjects = [];
 
 	this.addXP = function(xp)
 	{
 		var old_lvl = this.lvl;
 		this.xp += xp;
 		this.updateLevel();
-
-		while (old_lvl < this.lvl)
-		{
-			old_lvl++;
-			notificationList.push(new Notification("Level Up!","You reached level " + old_lvl));
-		}
-
 		flyTextList.push(new flyText(this.x, this.y - (this.height * 1.5), "+" + xp + " XP", "#0000C0"));
 	};
 
@@ -94,6 +61,7 @@ exports.Entity = function(x,y,spriteName,mapId)
 	this.updateLevel = function()
 	{
 		var old_lvl = this.lvl;
+		var updated = false;
 		this.lvl = Math.floor(Math.pow(this.xp / 5, 4/10)) + 1;
 		while (old_lvl < this.lvl)
 		{
@@ -103,97 +71,132 @@ exports.Entity = function(x,y,spriteName,mapId)
 			this.attack_speed += 0.01 / this.attack_speed;
 			this.max_health += 5;
 			this.current_health = this.max_health;
+
+			if(typeof(module) === 'undefined')
+			{
+				notificationList.push(new Notification("Level Up!","You reached level " + old_lvl)); 
+			}
+
+			updated = true;
+		}
+		if (updated)
+		{
+			this.loadAttacks();
 		}
 	};
 
-
-	this.move = function(x_direction, y_direction)
+	this.loadAttacks = function()
 	{
-		if (x_direction != 0 || y_direction != 0)
+		if (spriteName == "iceman")
 		{
-			this.knockback = false;
-
-			// change direction even if they are blocked and can't move
-			if (this.attack_counter <= 5)
-			{
-				if (this.x_speed != x_direction)
-				{
-					if (x_direction > 0) {this.direction = "Right";}
-					else if (x_direction < 0) {this.direction = "Left";}
-				}
-				else if (this.y_speed != y_direction)
-				{
-					if (y_direction > 0) {this.direction = "Down";}
-					else if (y_direction < 0) {this.direction = "Up";}
-				}
-				else if (this.y_speed == 0 && x_direction != 0)
-				{
-					if (x_direction > 0) {this.direction = "Right";}
-					else if (x_direction < 0) {this.direction = "Left";}
-				}
-				else if (this.x_speed == 0 && y_direction != 0)
-				{
-					if (y_direction > 0) {this.direction = "Down";}
-					else if (y_direction < 0) {this.direction = "Up";}
-				}
-			}
-
-			// check if the character moves along the x-axis
-			if(this.x + x_direction - (this.width/2) <= 0) // at the left edge
-			{
-				this.x = (this.width/2);
-				this.x_speed = 0;
-			}
-			else if ((this.x + x_direction + (this.width/2)) >= maxX[this.mapId]) // at the right edge
-			{
-				this.x = maxX[this.mapId] - (this.width/2);
-				this.x_speed = 0;
-			}
-			else
-			{
-				this.x_speed = x_direction;
-			}
-
-			//check if the character moves along the y-axis
-			if (this.y + y_direction - this.height <= minY[this.mapId]) // at the top edge
-			{
-				this.y = minY[this.mapId] + this.height;
-				this.y_speed = 0;
-			}
-			else if (this.y + y_direction >= maxY[this.mapId]) // at the bottom edge
-			{
-				this.y = maxY[this.mapId];
-				this.y_speed = 0;
-			}
-			else
-			{
-				this.y_speed = y_direction;
-			}
+			this.attacks.push(new Attack("Punch", [], this));
+			this.attacks.push(new Attack("Snowball", [{name:"Snowball",damage:5}], this));
 		}
 		else
 		{
-			this.x_speed = 0;
-			this.y_speed = 0;
+			this.attacks.push(new Attack("Punch", [], this));
+			this.attacks.push(new Attack("Arrow", [{name:"Arrow",damage:5}], this));
 		}
+	};
 
-		var blocked_directions = this.collisionCheck();
+	this.loadAttacks();
+};
 
+exports.Entity.prototype.initialize = function()
+{
+	if (typeof(Image) !== "undefined")
+	{
+	this.sprite = new Image();
+	this.weaponSprite = new Image();
+}
+};
+
+exports.Entity.prototype.move = function(x_direction, y_direction)
+{
+	if (x_direction != 0 || y_direction != 0)
+	{
+		this.knockback = false;
+
+		// change direction even if they are blocked and can't move
 		if (this.attack_counter <= 5)
 		{
-			if (this.y_speed == 0 && this.x_speed != 0)
+			if (this.x_speed != x_direction)
 			{
 				if (x_direction > 0) {this.direction = "Right";}
 				else if (x_direction < 0) {this.direction = "Left";}
 			}
-			else if (this.x_speed == 0 && this.y_speed != 0)
+			else if (this.y_speed != y_direction)
+			{
+				if (y_direction > 0) {this.direction = "Down";}
+				else if (y_direction < 0) {this.direction = "Up";}
+			}
+			else if (this.y_speed == 0 && x_direction != 0)
+			{
+				if (x_direction > 0) {this.direction = "Right";}
+				else if (x_direction < 0) {this.direction = "Left";}
+			}
+			else if (this.x_speed == 0 && y_direction != 0)
 			{
 				if (y_direction > 0) {this.direction = "Down";}
 				else if (y_direction < 0) {this.direction = "Up";}
 			}
 		}
 
-		return blocked_directions;
-	};
+		// check if the character moves along the x-axis
+		if(this.x + x_direction - (this.width/2) <= 0) // at the left edge
+		{
+			this.x = (this.width/2);
+			this.x_speed = 0;
+		}
+		else if ((this.x + x_direction + (this.width/2)) >= maxX[this.mapId]) // at the right edge
+		{
+			this.x = maxX[this.mapId] - (this.width/2);
+			this.x_speed = 0;
+		}
+		else
+		{
+			this.x_speed = x_direction;
+		}
+
+		//check if the character moves along the y-axis
+		if (this.y + y_direction - this.height <= minY[this.mapId]) // at the top edge
+		{
+			this.y = minY[this.mapId] + this.height;
+			this.y_speed = 0;
+		}
+		else if (this.y + y_direction >= maxY[this.mapId]) // at the bottom edge
+		{
+			this.y = maxY[this.mapId];
+			this.y_speed = 0;
+		}
+		else
+		{
+			this.y_speed = y_direction;
+		}
+	}
+	else
+	{
+		this.x_speed = 0;
+		this.y_speed = 0;
+	}
+
+	var blocked_directions = this.collisionCheck();
+
+	if (this.attack_counter <= 5)
+	{
+		if (this.y_speed == 0 && this.x_speed != 0)
+		{
+			if (x_direction > 0) {this.direction = "Right";}
+			else if (x_direction < 0) {this.direction = "Left";}
+		}
+		else if (this.x_speed == 0 && this.y_speed != 0)
+		{
+			if (y_direction > 0) {this.direction = "Down";}
+			else if (y_direction < 0) {this.direction = "Up";}
+		}
+	}
+
+	return blocked_directions;
 };
 
 //display the entity
@@ -229,22 +232,28 @@ exports.Entity.prototype.render = function()
 		context.restore();
 	}
 
-	this.renderWeapon();
+	if (this.current_attack >= 0)
+	{
+		for (var i in this.attacks[this.current_attack].weapons)
+		{
+			this.renderWeapon(this.attacks[this.current_attack].name, this.attacks[this.current_attack].weapons[i].name);
+		}
+	}
 };
 
 // display the entities current weapon
-exports.Entity.prototype.renderWeapon = function()
+exports.Entity.prototype.renderWeapon = function(attack_name, weapon_name)
 {
 	var x;
 	var y;
 
-	if (this.attack == 2 && typeof(weaponSprite[this.attack2]) !== "undefined" && weaponSprite[this.attack2][getDirNum(this.direction)][0].complete)
+	if (typeof(weaponSprite[weapon_name]) !== "undefined" && weaponSprite[weapon_name][getDirNum(this.direction)][0].complete)
 	{
-		var n = Math.floor((attackFrameLength[this.attack2] - this.attack_counter) / (attackFrameLength[this.attack2] / playerAttackSprite[this.spriteName][this.attack2][0].length)) % playerAttackSprite[this.spriteName][this.attack2][0].length;
+		var n = Math.floor((this.attacks[this.current_attack].frame_length - this.attack_counter) / (this.attacks[this.current_attack].frame_length / playerAttackSprite[this.spriteName][attack_name][0].length)) % playerAttackSprite[this.spriteName][attack_name][0].length;
 
-		if (n < weaponSprite[this.attack2][getDirNum(this.direction)].length)
+		if (n < weaponSprite[attack_name][getDirNum(this.direction)].length)
 		{
-			var img = weaponSprite[this.attack2][getDirNum(this.direction)][n];
+			var img = weaponSprite[attack_name][getDirNum(this.direction)][n];
 			if (typeof(img.y_offset) !== "undefined" && img.y_offset != null)
 			{
 				context.drawImage(
@@ -347,16 +356,9 @@ exports.Entity.prototype.updateSprite = function()
 {
 	this.sprite = new Image();
 
-	if (this.attack_counter > 0)
+	if (this.attack_counter > 0 && this.current_attack >= 0)
 	{
-		if (this.attack == 1)
-		{
-			this.sprite = playerAttackSprite[this.spriteName][this.attack1][getDirNum(this.direction)][Math.floor((this.attack_length - this.attack_counter) / (this.attack_length / 3))];
-		}
-		else
-		{
-			this.sprite = playerAttackSprite[this.spriteName][this.attack2][getDirNum(this.direction)][Math.floor((this.attack_length - this.attack_counter) / (this.attack_length / 3))];
-		}
+		this.sprite = playerAttackSprite[this.spriteName][this.attacks[this.current_attack].name][getDirNum(this.direction)][Math.floor((this.attacks[this.current_attack].frame_length - this.attack_counter) / (this.attacks[this.current_attack].frame_length / playerAttackSprite[this.spriteName][this.attacks[this.current_attack].name][getDirNum(this.direction)].length))];
 	}
 	else if ((this.x_speed == 0 && this.y_speed == 0) || this.z_speed != 0)
 	{
@@ -372,9 +374,11 @@ exports.Entity.prototype.updateSprite = function()
 // in the future, maintain a list of entities within 100 units of the entity for faster checking
 exports.Entity.prototype.collisionCheck = function()
 {
+	console.log("collisionCheck");
 	var blocked_directions = [0,0,0,0];
+	var collisionList = this.getNearbyObjects();
 
-	for (var i in this.collisionList)
+	for (var i in collisionList)
 	{
 		// if the entity isn't trying to move, stop checking for collisions
 		if (Math.abs(this.x_speed) + Math.abs(this.y_speed) + Math.abs(this.z_speed) == 0)
@@ -382,7 +386,7 @@ exports.Entity.prototype.collisionCheck = function()
 			break;
 		}
 
-		var c = this.collisionCheckAux(this, this.collisionList[i]);
+		var c = this.collisionCheckAux(this, collisionList[i]);
 
 		// check if their movement is blocked on the x-axis
 		if (c[0] == 1 && this.x_speed < 0)
@@ -451,11 +455,13 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 			if (e1.x - (e1.width / 2) + e1.x_speed >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) + e1.x_speed <= e2.x + (e2.width / 2))
 			{
 				c[0] = 1; //if there is no space to your left, you can only move right
+				console.log("blocked on x");
 			}
 			// check if there is space to right of you to move
 			if (e1.x + (e1.width / 2) + e1.x_speed >= e2.x - (e2.width / 2) && e1.x + (e1.width / 2) + e1.x_speed <= e2.x + (e2.width / 2))
 			{
 				c[0] = -1; //if there is no space to your right, you can only move left
+				console.log("blocked on x");
 			}
 		}
 
@@ -473,11 +479,13 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 			if (e1.y - e1.depth + e1.y_speed >= e2.y - e2.depth && e1.y - e1.depth + e1.y_speed <= e2.y)
 			{
 				c[1] = 1; // if there is no space behind you, you can move downward but not upward
+				console.log("blocked on y");
 			}
 			// check if there is space in front of you to move
 			else if (e1.y + e1.y_speed >= e2.y - e2.depth && e1.y + e1.y_speed <= e2.y)
 			{
 				c[1] = -1; // if there is no space in front of you, you can move upward but not downward
+				console.log("blocked on y");
 			}
 		}
 
@@ -510,23 +518,18 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 exports.Entity.prototype.update = function()
 {
 	// reduce the time before they can attack again
-	if (this.attack_counter > 0)
+	if (this.attack_counter > 0 && this.current_attack >= 0)
 	{
-		
-		if (this.attack == 1 && attackFrameLength[this.attack1] - this.attack_counter == Math.ceil(damageFrame[this.attack1] / this.attack_speed) - 2)
+		if (this.attacks[this.current_attack].checkDamageFrame(this.attack_counter))
 		{
-			this.createAttackAux();
-		}
-		else if (this.attack == 2 && attackFrameLength[this.attack2] - this.attack_counter == Math.ceil(damageFrame[this.attack2] / this.attack_speed) - 2)
-		{
-			this.createProjectileAux();
+			this.createAttack(this.attacks[this.current_attack]);
 		}
 
 		this.attack_counter--;
 
 		if (this.attack_counter <= 0)
 		{
-			this.attack = 0;
+			this.current_attack = -1;
 		}
 	}
 
@@ -589,107 +592,105 @@ exports.Entity.prototype.takeDamage = function(x, y, damage)
 	}
 };
 
-exports.Entity.prototype.createAttack = function(n)
+exports.Entity.prototype.setAttack = function(attack)
 {
-	if (this.attack_counter <= 1)
+	if (attack >= 0)
 	{
-		if (n == 1)
-		{
-			this.attack = 1;
-			this.attack_counter = Math.ceil(attackFrameLength[this.attack1] / this.attack_speed);
-			this.attack_length = this.attack_counter;
-		}
-		else if (n == 2)
-		{
-			this.attack = 2;
-			this.attack_counter = Math.ceil(attackFrameLength[this.attack2] / this.attack_speed);
-			this.attack_length = this.attack_counter;
-		}
-	}
-};
-
-exports.Entity.prototype.createAttackAux = function()
-{
-	var x = 0;
-	var y = 0;
-
-	if (this.direction == "Down")
-	{
-		x = this.x;
-		y = this.y + 2;
-	}
-	else if (this.direction == "Up")
-	{
-		x = this.x;
-		y = this.y - this.depth - 2;
-	}
-	else if (this.direction == "Left")
-	{
-		x = this.x - (this.width/2) - 2;
-		y = this.y - (this.depth/2)
-	}
-	else if (this.direction == "Right")
-	{
-		x = this.x + (this.width/2) + 2;
-		y = this.y - (this.depth/2);
-	}
-
-	if(typeof(module) === 'undefined')
-	{
-		socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), this.attack_damage, this.mapId);
-	}
-	else
-	{
-		damageList[this.mapId].push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), this.attack_damage, this.mapId));
+		this.current_attack = attack;
+		this.attack_counter = this.attacks[this.current_attack].frame_length;
 	}
 }
 
-exports.Entity.prototype.createProjectileAux = function()
+exports.Entity.prototype.createAttack = function(attack)
 {
 	var x = 0;
 	var y = 0;
-	var x_speed = 0;
-	var y_speed = 0;
 
-	if (this.direction == "Down")
+	// create a melee attack
+	if (attack.attack_type == 0)
 	{
-		x = this.x - (this.width / 4);
-		y = this.y;
-		x_speed = 0;
-		y_speed = 3;
-	}
-	else if (this.direction == "Up")
-	{
-		x = this.x + (this.width / 4);
-		y = this.y - (this.depth);
-		x_speed = 0;
-		y_speed = -3;
-	}
-	else if (this.direction == "Left")
-	{
-		x = this.x - (this.width / 2);
-		y = this.y;
-		x_speed = -3;
-		y_speed = 0;
-	}
+		if (this.direction == "Down")
+		{
+			x = this.x;
+			y = this.y + 2;
+		}
+		else if (this.direction == "Up")
+		{
+			x = this.x;
+			y = this.y - this.depth - 2;
+		}
+		else if (this.direction == "Left")
+		{
+			x = this.x - (this.width/2) - 2;
+			y = this.y - (this.depth/2);
+		}
 		else if (this.direction == "Right")
-	{
-		x = this.x + (this.width / 2);
-		y = this.y;
-		x_speed = 3;
-		y_speed = 0;
+		{
+			x = this.x + (this.width/2) + 2;
+			y = this.y - (this.depth/2);
+		}
+
+		if(typeof(module) === 'undefined')
+		{
+			socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), attack.damage, this.mapId);
+		}
+		else
+		{
+			damageList[this.mapId].push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), attack.damage, this.mapId));
+		}
 	}
 
-	if(typeof(module) === 'undefined')
+	// create a ranged attack (projectile)
+	else if (attack.attack_type == 1)
 	{
-		socket.emit('createProjectile', x + (this.x_speed * 2), y + (this.y_speed * 2), x_speed, y_speed,
-			 new Date().getTime() + (2000/60), Math.round(this.attack_damage * 0.75), this.attack2, this.mapId);
+		var x_speed = 0;
+		var y_speed = 0;
+
+		if (this.direction == "Down")
+		{
+			x = this.x - (this.width / 4);
+			y = this.y;
+			x_speed = 0;
+			y_speed = 3;
+		}
+		else if (this.direction == "Up")
+		{
+			x = this.x + (this.width / 4);
+			y = this.y - (this.depth);
+			x_speed = 0;
+			y_speed = -3;
+		}
+		else if (this.direction == "Left")
+		{
+			x = this.x - (this.width / 2);
+			y = this.y;
+			x_speed = -3;
+			y_speed = 0;
+		}
+			else if (this.direction == "Right")
+		{
+			x = this.x + (this.width / 2);
+			y = this.y;
+			x_speed = 3;
+			y_speed = 0;
+		}
+
+		if(typeof(module) === 'undefined')
+		{
+			socket.emit('createProjectile', x + (this.x_speed * 2), y + (this.y_speed * 2), x_speed, y_speed,
+				 new Date().getTime() + (2000/60), attack.damage, attack.weapons[0].name, this.mapId);
+		}
+		else
+		{
+			projectileList[this.mapId].push(new Projectile(x + (this.x_speed * 2), y + (this.y_speed * 2), x_speed, y_speed,
+				this.id, new Date().getTime() + (2000/60), attack.damage, attack.weapons[0].name, this.mapId));
+		}
 	}
 	else
 	{
-		projectileList[this.mapId].push(new Projectile(x + (this.x_speed * 2), y + (this.y_speed * 2), x_speed, y_speed,
-			this.id, new Date().getTime() + (2000/60), Math.round(this.attack_damage * 0.75), this.attack2, this.mapId));
+		console.log("entity.createAttack(): invalid attack type");
 	}
 };
+
 
 }(typeof exports === 'undefined' ? this.shareEntity = {} : exports));
