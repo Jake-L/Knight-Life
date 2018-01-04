@@ -31,6 +31,9 @@ var healthBarGreenSprite = new Image();
 healthBarGreenSprite.src = "img//healthbargreen.png";
 var minimapbox = new Image();
 minimapbox.src = "img//minimapbox.png";
+var itemSprite = [];
+itemSprite["money"] = new Image();
+itemSprite["money"].src = "img//money.png";
 
 //key mappings
 var left_key = 37;
@@ -607,6 +610,7 @@ function Player(mapId)
 	this.entity.allyState = "Player";
 	this.healthRegenCounter = 0;
 	this.portalCounter = 0;
+	this.inventory = new Inventory();
 }
 
 //display the player
@@ -635,11 +639,15 @@ var render = function()
 	var entityList = [];
 	Array.prototype.push.apply(entityList, renderList);
 
+	// render mapObjects: rocks, snowmen, etc
 	for (var j in mapObjects)
 	{
 		renderList.push(mapObjects[j]);
 	}
 
+	// render items
+
+	// render projectiles
 	for (var j in projectileList)
 	{
 		renderList.push(projectileList[j]);
@@ -1015,6 +1023,7 @@ function renderMinimap()
 	}
 
 	// draw the minimap background
+	context.globalAlpha = 0.7;
 	context.fillStyle = "#C0C0C0";
 	context.fillRect(x, y, 50 * graphics_scaling, 50 * graphics_scaling);
 
@@ -1045,9 +1054,16 @@ function renderMinimap()
 		1.5 * graphics_scaling,
 		0, Math.PI * 2, false);
 	context.fill();
+	context.globalAlpha = 1;
 
 	// draw the minimap outline
 	context.drawImage(minimapbox, x - (2 * graphics_scaling), y - (2 * graphics_scaling), 54 * graphics_scaling, 54 * graphics_scaling);
+
+	// draw the user's current money
+	context.fillStyle = "#000000";
+	context.font = "bold" + 4 * graphics_scaling + "px sans-serif";
+	context.fillText(player.inventory.getItem("money").quantity,x + graphics_scaling + Math.ceil(itemSprite["money"].width * graphics_scaling / 2), y - (3 * graphics_scaling));
+	context.drawImage(itemSprite["money"], x, y - ((3 + Math.ceil(itemSprite["money"].height / 2 )) * graphics_scaling), Math.ceil(itemSprite["money"].width * graphics_scaling / 2), Math.ceil(itemSprite["money"].height * graphics_scaling / 2))
 }
 
 // check if the user clicks the mouse
@@ -1111,6 +1127,12 @@ socket.on('xpgain', function(xp, entity)
 		achievements[i].enemyDefeated(entity);
 	}
 	player.entity.addXP(xp);
+});
+
+socket.on('itemreceived', function(item)
+{
+	console.log(item);
+	player.inventory.addItem(item);
 });
 
 // server sends all the projectiles currently on screen

@@ -5,7 +5,6 @@
  */
 
 // Dependencies
-process.env.NODE_ENV = 'production';
 var express = require('express');
 var http = require('http');
 var path = require('path');
@@ -48,7 +47,7 @@ global.mapObjects = []; // non-moving map objects like rocks
 global.connected = []; // connected players
 var connection = []; 
 var killParticipation = []; // keep track of players who recently attacked an enemy
-
+var items = [];
 var updateCounter = 0;
 var updateTime = new Date().getTime();
 
@@ -61,6 +60,7 @@ function initializeMap()
 		mapObjects[mapId] = [];
 		mapEntities[mapId] = [];
 		killParticipation[mapId] = {};
+		items[mapId] = [];
 		connected[mapId] = {};
 	}
 
@@ -697,6 +697,7 @@ function entityDeath(entity)
 				if (!Number.isInteger(killParticipation[entity.mapId][entity.id][i]))
 				{
 					io.to(killParticipation[entity.mapId][entity.id][i]).emit('xpgain', xp, entity);
+					io.to(killParticipation[entity.mapId][entity.id][i]).emit('itemreceived', {name: "money", quantity: Math.ceil((Math.random() + 1) * entity.lvl)});
 				}
 			}
 
@@ -715,6 +716,7 @@ function entityDeath(entity)
 		if (!Number.isInteger(killParticipation[entity.mapId][entity.id][0]))
 		{
 			io.to(killParticipation[entity.mapId][entity.id][0]).emit('xpgain', xp, entity);
+			io.to(killParticipation[entity.mapId][entity.id][0]).emit('itemreceived', {name: "money", quantity: Math.ceil((Math.random() + 1) * entity.lvl)});
 		}
 	}
 
@@ -800,6 +802,41 @@ global.Projectile = function(x, y, x_speed, y_speed, source, spawn_time, damage,
 		}
 	};
 };
+
+/*
+function Item(name, quantity)
+{
+	this.name = name;
+	this.quantity = 1;
+	this.x;
+	this.y;
+	this.z = 10;
+	this.x_speed;
+	this.y_speed;
+	this.z_speed;
+	this.counter;
+
+	if (quantity != null)
+	{
+		this.quantity = quantity;
+	}
+}
+
+Item.prototype.update = function()
+{
+	if (counter > 0)
+	{
+		this.x += x_speed;
+		this.y += y_speed;
+		this.z 
+	}
+};
+
+Item.prototype.drop = function(x, y)
+{
+	this.x = x;
+	this.y = y;
+};*/
 
 // check if an attack damaged any entities
 function checkDamage()
