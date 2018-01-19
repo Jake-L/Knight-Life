@@ -94,7 +94,7 @@ exports.Entity = function(x,y,spriteName,mapId)
 		}
 		else
 		{
-			this.attacks.push(new Attack("Punch", [], this));
+			this.attacks.push(new Attack("Sword", [{name:"Sword",damage:10}], this));
 			this.attacks.push(new Attack("Arrow", [{name:"Arrow",damage:5}], this));
 		}
 	};
@@ -254,8 +254,10 @@ exports.Entity.prototype.renderWeapon = function(attack_name, weapon_name)
 		if (n < weaponSprite[attack_name][getDirNum(this.direction)].length)
 		{
 			var img = weaponSprite[attack_name][getDirNum(this.direction)][n];
+
 			if (typeof(img.y_offset) !== "undefined" && img.y_offset != null)
 			{
+				console.log("applying offset");
 				context.drawImage(
 				img,
 				(this.x - (img.width / 2) - x_offset) * graphics_scaling,
@@ -374,7 +376,6 @@ exports.Entity.prototype.updateSprite = function()
 // in the future, maintain a list of entities within 100 units of the entity for faster checking
 exports.Entity.prototype.collisionCheck = function()
 {
-	console.log("collisionCheck");
 	var blocked_directions = [0,0,0,0];
 	var collisionList = this.getNearbyObjects();
 
@@ -455,13 +456,13 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 			if (e1.x - (e1.width / 2) + e1.x_speed >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) + e1.x_speed <= e2.x + (e2.width / 2))
 			{
 				c[0] = 1; //if there is no space to your left, you can only move right
-				console.log("blocked on x");
+				//console.log("blocked on x");
 			}
 			// check if there is space to right of you to move
 			if (e1.x + (e1.width / 2) + e1.x_speed >= e2.x - (e2.width / 2) && e1.x + (e1.width / 2) + e1.x_speed <= e2.x + (e2.width / 2))
 			{
 				c[0] = -1; //if there is no space to your right, you can only move left
-				console.log("blocked on x");
+				//console.log("blocked on x");
 			}
 		}
 
@@ -479,13 +480,13 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 			if (e1.y - e1.depth + e1.y_speed >= e2.y - e2.depth && e1.y - e1.depth + e1.y_speed <= e2.y)
 			{
 				c[1] = 1; // if there is no space behind you, you can move downward but not upward
-				console.log("blocked on y");
+				//console.log("blocked on y");
 			}
 			// check if there is space in front of you to move
 			else if (e1.y + e1.y_speed >= e2.y - e2.depth && e1.y + e1.y_speed <= e2.y)
 			{
 				c[1] = -1; // if there is no space in front of you, you can move upward but not downward
-				console.log("blocked on y");
+				//console.log("blocked on y");
 			}
 		}
 

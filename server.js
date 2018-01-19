@@ -618,6 +618,12 @@ setInterval(function()
 	}
 	checkDamage();
 
+	// spawn money on the map
+	if (new Date().getTime() % 1000 == 0)
+	{
+		items[0].push(new Item("money", Math.ceil(Math.random() * 5) + 1, Math.random() * maxX[0], Math.random() * maxY[0]));
+	}
+
 	// update all the entities on the map
 	for (var mapId in mapEntities)
 	{
@@ -632,6 +638,31 @@ setInterval(function()
 				e.entity.faction = mapEntities[mapId][i].entity.faction;
 				e.targetType = mapEntities[mapId][i].targetType;
 				mapEntities[mapId][i] = e;
+			}
+		}
+	}
+
+	// check if any players have picked up items
+	for (var mapId in items)
+	{
+		for (var j in connected[mapId])
+		{
+			var i = 0;
+			while (i < items[mapId].length)
+			{
+				if (items[mapId][i].collisionCheck(connected[mapId][j]))
+				{
+					// tell the client that they picked up the item
+					io.to(connected[mapId][j].id).emit('itemreceived', items[mapId][i]);
+					console.log(connected[mapId][j].display_name + " picked up " + items[mapId][i].quantity + " " + items[mapId][i].name);
+
+					// remove the item from the list now that it's been picked up
+					items[mapId].splice(i, 1);
+				}
+				else
+				{
+					i++;
+				}
 			}
 		}
 	}
@@ -749,7 +780,7 @@ global.Damage = function(x, y, source, damage_time, damage, mapId)
 };
 
 // holds information about projectiles on-screen
-global.Projectile = function(x, y, x_speed, y_speed, source, spawn_time, damage, spriteName, mapId)
+global.Projectile = function(x, y, x_speed, y_speed, source, update_time, damage, spriteName, mapId)
 {
 	this.x = x;
 	this.y = y;
@@ -764,14 +795,14 @@ global.Projectile = function(x, y, x_speed, y_speed, source, spawn_time, damage,
 	this.height = 8;
 	this.width = 8;
 	this.depth = 6;
-	this.spawn_time = spawn_time;
+	this.update_time = update_time;
 	this.mapId = mapId;
 
 	this.update = function()
 	{
-		if(new Date().getTime() > this.spawn_time)
+		if(new Date().getTime() > this.update_time)
 		{
-			var n = Math.floor((new Date().getTime() - this.spawn_time)/(1000/60));
+			var n = Math.floor((new Date().getTime() - this.update_time)/(1000/60));
 			this.x = this.spawn_x + (n * this.x_speed);
 			this.y = this.spawn_y + (n * this.y_speed);
 		}
@@ -803,40 +834,28 @@ global.Projectile = function(x, y, x_speed, y_speed, source, spawn_time, damage,
 	};
 };
 
-/*
-function Item(name, quantity)
+
+function Item(name, quantity, x, y)
 {
 	this.name = name;
-	this.quantity = 1;
-	this.x;
-	this.y;
-	this.z = 10;
-	this.x_speed;
-	this.y_speed;
-	this.z_speed;
-	this.counter;
-
-	if (quantity != null)
-	{
-		this.quantity = quantity;
-	}
-}
-
-Item.prototype.update = function()
-{
-	if (counter > 0)
-	{
-		this.x += x_speed;
-		this.y += y_speed;
-		this.z 
-	}
-};
-
-Item.prototype.drop = function(x, y)
-{
+	this.quantity = quantity;
 	this.x = x;
 	this.y = y;
-};*/
+	this.z = 2;
+};
+
+Item.prototype.collisionCheck = function(e)
+{
+	if (e.x - (e.width / 2) <= this.x && e.x + (e.width / 2) >= this.x 
+		&& e.y - (e.depth / 2) <= this.y && e.y + (e.depth / 2) >= this.y)
+	{
+		return true;
+	} 
+	else
+	{
+		return false;
+	}
+};
 
 // check if an attack damaged any entities
 function checkDamage()
@@ -899,7 +918,7 @@ function checkDamage()
 
 		for (var i = 0; i < n; i++)
 		{
-			if (currentTime.getTime() >= projectileList[mapId][i].spawn_time)
+			if (currentTime.getTime() >= projectileList[mapId][i].update_time)
 			{
 				projectileList[mapId][i].update();
 
@@ -1015,9 +1034,9 @@ io.on('connection', function(socket)
 		damageList[mapId].push(new Damage(x, y, socket.id, damage_time, damage, mapId));
 	});
 
-	socket.on('createProjectile', function(x, y, x_speed, y_speed, spawn_time, damage, spriteName, mapId)
+	socket.on('createProjectile', function(x, y, x_speed, y_speed, update_time, damage, spriteName, mapId)
 	{
-		projectileList[mapId].push(new Projectile(x, y, x_speed, y_speed, socket.id, Math.max(spawn_time, new Date().getTime()), damage, spriteName, mapId));
+		projectileList[mapId].push(new Projectile(x, y, x_speed, y_speed, socket.id, Math.max(update_time, new Date().getTime()), damage, spriteName, mapId));
 	});
 
 	socket.on('death', function()
@@ -1047,7 +1066,6 @@ io.on('connection', function(socket)
 // trasfer data to the client
 setInterval(function()
 {
-	console.log("transmitting players and projects to client");
 	for (var mapId in connected)
 	{
 		// send all active projectiles to the client
@@ -1055,7 +1073,7 @@ setInterval(function()
 
 		for (var i in projectileList[mapId])
 		{
-			if (new Date().getTime() >= projectileList[mapId][i].spawn_time)
+			if (new Date().getTime() >= projectileList[mapId][i].update_time)
 			{
 				p.push(projectileList[mapId][i]);
 			}
@@ -1091,7 +1109,7 @@ setInterval(function()
 			}
 
 			io.to(i).emit('players', players);
-			io.to(i).emit('projectiles', p);
+			io.to(i).emit('viewOnly', p, items[mapId]);
 		}
 	}
 

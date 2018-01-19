@@ -22,9 +22,6 @@ var ping = 0;
 var context = canvas.getContext('2d');
 context.imageSmoothingEnabled = false;
 context.fillStyle = "#ADD8E6";
-var backgroundSprite = new Image();
-var backgroundSpriteTop = new Image();
-var weatherSprite = [];
 var healthBarSprite = new Image();
 healthBarSprite.src = "img//healthbar.png";
 var healthBarGreenSprite = new Image();
@@ -34,6 +31,8 @@ minimapbox.src = "img//minimapbox.png";
 var itemSprite = [];
 itemSprite["money"] = new Image();
 itemSprite["money"].src = "img//money.png";
+itemSprite["moneyIcon"] = new Image();
+itemSprite["moneyIcon"].src = "img//moneyIcon.png";
 
 //key mappings
 var left_key = 37;
@@ -64,6 +63,8 @@ var weaponSprite = {};
 var username = "";
 var playerXP = 0;
 var minimapScale = 16;
+
+var view = new View();
 
 function getDirName(n)
 {
@@ -121,7 +122,7 @@ window.onload = function()
 {
 	document.body.appendChild(canvas);
 	loadMap(defaultmapId);
-	loadSprite("player",["Punch","Arrow"]);
+	loadSprite("player",["Punch","Sword","Arrow"]);
 	loadSprite("iceman",["Punch","Snowball"]);
 	loadWeapons();
 
@@ -155,30 +156,19 @@ function spawnPlayer(mapId)
 function loadMap(mapId)
 {
 	console.log("loading map " + mapId);
-	backgroundSprite = new Image();
-	backgroundSpriteTop = new Image();
+
+	view.loadMap(mapId);
 
 	if (mapId == 0)
 	{
 		audio = new Audio("audio//track2.mp3");
-		backgroundSprite.src = "img//grass1.png";
-		backgroundSpriteTop.src = "img//grass1top.png";
 		portalList[0] = new Portal(990, 300, 20, 20, 1, 10, 300, "Right");
 		weatherSprite = [];
 	}
 	else if (mapId == 1)
 	{
 		audio = new Audio("audio//track1.mp3");
-		backgroundSprite.src = "img//snow1.png";
-		backgroundSpriteTop.src = "img//snow1top.png";
 		portalList[0] = new Portal(10, 300, 20, 20, 0, 990, 300, "Left");
-		weatherSprite = [];
-
-		for (var i = 0; i < 4; i++)
-		{
-			weatherSprite[i] = new Image();
-			weatherSprite[i].src = "img//snowfall" + i + ".png";
-		}
 	}
 }
 
@@ -211,7 +201,7 @@ function loadSprite(spriteName, attacks)
 	for (var k in attacks)
 	{
 		var a = [];
-		console.log(attacks[k]);
+
 		for (var i = 0; i < 4; i++)
 		{
 			var s = [];
@@ -253,7 +243,7 @@ function loadWeapons()
 
 		// load snowball sprites
 		weaponSprite["Snowball"][j][0] = new Image();
-		weaponSprite["Snowball"][j][0].src = "img//attackSnowball" + getDirName(j) + "0.png";
+		2weaponSprite["Snowball"][j][0].src = "img//attackSnowball" + getDirName(j) + "0.png";
 		weaponSprite["Snowball"][j][1] = new Image();
 		weaponSprite["Snowball"][j][1].src = "img//attackSnowball" + getDirName(j) + "1.png";
 
@@ -274,7 +264,10 @@ function loadWeapons()
 	// set sprite specific y-offsets, for images that need to be displayed below the entity
 	weaponSprite["Arrow"][3][0].y_offset = 6;
 	weaponSprite["Arrow"][3][1].y_offset = 3;
-	weaponSprite["Sword"][0][3].y_offset = 7;
+	weaponSprite["Sword"][0][3].y_offset = 6; //left attack last frame
+	weaponSprite["Sword"][2][3].y_offset = 6; // right attack last frame
+	weaponSprite["Sword"][3][2].y_offset = 10; // down attack second last frame
+	weaponSprite["Sword"][3][3].y_offset = 11; // down attack last frame
 }
 
 var ucounter = 0;
@@ -308,7 +301,6 @@ function step()
 
   	render();
 	rcounter += 1;
-	//renderBackground();
 
 	if (rcounter >= 100)
 	{
@@ -332,13 +324,11 @@ function getUsername()
 {
 	var username;
 	var c = decodeURIComponent(document.cookie).split(';');
-	console.log(c);
 
 	// read username from a cookie
 	if (c != null && c[0].substr(0,8) == "username" && c[0].length > 9)
 	{
 		username = c[0].substr(9,c[0].length - 1);
-		console.log(username);
 	}
 
 	// get username from user
@@ -449,6 +439,7 @@ var update = function()
 			{
 				console.log(portalList);
 				console.log("moving to map " + portalList[i].destination_mapId)
+				view.clear();
 				player.entity.x = portalList[i].destination_x;
 				player.entity.y = portalList[i].destination_y;
 				player.entity.mapId = portalList[i].destination_mapId;
@@ -513,71 +504,6 @@ var update = function()
 
 };
 
-//displays the background image
-function renderBackground()
-{
-	context.fillRect(0, 0, width, height);
-
-	if (backgroundSprite.complete && backgroundSprite.naturalHeight !== 0)
-	{
-		var x_counter = Math.ceil((width / graphics_scaling) / backgroundSprite.width) + 1;
-		var y_counter = Math.ceil((height / graphics_scaling) / backgroundSprite.height) + 1;
-
-		for (i = 0; i <= x_counter; i++)
-		{
-			for (j = 0; j <= y_counter; j++)
-			{
-				// draw a different background rectangle at the very top of the screen
-				if (j == 0 && y_offset < backgroundSpriteTop.height)
-				{
-					context.drawImage(backgroundSpriteTop,
-					((backgroundSpriteTop.width * i) - (x_offset % backgroundSpriteTop.width)) * graphics_scaling, //x position
-					((backgroundSpriteTop.height * j) - (y_offset % backgroundSpriteTop.height)) * graphics_scaling, //y position
-					backgroundSpriteTop.width * graphics_scaling, //width
-					backgroundSpriteTop.height * graphics_scaling); //height
-				}
-				// draw the usual background rectangle
-				else
-				{
-					context.drawImage(backgroundSprite,
-					((backgroundSprite.width * i) - (x_offset % backgroundSprite.width)) * graphics_scaling, //x position
-					((backgroundSprite.height * j) - (y_offset % backgroundSprite.height)) * graphics_scaling, //y position
-					backgroundSprite.width * graphics_scaling, //width
-					backgroundSprite.height * graphics_scaling); //height
-				}
-			}
-		}
-	}
-}
-
-// display the current weather (snow, rain, etc.) if there is any
-function renderWeather()
-{
-	if (typeof(weatherSprite) !== "undefined" && weatherSprite.length > 0)
-	{
-		var img = weatherSprite[Math.floor((new Date().getTime() % 400) / 100)];
-
-		if (img.complete && img.naturalHeight !== 0)
-		{
-			var x_counter = Math.ceil((width / graphics_scaling) / img.width) + 1;
-			var y_counter = Math.ceil((height / graphics_scaling) / img.height) + 1;
-
-			for (i = 0; i <= x_counter; i++)
-			{
-				for (j = 0; j <= y_counter; j++)
-				{
-					// draw the usual background rectangle
-					context.drawImage(img,
-					((img.width * i) - (x_offset % img.width)) * graphics_scaling + Math.floor(((new Date().getTime() % (graphics_scaling * 100)) / 100) / graphics_scaling), //x position
-					((img.height * j) - (y_offset % img.height)) * graphics_scaling + Math.floor(((new Date().getTime() % (graphics_scaling * 100)) / 100) / graphics_scaling), //y position
-					img.width * graphics_scaling, //width
-					img.height * graphics_scaling); //height
-				}
-			}
-		}
-	}
-}
-
 //initialize an entity from a pre-existing entity
 function copyEntity(old)
 {
@@ -622,7 +548,7 @@ Player.prototype.render = function()
 //display graphics
 var render = function()
 {
-	renderBackground();
+	view.renderBackground();
 
 	//create a list of all the entities to be rendered
 	var renderList = [];
@@ -639,20 +565,6 @@ var render = function()
 	var entityList = [];
 	Array.prototype.push.apply(entityList, renderList);
 
-	// render mapObjects: rocks, snowmen, etc
-	for (var j in mapObjects)
-	{
-		renderList.push(mapObjects[j]);
-	}
-
-	// render items
-
-	// render projectiles
-	for (var j in projectileList)
-	{
-		renderList.push(projectileList[j]);
-	}
-
 	// sort the list of players
 	renderSort(renderList);
 
@@ -661,8 +573,13 @@ var render = function()
 		renderList[n].render(); // render each player
 	}
 
+	// render mapObjects: rocks, snowmen, etc
+	// render items
+	// render projectiles
+	view.render();
+
 	//display weather if there is any
-	renderWeather();
+	view.renderWeather();
 
 	for (var i in entityList)
 	{
@@ -856,67 +773,35 @@ function get_offset()
 }
 
 // holds information about projectiles on-screen
-function Projectile(p)
+function InitializeProjectile(p)
 {
-	//this.x = p.x;
-	//this.y = p.y;
-	this.x = p.spawn_x;
-	this.y = p.spawn_y;
-	this.z = p.z;
-	this.x_speed = p.x_speed;
-	this.y_speed = p.y_speed;
-	this.spriteName = p.spriteName;
-	this.spawn_time = p.spawn_time;
-	this.sprite = new Image();
+	p.sprite = new Image();
+	p.x = p.spawn_x;
+	p.y = p.spawn_y;
 
-	if (this.spriteName == "Snowball")
+	if (p.spriteName == "Snowball")
 	{
-		this.sprite.src = "img//" + this.spriteName + ".png";
+		p.sprite.src = "img//" + p.spriteName + ".png";
 	}
 	else
 	{
-		if (this.x_speed > 0)
+		if (p.x_speed > 0)
 		{
-			this.sprite.src = "img//" + this.spriteName + "Right.png";
+			p.sprite.src = "img//" + p.spriteName + "Right.png";
 		}
-		else if (this.x_speed < 0)
+		else if (p.x_speed < 0)
 		{
-			this.sprite.src = "img//" + this.spriteName + "Left.png";
+			p.sprite.src = "img//" + p.spriteName + "Left.png";
 		}
-		else if (this.y_speed > 0)
+		else if (p.y_speed > 0)
 		{
-			this.sprite.src = "img//" + this.spriteName + "Down.png";
+			p.sprite.src = "img//" + p.spriteName + "Down.png";
 		}
-		else if (this.y_speed < 0)
+		else if (p.y_speed < 0)
 		{
-			this.sprite.src = "img//" + this.spriteName + "Up.png";
+			p.sprite.src = "img//" + p.spriteName + "Up.png";
 		}
 	}
-
-	this.render = function()
-	{
-		var n = (new Date().getTime() - this.spawn_time)/(1000/60);
-
-		if (n > 0)
-		{
-			context.save();
-			context.shadowColor = "rgba(80, 80, 80, .4)";
-			context.shadowBlur = 15 + this.z;
-			context.shadowOffsetX = 0;
-			context.shadowOffsetY = (3 + this.z) * graphics_scaling;
-
-			context.drawImage(
-				this.sprite, 
-				//(this.x - (this.sprite.width/2) - x_offset) * graphics_scaling,
-				//(this.y - this.sprite.height - this.z - y_offset) * graphics_scaling,
-				(this.x + (n * this.x_speed) - (this.sprite.width/2) - x_offset) * graphics_scaling,
-				(this.y + (n * this.y_speed) - this.sprite.height - this.z - y_offset) * graphics_scaling,
-				this.sprite.width * graphics_scaling,
-				this.sprite.height * graphics_scaling);
-
-			context.restore();
-		}
-	};
 }
 
 function flyText(x, y, s, colour)
@@ -1062,8 +947,8 @@ function renderMinimap()
 	// draw the user's current money
 	context.fillStyle = "#000000";
 	context.font = "bold" + 4 * graphics_scaling + "px sans-serif";
-	context.fillText(player.inventory.getItem("money").quantity,x + graphics_scaling + Math.ceil(itemSprite["money"].width * graphics_scaling / 2), y - (3 * graphics_scaling));
-	context.drawImage(itemSprite["money"], x, y - ((3 + Math.ceil(itemSprite["money"].height / 2 )) * graphics_scaling), Math.ceil(itemSprite["money"].width * graphics_scaling / 2), Math.ceil(itemSprite["money"].height * graphics_scaling / 2))
+	context.fillText(player.inventory.getItem("money").quantity,x + graphics_scaling + Math.ceil(itemSprite["moneyIcon"].width * graphics_scaling / 2), y - (3 * graphics_scaling));
+	context.drawImage(itemSprite["moneyIcon"], x, y - ((3 + Math.ceil(itemSprite["moneyIcon"].height / 2 )) * graphics_scaling), Math.ceil(itemSprite["moneyIcon"].width * graphics_scaling / 2), Math.ceil(itemSprite["moneyIcon"].height * graphics_scaling / 2))
 }
 
 // check if the user clicks the mouse
@@ -1099,6 +984,8 @@ socket.on('mapObjects', function(a)
 		p.initialize();
 		mapObjects[p.id] = p;
 	}
+
+	view.insertStatic(mapObjects);
 });
 
 // update position of other players from the server
@@ -1136,14 +1023,24 @@ socket.on('itemreceived', function(item)
 });
 
 // server sends all the projectiles currently on screen
-socket.on('projectiles', function(p)
+socket.on('viewOnly', function(p, items)
 {
-	projectileList = [];
+	var array = [];
 
 	for (var i in p)
 	{
-		projectileList.push(new Projectile(p[i]));
+		InitializeProjectile(p[i]);
+		array.push(p[i]);
 	}
+
+	for (var i in items)
+	{
+		items[i].sprite = new Image();
+		items[i].sprite.src = "img//" + items[i].name + ".png";
+		array.push(items[i]);
+	}
+
+	view.insertDynamic(array);
 });
 
 // check current ping
