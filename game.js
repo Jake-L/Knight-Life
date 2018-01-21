@@ -331,20 +331,11 @@ function getUsername()
 		username = c[0].substr(9,c[0].length - 1);
 	}
 
-	// get username from user
+	// otherwise give them default name
 	else
 	{
-		username = prompt("Please enter your username:");
-		if (username == null || username == "")
-		{
-			username = "Player";
-		}
-		else
-		{
-			// save username to cookie
-			document.cookie = "username=" + username;
-			notificationList.push(new Notification("Default Controls","Press 1 to jump;Press 2 for basic attack;Press 3 for ranged attack"));
-		}
+		username = "Player";
+		notificationList.push(new Notification("Default Controls","Press 1 to jump;Press 2 for basic attack;Press 3 for ranged attack"));
 	}
 
 	return username;

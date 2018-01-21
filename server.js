@@ -24,8 +24,27 @@ app.get('/', function(request, response) {
 
 // Starts the server.
 server.listen(5000, function() {
-  console.log('Starting server on port 5000');
+  	console.log('Starting server on port 5000');
 	initializeMap();
+
+	// check if the users.txt file exists, and it create it if it does not
+	fs.exists('C:\\Users\\ryand_000\\GitHub\\Knight Life\\users.txt', function(exists)
+	{
+		if (exists == false)
+		{
+			fs.writeFile('C:\\Users\\ryand_000\\GitHub\\Knight Life\\users.txt', '', function(err) 
+			{
+				if (err)
+				{
+					console.log("unable to create users.txt");
+				}
+				else
+				{
+					console.log("users.txt file created successfully!");
+				}
+			});
+		}
+	});
 });
 
 // Constants
@@ -1069,14 +1088,13 @@ io.on('connection', function(socket)
 		{
 		    if(err) 
 		    {
-		    	console.log("error reading username file");
+		    	console.log("error reading from username file");
 		    	io.to(socket.id).emit('loginresult', false);
 			}
 		    var array = data.toString().split("\n");
 		    var success = false;
 		    for(i in array) 
 		    {
-		    	console.log(array[i]);
 		    	if(username == array[i].split(",")[0] && password == array[i].split(",")[1])
 		    	{
 		    		console.log("login successful for user " + username);
@@ -1089,6 +1107,59 @@ io.on('connection', function(socket)
 		    	io.to(socket.id).emit('loginresult', false);
 		    }
 		});
+	});
+
+	socket.on('register', function(username, password)
+	{
+		var valid = false;
+
+		if (username != null && username.length >= 2 && password != null && password.length >= 4)
+		{
+			fs.readFile('C:\\Users\\ryand_000\\GitHub\\Knight Life\\users.txt', function(err, data) 
+			{
+			    if(err) 
+			    {
+			    	console.log("error reading from username file");
+				}
+				else
+				{
+					// check if the username is already in use
+				    var array = data.toString().split("\n");
+				    valid = true;
+				    for(i in array) 
+				    {
+				    	if(username == array[i].split(",")[0])
+				    	{
+				    		// username is already in use, therefore not valid
+				    		valid = false;
+				    		break;
+				    	}
+				    }
+				    // username is not already in use, so it is registered
+				    if (valid == true)
+				    {
+				    	fs.appendFile('C:\\Users\\ryand_000\\GitHub\\Knight Life\\users.txt', username + "," + password + "\n", function(err) 
+				    	{
+						    if(err) 
+						    {
+						        console.log("error writing to username file");
+						        valid = false;
+						    }
+						    else
+						    {
+							    console.log("User " + username + " was registered!");
+							    io.to(socket.id).emit('registrationresult', true, username);
+							}
+					    });
+				    }
+				}
+			});
+		}
+
+		if (valid == false)
+		{
+			io.to(socket.id).emit('registrationresult', false);
+		}
 	});
 });
 

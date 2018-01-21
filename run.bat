@@ -1,1 +1,1 @@
-node server.js > log.txt
+node server.js
