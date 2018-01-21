@@ -243,7 +243,7 @@ function loadWeapons()
 
 		// load snowball sprites
 		weaponSprite["Snowball"][j][0] = new Image();
-		2weaponSprite["Snowball"][j][0].src = "img//attackSnowball" + getDirName(j) + "0.png";
+		weaponSprite["Snowball"][j][0].src = "img//attackSnowball" + getDirName(j) + "0.png";
 		weaponSprite["Snowball"][j][1] = new Image();
 		weaponSprite["Snowball"][j][1].src = "img//attackSnowball" + getDirName(j) + "1.png";
 

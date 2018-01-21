@@ -41,6 +41,7 @@ var mapObject = require('./mapobject.js').mapObject;
 global.Attack = require('./attack.js').Attack; 
 var Entity = require('./entity.js').Entity;
 var sizeOf = require('image-size');
+var fs = require('fs');
 
 global.mapEntities = []; // all the CPUs
 global.mapObjects = []; // non-moving map objects like rocks
@@ -1048,11 +1049,11 @@ io.on('connection', function(socket)
 	socket.on('disconnect', function()
 	{
 		console.log(socket.id + " disconnected");
-		console.log("Connection entry: " + connection[socket.id]);
-		console.log("Connected entry: " + connected[0][socket.id]);
 
 		if (typeof(connection[socket.id]) !== "undefined")
 		{
+			console.log("Connection entry: " + connection[socket.id]);
+			console.log("Connected entry: " + connected[connection[socket.id].mapId][socket.id]);
 			clearAgro(socket.id, connection[socket.id].mapId);
 			delete killParticipation[connection[socket.id].mapId][socket.id];
 			delete connected[connection[socket.id].mapId][socket.id];
@@ -1060,6 +1061,34 @@ io.on('connection', function(socket)
 		}
 
 		displayPlayerCount();
+	});
+
+	socket.on('login', function(username, password)
+	{
+		fs.readFile('C:\\Users\\ryand_000\\GitHub\\Knight Life\\users.txt', function(err, data) 
+		{
+		    if(err) 
+		    {
+		    	console.log("error reading username file");
+		    	io.to(socket.id).emit('loginresult', false);
+			}
+		    var array = data.toString().split("\n");
+		    var success = false;
+		    for(i in array) 
+		    {
+		    	console.log(array[i]);
+		    	if(username == array[i].split(",")[0] && password == array[i].split(",")[1])
+		    	{
+		    		console.log("login successful for user " + username);
+		    		io.to(socket.id).emit('loginresult', true, username);
+		    		success = true;
+		    	}
+		    }
+		    if (success == false)
+		    {
+		    	io.to(socket.id).emit('loginresult', false);
+		    }
+		});
 	});
 });
 

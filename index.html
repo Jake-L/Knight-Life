@@ -3,6 +3,8 @@
     <head>
 				<title>Knight Life Game</title>
 				<link rel="stylesheet" type="text/css" href="main.css">
+				<script src="/socket.io/socket.io.js"></script>
+				<script src="login.js"></script>
     </head>
 		  <body>
 	<!-- the navbar shown at the top of the page -->
@@ -27,11 +29,12 @@
 			<input type="text" placeholder="Enter Username" id="loginusername">
 			<p>Password</p>
 			<input type="password" placeholder="Enter Password" id="loginpassword">
+			<p id="loginstatus"></p>
 			<br/>
 			<br/>
 			<!-- div used to center the submit button -->
 			<div style="text-align:center">
-			<button type="button" onclick="document.getElementById('loginform').style.display='none'">Submit</button>
+			<button type="button" onclick="login()">Submit</button>
 			</div>
 		</div>
 	</div>
