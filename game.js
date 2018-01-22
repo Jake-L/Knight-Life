@@ -20,6 +20,8 @@ var ping = 0;
 
 // create the player's graphics
 var context = canvas.getContext('2d');
+context.webkitImageSmoothingEnabled = false;
+context.mozImageSmoothingEnabled = false;
 context.imageSmoothingEnabled = false;
 context.fillStyle = "#ADD8E6";
 var healthBarSprite = new Image();
@@ -322,23 +324,20 @@ function step()
 
 function getUsername()
 {
-	var username;
 	var c = decodeURIComponent(document.cookie).split(';');
 
 	// read username from a cookie
 	if (c != null && c[0].substr(0,8) == "username" && c[0].length > 9)
 	{
-		username = c[0].substr(9,c[0].length - 1);
+		return c[0].substr(9,c[0].length - 1);
 	}
 
 	// otherwise give them default name
 	else
 	{
-		username = "Player";
 		notificationList.push(new Notification("Default Controls","Press 1 to jump;Press 2 for basic attack;Press 3 for ranged attack"));
+		return "Player";
 	}
-
-	return username;
 }
 
 // update the list of nearby entities once a second
@@ -955,11 +954,15 @@ window.addEventListener("resize", setScreenSize);
 
 function setScreenSize(event)
 {
-	canvas = document.createElement('canvas');
+	//canvas = document.createElement('canvas');
 	width = window.innerWidth - 20;
 	height = window.innerHeight - 20;
 	canvas.width = width;
 	canvas.height = height;
+	context = canvas.getContext('2d');
+	context.webkitImageSmoothingEnabled = false;
+	context.mozImageSmoothingEnabled = false;
+	context.imageSmoothingEnabled = false;
   	graphics_scaling = Math.ceil(Math.min(height,width)/250);
 	pixelWidth = Math.ceil(width / graphics_scaling);
 	pixelHeight = Math.ceil(height / graphics_scaling);
