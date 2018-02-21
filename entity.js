@@ -261,7 +261,7 @@ exports.Entity.prototype.renderWeapon = function(attack_name, weapon_name)
 				context.drawImage(
 				img,
 				(this.x - (img.width / 2) - x_offset) * graphics_scaling,
-				(this.y - img.height + img.y_offset - y_offset) * graphics_scaling,
+				(this.y - img.height + img.y_offset - y_offset - this.z) * graphics_scaling,
 				img.width * graphics_scaling,
 				img.height * graphics_scaling);
 			}
@@ -270,7 +270,7 @@ exports.Entity.prototype.renderWeapon = function(attack_name, weapon_name)
 				context.drawImage(
 					img,
 					(this.x - (img.width / 2) - x_offset) * graphics_scaling,
-					(this.y - img.height - y_offset) * graphics_scaling,
+					(this.y - img.height - y_offset - this.z) * graphics_scaling,
 					img.width * graphics_scaling,
 					img.height * graphics_scaling);
 			}

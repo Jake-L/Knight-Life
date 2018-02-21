@@ -1091,17 +1091,33 @@ io.on('connection', function(socket)
 		    	console.log("error reading from username file");
 		    	io.to(socket.id).emit('loginresult', false);
 			}
-		    var array = data.toString().split("\n");
-		    var success = false;
-		    for(i in array) 
-		    {
-		    	if(username == array[i].split(",")[0] && password == array[i].split(",")[1])
-		    	{
-		    		console.log("login successful for user " + username);
-		    		io.to(socket.id).emit('loginresult', true, username);
-		    		success = true;
-		    	}
-		    }
+			//check if someone is already logged in with that username
+			var success = true;
+			for (var mapId in connected)
+			{
+				for (var j in connected[mapId])
+				{
+					if (connected[mapId][j].display_name == username)
+					{
+						success = false;
+					}
+				}
+			}
+
+			if (success == true)
+			{
+			    var array = data.toString().split("\n");
+			    success = false;
+			    for(i in array) 
+			    {
+			    	if(username == array[i].split(",")[0] && password == array[i].split(",")[1])
+			    	{
+			    		console.log("login successful for user " + username);
+			    		io.to(socket.id).emit('loginresult', true, username);
+			    		success = true;
+			    	}
+			    }
+			}
 		    if (success == false)
 		    {
 		    	io.to(socket.id).emit('loginresult', false);

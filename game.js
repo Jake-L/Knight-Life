@@ -7,6 +7,10 @@ var width = window.innerWidth - 20;
 var height = window.innerHeight - 20;
 canvas.width = width;
 canvas.height = height;
+var context = canvas.getContext('2d');
+context.webkitImageSmoothingEnabled = false;
+context.mozImageSmoothingEnabled = false;
+context.imageSmoothingEnabled = false;
 var graphics_scaling = Math.ceil(Math.min(height,width)/250);
 console.log(graphics_scaling);
 var pixelWidth = Math.ceil(width / graphics_scaling);
@@ -19,10 +23,6 @@ var socket = io();
 var ping = 0;
 
 // create the player's graphics
-var context = canvas.getContext('2d');
-context.webkitImageSmoothingEnabled = false;
-context.mozImageSmoothingEnabled = false;
-context.imageSmoothingEnabled = false;
 context.fillStyle = "#ADD8E6";
 var healthBarSprite = new Image();
 healthBarSprite.src = "img//healthbar.png";
