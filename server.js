@@ -89,6 +89,8 @@ function initializeMap()
 	mapObjects[0].push(new mapObject(100,200,"rock1"));
 	mapObjects[0].push(new mapObject(700,350,"bigrock"));
 	mapObjects[0].push(new mapObject(400,400,"rock1"));
+	mapObjects[0].push(new mapObject(100,300,"treestump"));
+	mapObjects[0].push(new mapObject(250,150,"treestump"));
 
 	// spawn knights
 	for (var i = 0; i < 6; i++)
@@ -113,6 +115,8 @@ function initializeMap()
 	mapObjects[1].push(new mapObject(100,200,"snowman"));
 	mapObjects[1].push(new mapObject(700,350,"snowman"));
 	mapObjects[1].push(new mapObject(400,400,"snowman"));
+	mapObjects[1].push(new mapObject(200,500,"snowtreestump"));
+	mapObjects[1].push(new mapObject(600,150,"snowtreestump"));
 
 	// spawn icemen
 	for (var i = 0; i < 3; i++)
