@@ -989,7 +989,7 @@ socket.on('players', function(players)
 
 	for (var i in players)
 	{
-		playerList[i] = copyEntity(players[i]);
+		playerList[players[i].id] = copyEntity(players[i]);
 	}
 });
 
