@@ -1,5 +1,6 @@
 // play background music
 var audio;
+var soundEffect = [];
 
 // create the graphics canvas
 var canvas = document.createElement('canvas');
@@ -58,6 +59,7 @@ var projectileList = [];
 var flyTextList = [];
 var notificationList = [];
 var portalList = [];
+var cutscene = null;
 
 var playerSprite = [];
 var playerAttackSprite = [];
@@ -464,6 +466,16 @@ var update = function()
 		}
 	}
 
+	if (cutscene != null)
+	{
+		cutscene.update();
+
+		if (cutscene.isComplete())
+		{
+			cutscene = null;
+		}
+	}
+
 	// update flytext and remove any that expired
 	var n = flyTextList.length;
 	for (var i = 0; i < n; i++)
@@ -574,6 +586,11 @@ var render = function()
 	for (var i in entityList)
 	{
 		entityList[i].renderHealthBar();
+	}
+
+	if (cutscene != null)
+	{
+		cutscene.render();
 	}
 
 	for (var i in flyTextList)
@@ -712,8 +729,13 @@ Player.prototype.update = function()
 			}
 			else if (value == 67)
 			{
-				document.cookie = "username=";
-				console.log(document.cookie);
+				if (cutscene == null)
+				{
+					console.log("c key pressed");
+					cutscene = new Cutscene(0);
+					console.log(cutscene);
+				}
+
 			}
 		}
 	}
@@ -968,6 +990,26 @@ function setScreenSize(event)
 	pixelHeight = Math.ceil(height / graphics_scaling);
 };
 
+function playSoundEffect(path)
+{
+	var i = 0;
+	while (i < soundEffect.length && !soundEffect[i].ended)
+	{
+		i++;
+	}
+	if (i < soundEffect.length)
+	{
+		soundEffect[i] = new Audio("audio//" + path);
+		
+	}
+	else
+	{
+		soundEffect.push(new Audio("audio//" + path));
+	}
+	soundEffect[i].play();
+	console.log(soundEffect);
+}
+
 socket.on('mapObjects', function(a)
 {
 	mapObjects = {};
@@ -1014,6 +1056,7 @@ socket.on('itemreceived', function(item)
 {
 	console.log(item);
 	player.inventory.addItem(item);
+	playSoundEffect("coin.mp3");
 });
 
 // server sends all the projectiles currently on screen

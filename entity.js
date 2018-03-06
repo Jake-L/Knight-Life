@@ -257,7 +257,6 @@ exports.Entity.prototype.renderWeapon = function(attack_name, weapon_name)
 
 			if (typeof(img.y_offset) !== "undefined" && img.y_offset != null)
 			{
-				console.log("applying offset");
 				context.drawImage(
 				img,
 				(this.x - (img.width / 2) - x_offset) * graphics_scaling,
@@ -441,6 +440,7 @@ exports.Entity.prototype.collisionCheck = function()
 exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 {
 	var c = [0,0,0];
+	//console.log(e2.display_name, e2.x, e2.y, e2.z, e2.depth, e2.width, e2.height);
 
 	// check what x-directions the player can move (left / right)
 	if
