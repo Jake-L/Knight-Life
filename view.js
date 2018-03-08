@@ -114,6 +114,12 @@ var View = function()
 				weatherSprite[i].src = "img//snowfall" + i + ".png";
 			}
 		}
+		else if (mapId == -1)
+		{
+			backgroundSprite.src = "img//loghouseinside.png";
+			backgroundSpriteTop.src = "img//loghouseinside.png";
+			weatherSprite = [];
+		}
 	}
 
 	//displays the background image
@@ -123,19 +129,31 @@ var View = function()
 
 		if (backgroundSprite.complete && backgroundSprite.naturalHeight !== 0)
 		{
-			var x_counter = Math.ceil((width / graphics_scaling) / backgroundSprite.width) + 1;
-			var y_counter = Math.ceil((height / graphics_scaling) / backgroundSprite.height) + 1;
+			var x_counter = Math.ceil(Math.min(((width / graphics_scaling) / backgroundSprite.width) + 1,maxX[player.entity.mapId] / backgroundSprite.width));
+			var y_counter = Math.ceil(Math.min(((height / graphics_scaling) / backgroundSprite.height) + 1,maxY[player.entity.mapId] / backgroundSprite.width));
 
-			for (i = 0; i <= x_counter; i++)
+			var background_x_offset = x_offset;
+			var background_y_offset = y_offset;
+
+			if (maxX[player.entity.mapId] > pixelWidth)
 			{
-				for (j = 0; j <= y_counter; j++)
+				background_x_offset = x_offset % backgroundSprite.width;
+			}
+			if (maxY[player.entity.mapId] > pixelHeight)
+			{
+				background_y_offset = y_offset % backgroundSprite.height;
+			}
+
+			for (i = 0; i < x_counter; i++)
+			{
+				for (j = 0; j < y_counter; j++)
 				{
 					// draw a different background rectangle at the very top of the screen
 					if (j == 0 && y_offset < backgroundSpriteTop.height)
 					{
 						context.drawImage(backgroundSpriteTop,
-						((backgroundSpriteTop.width * i) - (x_offset % backgroundSpriteTop.width)) * graphics_scaling, //x position
-						((backgroundSpriteTop.height * j) - (y_offset % backgroundSpriteTop.height)) * graphics_scaling, //y position
+						((backgroundSpriteTop.width * i) - background_x_offset) * graphics_scaling, //x position
+						((backgroundSpriteTop.height * j) - background_y_offset) * graphics_scaling, //y position
 						backgroundSpriteTop.width * graphics_scaling, //width
 						backgroundSpriteTop.height * graphics_scaling); //height
 					}
@@ -143,8 +161,8 @@ var View = function()
 					else
 					{
 						context.drawImage(backgroundSprite,
-						((backgroundSprite.width * i) - (x_offset % backgroundSprite.width)) * graphics_scaling, //x position
-						((backgroundSprite.height * j) - (y_offset % backgroundSprite.height)) * graphics_scaling, //y position
+						((backgroundSprite.width * i) - background_x_offset) * graphics_scaling, //x position
+						((backgroundSprite.height * j) - background_y_offset) * graphics_scaling, //y position
 						backgroundSprite.width * graphics_scaling, //width
 						backgroundSprite.height * graphics_scaling); //height
 					}

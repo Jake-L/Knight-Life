@@ -1,3 +1,5 @@
+'use strict';
+
 // play background music
 var audio;
 var soundEffect = [];
@@ -49,9 +51,18 @@ var attack2_key = 51;
 var frameTime = 0;
 var startTime = 0;
 
-var maxX = [1000,1000];
-var minY = [30,30];
-var maxY = [500,800];
+var maxX = {};
+maxX[0] = 1000;
+maxX[1] = 1000;
+maxX[-1] = 127;
+var minY = {};
+minY[0] = 30;
+minY[1] = 30;
+minY[-1] = 0;
+var maxY = {};
+maxY[0] = 500;
+maxY[1] = 800;
+maxY[-1] = 127;
 
 var playerList = {};
 var mapObjects = {};
@@ -113,9 +124,9 @@ function getDirNum(s)
 }
 
 //functions from external files
-mapObject = share.mapObject;
-Attack = shareAttack.Attack;
-Entity = shareEntity.Entity;
+var mapObject = share.mapObject;
+var Attack = shareAttack.Attack;
+var Entity = shareEntity.Entity;
 
 var defaultmapId = 0;
 var player;
@@ -163,10 +174,13 @@ function loadMap(mapId)
 
 	view.loadMap(mapId);
 
+	/* mapID >= 0 means public maps with other users */
 	if (mapId == 0)
 	{
 		audio = new Audio("audio//track2.mp3");
 		portalList[0] = new Portal(990, 300, 20, 20, 1, 10, 300, "Right");
+		portalList[1] = new Portal(254, 360, 20, 20, -1, 64, 127, "Up");
+		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
 		weatherSprite = [];
 	}
 	else if (mapId == 1)
@@ -174,6 +188,21 @@ function loadMap(mapId)
 		audio = new Audio("audio//track1.mp3");
 		portalList[0] = new Portal(10, 300, 20, 20, 0, 990, 300, "Left");
 	}
+
+	/* mapId <= 0 means private maps with no other users */
+	else if (mapId == -1)
+	{
+		audio = new Audio("audio//track2.mp3");
+		portalList[0] = new Portal(64, 127, 20, 20, 0, 254, 360, "Down");
+		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
+		weatherSprite = [];
+	}
+
+	// clear any entities or map objects from the previous map
+	mapObjects = {};
+	playerList = {};
+	projectileList = [];
+	frameTime = new Date().getTime(); // reset update frame timer
 }
 
 //load sprites
@@ -296,7 +325,10 @@ function step()
 			updateNearbyObjects();
 		}
 		update();
-		socket.emit('movement', player.entity); //send new location to server
+		if (player.entity.mapId >= 0)
+		{
+			socket.emit('movement', player.entity); //send new location to server
+		}
 		frameTime += 16.6;
 		ucounter += 1;
 		
@@ -320,6 +352,7 @@ function step()
 	context.fillText("FPS: " + rfps,10,10);
 	context.fillText("FPS: " + ufps,10,20);
 	context.fillText("Ping: " + ping,10,30);
+	console.log(ufps);
 	//console.log("Render FPS: " + Math.round(rcounter / ((new Date().getTime() - startTime)/1000)) + " Update FPS: " + Math.round(ucounter / ((new Date().getTime() - startTime)/1000)));
 	setTimeout(step, 4);
 }
@@ -397,6 +430,8 @@ Entity.prototype.getNearbyObjects = function()
 // when the tab is inactive assume this function runs at 1 fps
 var update = function()
 {
+	//console.log(player.entity.x, player.entity.y);
+
 	//restart background music at the end of the song
 	if (audio.currentTime + (8/60) > audio.duration)
 	{
@@ -437,6 +472,10 @@ var update = function()
 				player.entity.mapId = portalList[i].destination_mapId;
 				loadMap(portalList[i].destination_mapId);
 				player.portalCounter = 30;
+				if (player.entity.mapId < 0)
+				{
+					socket.emit('movement', player.entity); //send new location to server
+				}
 				break;
 			}
 		}
@@ -452,7 +491,7 @@ var update = function()
 		if (achievements[i].isComplete())
 		{
 			notificationList.push(new Notification("Achievement Complete","You completed the achievement " + achievements[i].name))
-			r = achievements[i].reward;
+			var r = achievements[i].reward;
 
 			if (typeof(r) !== "undefined" && r != null)
 			{
@@ -616,8 +655,8 @@ function renderSort(array)
 
 	for (var i = 1; i < n; i++)
 	{
-		e = array[i];
-		j = i - 1;
+		var e = array[i];
+		var j = i - 1;
 
 		while (j >= 0 && renderSortAux(array[j],e))
 		{
@@ -753,8 +792,13 @@ function get_offset()
 	var left_offset = player.entity.x - (pixelWidth / 2);
 	var right_offset = player.entity.x + (pixelWidth / 2);
 
+	// if the map doesn't fill the whole screen, center it
+	if (maxX[player.entity.mapId] <= pixelWidth)
+	{
+		x_offset = -(pixelWidth / 2) + (maxX[player.entity.mapId] / 2);
+	} 
 	// check if the player is moving in the middle of the map and the screen needs to be moved
-	if (left_offset > 0 && right_offset < maxX[player.entity.mapId])
+	else if (left_offset > 0 && right_offset < maxX[player.entity.mapId])
 	{
 		x_offset = left_offset;
 	}
@@ -770,7 +814,12 @@ function get_offset()
 	var top_offset = player.entity.y - (pixelHeight / 2);
 	var bot_offset = player.entity.y + (pixelHeight / 2);
 
-	if (top_offset > 0 && bot_offset < maxY[player.entity.mapId])
+	// if the map doesn't fill the whole screen, center it
+	if (maxY[player.entity.mapId] <= pixelHeight)
+	{
+		y_offset = -(pixelHeight / 2) + (maxY[player.entity.mapId] / 2);
+	}
+	else if (top_offset > 0 && bot_offset < maxY[player.entity.mapId])
 	{
 		y_offset = top_offset;
 	}
@@ -1007,21 +1056,23 @@ function playSoundEffect(path)
 		soundEffect.push(new Audio("audio//" + path));
 	}
 	soundEffect[i].play();
-	console.log(soundEffect);
 }
 
 socket.on('mapObjects', function(a)
 {
 	mapObjects = {};
 
-	for (var i in a)
+	if (player.entity.mapId >= 0)
 	{
-		p = new mapObject(a[i].x, a[i].y, a[i].spriteName);
-		p.initialize();
-		mapObjects[p.id] = p;
-	}
+		for (var i in a)
+		{
+			var p = new mapObject(a[i].x, a[i].y, a[i].spriteName);
+			p.initialize();
+			mapObjects[p.id] = p;
+		}
 
-	view.insertStatic(mapObjects);
+		view.insertStatic(mapObjects);
+	}
 });
 
 // update position of other players from the server
@@ -1029,9 +1080,12 @@ socket.on('players', function(players)
 {
 	playerList = {};
 
-	for (var i in players)
+	if (players[0].mapId == player.entity.mapId)
 	{
-		playerList[players[i].id] = copyEntity(players[i]);
+		for (var i in players)
+		{
+			playerList[players[i].id] = copyEntity(players[i]);
+		}
 	}
 });
 
@@ -1060,24 +1114,29 @@ socket.on('itemreceived', function(item)
 });
 
 // server sends all the projectiles currently on screen
+
 socket.on('viewOnly', function(p, items)
 {
-	var array = [];
-
-	for (var i in p)
+	
+	if (player.entity.mapId >= 0)
 	{
-		InitializeProjectile(p[i]);
-		array.push(p[i]);
-	}
+		var array = [];
 
-	for (var i in items)
-	{
-		items[i].sprite = new Image();
-		items[i].sprite.src = "img//" + items[i].name + ".png";
-		array.push(items[i]);
-	}
+		for (var i in p)
+		{
+			InitializeProjectile(p[i]);
+			array.push(p[i]);
+		}
 
-	view.insertDynamic(array);
+		for (var i in items)
+		{
+			items[i].sprite = new Image();
+			items[i].sprite.src = "img//" + items[i].name + ".png";
+			array.push(items[i]);
+		}
+
+		view.insertDynamic(array);
+	}
 });
 
 // check current ping

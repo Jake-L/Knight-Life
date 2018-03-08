@@ -91,6 +91,7 @@ function initializeMap()
 	mapObjects[0].push(new mapObject(400,400,"rock1"));
 	mapObjects[0].push(new mapObject(100,300,"treestump"));
 	mapObjects[0].push(new mapObject(250,150,"treestump"));
+	mapObjects[0].push(new mapObject(250,350,"loghouse"));
 
 	// spawn knights
 	for (var i = 0; i < 6; i++)
@@ -1026,29 +1027,42 @@ io.on('connection', function(socket)
 	{
 		if (player != null)// && player.entity.x != null)
 		{
-			player.id = socket.id;
-			connected[player.mapId][socket.id] = player;
-			if (connection[socket.id] != null)
+			if (player.mapId >= 0)
 			{
-				connection[socket.id].last_update = new Date().getTime();
-
-				// update the player lists and kill participation lists if a player changes maps
-				if (connection[socket.id].mapId != player.mapId)
+				player.id = socket.id;
+				connected[player.mapId][socket.id] = player;
+				if (connection[socket.id] != null)
 				{
-					console.log("player changed maps from " + connection[socket.id].mapId + " to " + player.mapId);
-					clearAgro(socket.id, connection[socket.id].mapId);
-					delete killParticipation[connection[socket.id].mapId][socket.id];
-					killParticipation[player.mapId][socket.id] = [];
-					delete connected[connection[socket.id].mapId][socket.id];
+					connection[socket.id].last_update = new Date().getTime();
+
+					// update the player lists and kill participation lists if a player changes maps
+					if (connection[socket.id].mapId != player.mapId)
+					{
+						console.log("player changed maps from " + connection[socket.id].mapId + " to " + player.mapId);
+						clearAgro(socket.id, connection[socket.id].mapId);
+						delete killParticipation[connection[socket.id].mapId][socket.id];
+						delete connected[connection[socket.id].mapId][socket.id];
+						killParticipation[player.mapId][socket.id] = [];					
+						connection[socket.id] = {mapId: player.mapId, last_update: new Date().getTime()};
+						io.to(socket.id).emit('mapObjects', mapObjects[player.mapId]);
+					}
+				}
+				else
+				{
 					connection[socket.id] = {mapId: player.mapId, last_update: new Date().getTime()};
-					io.to(socket.id).emit('mapObjects', mapObjects[player.mapId]);
+					io.to(socket.id).emit('mapObjects', mapObjects[connection[socket.id].mapId]);
+					killParticipation[connection[socket.id].mapId][socket.id] = [];
 				}
 			}
 			else
 			{
-				connection[socket.id] = {mapId: player.mapId, last_update: new Date().getTime()};
-				io.to(socket.id).emit('mapObjects', mapObjects[connection[socket.id].mapId]);
-				killParticipation[connection[socket.id].mapId][socket.id] = [];
+				if (connection[socket.id] != null && connection[socket.id].mapId != player.mapId)
+				{
+					clearAgro(socket.id, connection[socket.id].mapId);
+					delete killParticipation[connection[socket.id].mapId][socket.id];
+					delete connected[connection[socket.id].mapId][socket.id];
+				}
+				delete connection[socket.id];
 			}
 		}
   	});
