@@ -21,7 +21,7 @@ exports.Entity = function(x,y,spriteName,mapId)
 	this.sprite;
 	this.spriteName = spriteName;
 	this.weaponSprite;
-	this.id;
+	this.id = Math.ceil(new Date().getTime() * Math.random());
 
 	// stats
 	this.max_health = 100;
@@ -40,6 +40,7 @@ exports.Entity = function(x,y,spriteName,mapId)
 	this.spawn_time = new Date().getTime();
 
 	this.allyState = "Neutral";
+	this.conversationId;
 	this.faction;
 
 	this.nearbyObjects = [];
@@ -106,9 +107,9 @@ exports.Entity.prototype.initialize = function()
 {
 	if (typeof(Image) !== "undefined")
 	{
-	this.sprite = new Image();
-	this.weaponSprite = new Image();
-}
+		this.sprite = new Image();
+		this.weaponSprite = new Image();
+	}
 };
 
 exports.Entity.prototype.move = function(x_direction, y_direction)
@@ -440,8 +441,7 @@ exports.Entity.prototype.collisionCheck = function()
 exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 {
 	var c = [0,0,0];
-	//console.log(e2.display_name, e2.x, e2.y, e2.z, e2.depth, e2.width, e2.height);
-
+	
 	// check what x-directions the player can move (left / right)
 	if
 	(
@@ -453,13 +453,13 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 	)
 		{
 			// check if there is space to left of you to move
-			if (e1.x - (e1.width / 2) + e1.x_speed >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) + e1.x_speed <= e2.x + (e2.width / 2))
+			if (e1.x - (e1.width / 2) >= e2.x - (e2.width / 2) && e1.x - (e1.width / 2) <= e2.x + (e2.width / 2))
 			{
 				c[0] = 1; //if there is no space to your left, you can only move right
 				//console.log("blocked on x");
 			}
 			// check if there is space to right of you to move
-			if (e1.x + (e1.width / 2) + e1.x_speed >= e2.x - (e2.width / 2) && e1.x + (e1.width / 2) + e1.x_speed <= e2.x + (e2.width / 2))
+			if (e1.x + (e1.width / 2)  >= e2.x - (e2.width / 2) && e1.x + (e1.width / 2) <= e2.x + (e2.width / 2))
 			{
 				c[0] = -1; //if there is no space to your right, you can only move left
 				//console.log("blocked on x");
@@ -477,13 +477,13 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 	)
 		{
 			// check if there is space behind you to move
-			if (e1.y - e1.depth + e1.y_speed >= e2.y - e2.depth && e1.y - e1.depth + e1.y_speed <= e2.y)
+			if (e1.y - e1.depth >= e2.y - e2.depth && e1.y - e1.depth <= e2.y)
 			{
 				c[1] = 1; // if there is no space behind you, you can move downward but not upward
 				//console.log("blocked on y");
 			}
 			// check if there is space in front of you to move
-			else if (e1.y + e1.y_speed >= e2.y - e2.depth && e1.y + e1.y_speed <= e2.y)
+			else if (e1.y >= e2.y - e2.depth && e1.y <= e2.y)
 			{
 				c[1] = -1; // if there is no space in front of you, you can move upward but not downward
 				//console.log("blocked on y");
@@ -633,7 +633,10 @@ exports.Entity.prototype.createAttack = function(attack)
 
 		if(typeof(module) === 'undefined')
 		{
-			socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), attack.damage, this.mapId);
+			if (this.mapId >= 0)
+			{
+				socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), attack.damage, this.mapId);
+			}
 		}
 		else
 		{
@@ -678,8 +681,11 @@ exports.Entity.prototype.createAttack = function(attack)
 
 		if(typeof(module) === 'undefined')
 		{
-			socket.emit('createProjectile', x + (this.x_speed * 2), y + (this.y_speed * 2), x_speed, y_speed,
-				 new Date().getTime() + (2000/60), attack.damage, attack.weapons[0].name, this.mapId);
+			if (this.mapId >= 0)
+			{
+				socket.emit('createProjectile', x + (this.x_speed * 2), y + (this.y_speed * 2), x_speed, y_speed,
+					 new Date().getTime() + (2000/60), attack.damage, attack.weapons[0].name, this.mapId);
+			}
 		}
 		else
 		{

@@ -130,8 +130,10 @@ var Entity = shareEntity.Entity;
 
 var defaultmapId = 0;
 var player;
-var missions = [];
-var achievements = [];
+var quests = {};
+var completedQuests = {};
+var achievements = {};
+var achievementCount = 5;
 
 window.onload = function()
 {
@@ -147,9 +149,9 @@ window.onload = function()
 	
 	audio.play(); //must come after loadMap
 
-	for (var i in initialize)
+	for (var i = 0; i < achievementCount; i++)
 	{
-		achievements.push(new Objective(i));
+		achievements[i] = new Objective(i);
 	}
 
 	frameTime = new Date().getTime();
@@ -173,6 +175,10 @@ function loadMap(mapId)
 	console.log("loading map " + mapId);
 
 	view.loadMap(mapId);
+	// clear any entities or map objects from the previous map
+	mapObjects = {};
+	playerList = {};
+	projectileList = [];
 
 	/* mapID >= 0 means public maps with other users */
 	if (mapId == 0)
@@ -196,12 +202,13 @@ function loadMap(mapId)
 		portalList[0] = new Portal(64, 127, 20, 20, 0, 254, 360, "Down");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
 		weatherSprite = [];
+		var e = new Entity(64, 32, "player", -1);
+		e.id = "-1p1";
+		playerList[e.id] = e; 
+		playerList[e.id].allyState = "Passive"; 
+		playerList[e.id].conversationId = 0; 
 	}
 
-	// clear any entities or map objects from the previous map
-	mapObjects = {};
-	playerList = {};
-	projectileList = [];
 	frameTime = new Date().getTime(); // reset update frame timer
 }
 
@@ -318,7 +325,7 @@ var ufps = 0;
 
 function step()
 {
-	if (new Date().getTime() > frameTime)
+	while (new Date().getTime() > frameTime)
 	{
 		if (ucounter / 15 == 0)
 		{
@@ -352,8 +359,6 @@ function step()
 	context.fillText("FPS: " + rfps,10,10);
 	context.fillText("FPS: " + ufps,10,20);
 	context.fillText("Ping: " + ping,10,30);
-	console.log(ufps);
-	//console.log("Render FPS: " + Math.round(rcounter / ((new Date().getTime() - startTime)/1000)) + " Update FPS: " + Math.round(ucounter / ((new Date().getTime() - startTime)/1000)));
 	setTimeout(step, 4);
 }
 
@@ -406,6 +411,7 @@ Entity.prototype.getNearbyObjects = function()
 		// retrieve players / CPUs
 		if (this.nearbyObjects[i].type == "player") 
 		{
+			
 			if (typeof(playerList[this.nearbyObjects[i].id]) !== 'undefined')
 			{
 				objectList.push(playerList[this.nearbyObjects[i].id]);
@@ -470,6 +476,7 @@ var update = function()
 				player.entity.x = portalList[i].destination_x;
 				player.entity.y = portalList[i].destination_y;
 				player.entity.mapId = portalList[i].destination_mapId;
+				player.entity.nearbyObjects = [];
 				loadMap(portalList[i].destination_mapId);
 				player.portalCounter = 30;
 				if (player.entity.mapId < 0)
@@ -499,9 +506,37 @@ var update = function()
 				{
 					player.entity.addXP(r.xp);
 				}
+				if (typeof(r.items) !== "undefined")
+				{
+					for (var i in r.items)
+					{
+						inventory.addItem(r.items[i]);
+					}
+				}
 			}
 
-			achievements.splice(i, 1);
+			delete achievements[i];
+		}
+	}
+
+	// check if any quests have been completed
+	for (var i in quests)
+	{
+		if (quests[i].isComplete())
+		{
+			notificationList.push(new Notification("Quest Complete","You completed the quest " + quests[i].name))
+			var r = quests[i].reward;
+
+			if (typeof(r) !== "undefined" && r != null)
+			{
+				if (typeof(r.xp) !== "undefined")
+				{
+					player.entity.addXP(r.xp);
+				}
+			}
+
+			completedQuests[i] = true;
+			delete quests[i];
 		}
 	}
 
@@ -512,7 +547,12 @@ var update = function()
 		if (cutscene.isComplete())
 		{
 			cutscene = null;
+			player.conversationCounter = 30;
 		}
+	}
+	else if (player.conversationCounter > 0)
+	{
+		player.conversationCounter--;
 	}
 
 	// update flytext and remove any that expired
@@ -537,7 +577,7 @@ var update = function()
 	{
 		notificationList[0].update();
 
-		if (notificationList[0].counter <= 0)
+		if (notificationList[0].counter <= 0 && cutscene == null) // only start new notifications outside of cutscenes
 		{
 			notificationList.splice(0,1);
 		}
@@ -566,6 +606,7 @@ function copyEntity(old)
 	p.lvl = old.lvl;
 	p.allyState = old.allyState;
 	p.id = old.id;
+	p.conversationId = old.conversationId;
 	return p;
 }
 
@@ -577,6 +618,7 @@ function Player(mapId)
 	this.entity.allyState = "Player";
 	this.healthRegenCounter = 0;
 	this.portalCounter = 0;
+	this.conversationCounter = 0;
 	this.inventory = new Inventory();
 }
 
@@ -714,14 +756,6 @@ Player.prototype.update = function()
 		}
 	}
 
-	if (this.entity.sprite.complete && this.entity.sprite.naturalHeight !== 0)
-	{
-		 this.entity.width = Math.floor(this.entity.sprite.width * 0.8);
-		 this.entity.width -= this.entity.width % 2;
-		 this.entity.depth = Math.floor(this.entity.sprite.height * 0.5);
-		 this.entity.height = this.entity.sprite.height;
-	}
-
 	/* move the player based on user input */
 	var x_direction = 0;
 	var y_direction = 0;
@@ -766,20 +800,21 @@ Player.prototype.update = function()
 					this.entity.z_speed = 3;
 				}
 			}
-			else if (value == 67)
+			else if (value == 13)
 			{
-				if (cutscene == null)
+				if (cutscene == null && player.conversationCounter <= 0)
 				{
-					console.log("c key pressed");
-					cutscene = new Cutscene(0);
-					console.log(cutscene);
+					initiateConversation();
 				}
 
 			}
 		}
 	}
 
-	this.entity.move(x_direction, y_direction);
+	if (cutscene == null) // don't let the player move themselves during cutscenes
+	{
+		this.entity.move(x_direction, y_direction);
+	}
 
 	this.entity.update();
 
@@ -932,6 +967,59 @@ function Notification(header, body)
 	}
 }
 
+function initiateConversation()
+{
+	var collisionList = player.entity.getNearbyObjects();
+
+	for (var i in collisionList)
+	{
+		// check that the entity is not fighting the player, and that they have a conversation
+		if (collisionList[i].conversationId != null)
+		{
+			var c = player.entity.collisionCheckAux(player.entity, collisionList[i]);
+			console.log(c);
+			console.log(player.entity.x, player.entity.y, collisionList[i].x, collisionList[i].y);
+			if (c[0] == 1 && player.entity.direction == "Left")
+			{
+				collisionList[i].direction = "Right";
+				cutscene = new Cutscene(collisionList[i].conversationId);
+				break;
+			}
+			else if (c[0] == -1 && player.entity.direction == "Right")
+			{
+				collisionList[i].direction = "Left";
+				cutscene = new Cutscene(collisionList[i].conversationId);
+				break;
+			}
+			else if (c[1] == 1 && player.entity.direction == "Up")
+			{
+				collisionList[i].direction = "Down";
+				cutscene = new Cutscene(collisionList[i].conversationId);
+				break;
+			}
+			else if (c[1] == -1 && player.entity.direction == "Down")
+			{
+				collisionList[i].direction = "Up";
+				cutscene = new Cutscene(collisionList[i].conversationId);
+				break;
+			}
+		}
+	}
+}
+
+function addQuest(id)
+{
+	if (typeof(completedQuests[id]) === 'undefined' && typeof(quests[id]) === 'undefined')
+	{
+		quests[id] = new Objective(id);
+		notificationList.push(new Notification("Quest received!","You received the quest " + quests[id].name))
+	}
+	else
+	{
+		console.log("Already have quest " + id);
+	}
+}
+
 // display the minimap
 function renderMinimap()
 {
@@ -1060,10 +1148,10 @@ function playSoundEffect(path)
 
 socket.on('mapObjects', function(a)
 {
-	mapObjects = {};
-
 	if (player.entity.mapId >= 0)
 	{
+		mapObjects = {};
+
 		for (var i in a)
 		{
 			var p = new mapObject(a[i].x, a[i].y, a[i].spriteName);
@@ -1073,18 +1161,29 @@ socket.on('mapObjects', function(a)
 
 		view.insertStatic(mapObjects);
 	}
+
+	updateNearbyObjects();
 });
 
 // update position of other players from the server
 socket.on('players', function(players)
 {
-	playerList = {};
-
 	if (players[0].mapId == player.entity.mapId)
 	{
+		var needUpdate = false;
+		if (playerList.length == 0)
+		{
+			needUpdate = true;
+		}
+		playerList = {};
+
 		for (var i in players)
 		{
 			playerList[players[i].id] = copyEntity(players[i]);
+		}
+		if (needUpdate == true)
+		{
+			updateNearbyObjects();
 		}
 	}
 });
@@ -1103,6 +1202,10 @@ socket.on('xpgain', function(xp, entity)
 	{
 		achievements[i].enemyDefeated(entity);
 	}
+	for (var i in quests)
+	{
+		quests[i].enemyDefeated(entity);
+	}
 	player.entity.addXP(xp);
 });
 
@@ -1117,7 +1220,6 @@ socket.on('itemreceived', function(item)
 
 socket.on('viewOnly', function(p, items)
 {
-	
 	if (player.entity.mapId >= 0)
 	{
 		var array = [];
