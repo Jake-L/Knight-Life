@@ -147,7 +147,7 @@ window.onload = function()
 	username = getUsername();
 	spawnPlayer(defaultmapId);
 	
-	audio.play(); //must come after loadMap
+	//audio.play(); //must come after loadMap
 
 	for (var i = 0; i < achievementCount; i++)
 	{
@@ -439,7 +439,7 @@ var update = function()
 	//console.log(player.entity.x, player.entity.y);
 
 	//restart background music at the end of the song
-	if (audio.currentTime + (8/60) > audio.duration)
+	/*if (audio.currentTime + (8/60) > audio.duration)
 	{
 		audio.currentTime = 0;
 
@@ -447,7 +447,7 @@ var update = function()
 		{
 			audio.play();
 		}
-	}
+	}*/
 
 
 	if (player.entity.current_health <= 0)
@@ -508,9 +508,9 @@ var update = function()
 				}
 				if (typeof(r.items) !== "undefined")
 				{
-					for (var i in r.items)
+					for (var j in r.items)
 					{
-						inventory.addItem(r.items[i]);
+						player.inventory.addItem(r.items[j]);
 					}
 				}
 			}
@@ -532,6 +532,13 @@ var update = function()
 				if (typeof(r.xp) !== "undefined")
 				{
 					player.entity.addXP(r.xp);
+				}
+				if (typeof(r.items) !== "undefined")
+				{
+					for (var j in r.items)
+					{
+						player.inventory.addItem(r.items[j]);
+					}
 				}
 			}
 
@@ -616,6 +623,7 @@ function Player(mapId)
   	this.entity = new Entity(100,100,"player",mapId);
 	this.entity.initialize();
 	this.entity.allyState = "Player";
+	this.entity.updateSprite();
 	this.healthRegenCounter = 0;
 	this.portalCounter = 0;
 	this.conversationCounter = 0;
@@ -633,29 +641,6 @@ var render = function()
 {
 	view.renderBackground();
 
-	//create a list of all the entities to be rendered
-	var renderList = [];
-
-	for (var i in playerList)
-	{
-		playerList[i].updateSprite();
-		renderList.push(playerList[i]); // add all the other players
-	}
-
-	player.entity.updateSprite();
-	renderList.push(player.entity); // add the player
-
-	var entityList = [];
-	Array.prototype.push.apply(entityList, renderList);
-
-	// sort the list of players
-	renderSort(renderList);
-
-	for (var n in renderList)
-	{
-		renderList[n].render(); // render each player
-	}
-
 	// render mapObjects: rocks, snowmen, etc
 	// render items
 	// render projectiles
@@ -663,11 +648,6 @@ var render = function()
 
 	//display weather if there is any
 	view.renderWeather();
-
-	for (var i in entityList)
-	{
-		entityList[i].renderHealthBar();
-	}
 
 	if (cutscene != null)
 	{

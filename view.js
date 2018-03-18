@@ -10,16 +10,77 @@ var View = function()
 
 	this.render = function()
 	{
+		// a sorted list to hold all objects that must be rendered
+		sortedIndexList = [];
+
+		// add rocks, projectiles, etc to sorted render list
 		for (var i in this.renderList)
 		{
-			if (typeof(this.renderList[i].render) !== 'undefined')
+			var j = 0;
+			while (j < sortedIndexList.length && this.renderList[i].y > sortedIndexList[j].y)
 			{
-				this.renderList[i].render();
+				j++;
 			}
-			else
+			sortedIndexList.splice(j,0,{id: i, type: "renderList", y: this.renderList[i].y});
+		}
+
+		// add other entities to the sorted render list
+		for (var i in playerList)
+		{
+			var j = 0;
+			while (j < sortedIndexList.length && playerList[i].y > sortedIndexList[j].y)
 			{
-				this.genericRender(this.renderList[i]);
+				j++;
 			}
+			sortedIndexList.splice(j,0,{id: i, type: "playerList", y: playerList[i].y});
+		}
+
+		// add the player to the sorted render list
+		var j = 0;
+		while (j < sortedIndexList.length && player.entity.y > sortedIndexList[j].y)
+		{
+			j++;
+		}
+		sortedIndexList.splice(j,0,{id: i, type: "player", y: player.entity.y});
+
+		// render every element in the sorted render list
+		for (var i in sortedIndexList)
+		{
+			if (sortedIndexList[i].type == "renderList")
+			{
+				this.renderAux(this.renderList[sortedIndexList[i].id]);
+			}
+			else if (sortedIndexList[i].type == "playerList")
+			{
+				this.renderAux(playerList[sortedIndexList[i].id]);
+			}
+			else if (sortedIndexList[i].type == "player")
+			{
+				//player.entity.updateSprite();
+				player.entity.render();
+			}
+		}
+
+		for (var i in sortedIndexList)
+		{
+			 if (sortedIndexList[i].type == "playerList")
+			{
+				playerList[sortedIndexList[i].id].renderHealthBar();
+			}
+		}
+
+		player.entity.renderHealthBar();
+	}
+
+	this.renderAux = function(e)
+	{
+		if (typeof(e.render) !== 'undefined')
+		{
+			e.render();
+		}
+		else
+		{
+			this.genericRender(e);
 		}
 	}
 
@@ -89,6 +150,11 @@ var View = function()
 		{
 			this.renderList.push(a[i]);
 		}
+	}
+
+	this.insertReference = function(f)
+	{
+		this.referenceList.push(f);
 	}
 
 	this.loadMap = function(mapId)

@@ -211,6 +211,7 @@ exports.Entity.prototype.render = function()
 
 	if (this.sprite.complete && this.sprite.naturalHeight !== 0)
 	{
+		this.updateSprite();
 		context.save();
 		context.shadowColor = "rgba(80, 80, 80, .4)";
 		context.shadowBlur = 15 + this.z;
@@ -356,8 +357,7 @@ exports.Entity.prototype.renderHealthBar = function()
 // animate the entities sprite and change it based on their action
 exports.Entity.prototype.updateSprite = function()
 {
-	this.sprite = new Image();
-
+	//this.sprite = new Image();
 	if (this.attack_counter > 0 && this.current_attack >= 0)
 	{
 		this.sprite = playerAttackSprite[this.spriteName][this.attacks[this.current_attack].name][getDirNum(this.direction)][Math.floor((this.attacks[this.current_attack].frame_length - this.attack_counter) / (this.attacks[this.current_attack].frame_length / playerAttackSprite[this.spriteName][this.attacks[this.current_attack].name][getDirNum(this.direction)].length))];
