@@ -221,7 +221,7 @@ exports.Entity.prototype.render = function()
 		if (this.width == 0)
 		{
 			this.width = this.sprite.width;
-			this.depth = this.sprite.height * 0.75;
+			this.depth = Math.ceil(this.sprite.height * 0.5);
 			this.height = this.sprite.height / 2;
 		}
 
@@ -291,6 +291,10 @@ exports.Entity.prototype.setColour = function()
 	else if (this.allyState == "Enemy")
 	{
 		context.fillStyle = "#FF0000";
+	}
+	else if (this.allyState == "Ally")
+	{
+		context.fillStyle = "#00FF00";
 	}
 	else
 	{
@@ -441,7 +445,7 @@ exports.Entity.prototype.collisionCheck = function()
 exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 {
 	var c = [0,0,0];
-	
+
 	// check what x-directions the player can move (left / right)
 	if
 	(
@@ -613,22 +617,22 @@ exports.Entity.prototype.createAttack = function(attack)
 		if (this.direction == "Down")
 		{
 			x = this.x;
-			y = this.y + 2;
+			y = this.y + (this.depth / 2) + 2;
 		}
 		else if (this.direction == "Up")
 		{
 			x = this.x;
-			y = this.y - this.depth - 2;
+			y = this.y - (this.depth / 2) - 2;
 		}
 		else if (this.direction == "Left")
 		{
 			x = this.x - (this.width/2) - 2;
-			y = this.y - (this.depth/2);
+			y = this.y;
 		}
 		else if (this.direction == "Right")
 		{
 			x = this.x + (this.width/2) + 2;
-			y = this.y - (this.depth/2);
+			y = this.y;
 		}
 
 		if(typeof(module) === 'undefined')

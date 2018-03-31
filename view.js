@@ -265,4 +265,57 @@ var View = function()
 		}
 	}
 
+	this.renderText = function(text)
+	{
+		var x = 54 * graphics_scaling;
+		var y = (pixelHeight - 53) * graphics_scaling;
+		var w = (pixelWidth - (2 * 54)) * graphics_scaling;
+		var h = 52 * graphics_scaling;
+
+		//var pos_x = Math.min(Math.max(e.x - x_offset, x),x + w);
+		//var pos_y = e.y - y_offset;
+
+		// draw the textbox
+		context.fillStyle = "#FFFFFF";
+		context.fillRect(x, y, w, h);
+		/*context.beginPath();
+		context.moveTo(Math.max(pos_x - 30,x) * graphics_scaling, y * graphics_scaling);
+		context.lineTo(pos_x  * graphics_scaling, pos_y * graphics_scaling);
+		context.lineTo(Math.min(pos_x + 30,x + w) * graphics_scaling, y * graphics_scaling);
+		context.stroke();
+		context.fill();*/
+
+		context.lineWidth = graphics_scaling * 2;
+		context.strokeStyle = "#000000";
+		context.beginPath();		
+		context.moveTo(x, y);
+		context.lineTo(x + w, y);
+		context.lineTo(x + w, y + h);
+		context.lineTo(x, y + h);
+		context.lineTo(x, y);
+		context.stroke();
+
+		context.font = "bold " + 8 * graphics_scaling + "px sans-serif";
+		context.fillStyle = "#000000";
+		var textArray = text.split(" ");
+		var line_counter = 0;
+		var i = 0;
+
+		while (i < textArray.length)
+		{
+			var renderText = "";
+
+			while (i < textArray.length && context.measureText(renderText).width + context.measureText(textArray[i]).width + (8 * graphics_scaling) < w)
+			{
+				renderText += textArray[i] + " ";
+				i++;
+			}
+
+			// 	draw the text
+			context.fillText(renderText,
+				x + (4 * graphics_scaling),
+				(y + (h / 4) + (line_counter * 8 * graphics_scaling)));
+			line_counter++;
+		}
+	}
 }

@@ -128,7 +128,7 @@ var mapObject = share.mapObject;
 var Attack = shareAttack.Attack;
 var Entity = shareEntity.Entity;
 
-var defaultmapId = 0;
+var defaultmapId = -1;
 var player;
 var quests = {};
 var completedQuests = {};
@@ -205,7 +205,8 @@ function loadMap(mapId)
 		var e = new Entity(64, 32, "player", -1);
 		e.id = "-1p1";
 		playerList[e.id] = e; 
-		playerList[e.id].allyState = "Passive"; 
+		playerList[e.id].targetType = "Passive"; 
+		playerList[e.id].allyState = "Ally";
 		playerList[e.id].conversationId = 0; 
 	}
 
@@ -304,8 +305,8 @@ function loadWeapons()
 	// set sprite specific y-offsets, for images that need to be displayed below the entity
 	weaponSprite["Arrow"][3][0].y_offset = 6;
 	weaponSprite["Arrow"][3][1].y_offset = 3;
-	weaponSprite["Sword"][0][3].y_offset = 6; //left attack last frame
-	weaponSprite["Sword"][2][3].y_offset = 6; // right attack last frame
+	weaponSprite["Sword"][0][3].y_offset = 7; //left attack last frame
+	weaponSprite["Sword"][2][3].y_offset = 7; // right attack last frame
 	weaponSprite["Sword"][3][2].y_offset = 10; // down attack second last frame
 	weaponSprite["Sword"][3][3].y_offset = 11; // down attack last frame
 }
@@ -1075,7 +1076,7 @@ function renderMinimap()
 
 	// draw the user's current money
 	context.fillStyle = "#000000";
-	context.font = "bold" + 4 * graphics_scaling + "px sans-serif";
+	context.font = "bold " + 4 * graphics_scaling + "px sans-serif";
 	context.fillText(player.inventory.getItem("money").quantity,x + graphics_scaling + Math.ceil(itemSprite["moneyIcon"].width * graphics_scaling / 2), y - (3 * graphics_scaling));
 	context.drawImage(itemSprite["moneyIcon"], x, y - ((3 + Math.ceil(itemSprite["moneyIcon"].height / 2 )) * graphics_scaling), Math.ceil(itemSprite["moneyIcon"].width * graphics_scaling / 2), Math.ceil(itemSprite["moneyIcon"].height * graphics_scaling / 2))
 }

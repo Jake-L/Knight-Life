@@ -284,7 +284,7 @@ var CPU = function(x, y, spriteName, id, lvl, mapId)
 	this.entity = new Entity(x, y, spriteName, mapId);
 	console.log("Spawning entity at (" + x + "," + y + ") on map " + mapId);
 	this.entity.width = w;
-	this.entity.depth = Math.floor(h * 0.5);
+	this.entity.depth = Math.ceil(h * 0.5);
 	this.entity.height = h;
 	this.entity.id = id;
 	this.entity.setLevel(lvl);
@@ -302,7 +302,7 @@ var CPU = function(x, y, spriteName, id, lvl, mapId)
 	    for (var i in targetList)
 	    {
 			// only target enemies not in your faction
-			if ((targetList[i].faction == null || targetList[i].faction != this.entity.faction) && targetList[i].allyState != "Passive")
+			if ((targetList[i].faction == null || targetList[i].faction != this.entity.faction) && targetList[i].targetType != "Passive")
 			{
 				// only target entities within 100 units
 				if (nearest_target == null)
@@ -566,7 +566,7 @@ CPU.prototype.update = function()
 
 CPU.prototype.setTarget = function(id)
 {
-	if (this.target != id && this.entity.allyState != "Passive")
+	if (this.target != id && this.entity.targetType != "Passive")
 	{
 		var e = getEntity(id, this.entity.mapId);
 		
@@ -644,9 +644,9 @@ setInterval(function()
 	checkDamage();
 
 	// spawn money on the map
-	if (new Date().getTime() % 1000 == 0)
+	if (new Date().getTime() % 2000 == 0 && items[0].length < 10)
 	{
-		items[0].push(new Item("money", Math.ceil(Math.random() * 5) + 1, Math.ceil(Math.random() * maxX[0]), Math.ceil(Math.random() * maxY[0])));
+		items[0].push(new Item("money", Math.ceil(Math.random() * 5) + 1, Math.ceil(Math.random() * maxX[0]), Math.ceil(Math.random() * (maxY[0] - minY[0])) + minY[0]));
 	}
 
 	// update all the entities on the map
@@ -792,8 +792,8 @@ global.Damage = function(x, y, source, damage_time, damage, mapId)
 
 	this.collisionCheck = function(e)
 	{
-		if ((this.x + 1 >= e.x - (e.width / 2) && this.x - 1 <= e.x + (e.width / 2))
-			&& (this.y + 1 >= e.y - e.depth && this.y - 1 <= e.y))
+		if (this.x + 1 >= e.x - (e.width / 2) && this.x - 1 <= e.x + (e.width / 2)
+			&& this.y + 1 >= e.y - (e.depth / 2) && this.y - 1 <= e.y + (e.depth / 2))
 		{
 			return true;
 		}
@@ -899,7 +899,7 @@ function checkDamage()
 				// check every connected player to see if they were hit
 				for (var j in connected[mapId])
 				{
-					if (damageList[mapId][i].source != connected[mapId][j].id && connected[mapId][j].allyState != "Passive" && damageList[mapId][i].collisionCheck(connected[mapId][j]))
+					if (damageList[mapId][i].source != connected[mapId][j].id && connected[mapId][j].targetType != "Passive" && damageList[mapId][i].collisionCheck(connected[mapId][j]))
 					{
 						// tell the client that they took damage
 						io.to(connected[mapId][j].id).emit('damageIn', damageList[mapId][i].x, damageList[mapId][i].y, damageList[mapId][i].damage);
@@ -914,7 +914,7 @@ function checkDamage()
 				// check every cpu to see if they were hit
 				for (var j in mapEntities[mapId])
 				{
-					if (damageList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].entity.allyState != "Passive"  && damageList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
+					if (damageList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].entity.targetType != "Passive"  && damageList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
 					{
 						// damage the entity
 						mapEntities[mapId][j].entity.takeDamage(damageList[mapId][i].x, damageList[mapId][i].y, damageList[mapId][i].damage);
@@ -961,7 +961,7 @@ function checkDamage()
 					// check every connected player to see if they were hit
 					for (var j in connected[mapId])
 					{
-						if (projectileList[mapId][i].source != connected[mapId][j].id && connected[mapId][j].allyState != "Passive" && projectileList[mapId][i].collisionCheck(connected[mapId][j]))
+						if (projectileList[mapId][i].source != connected[mapId][j].id && connected[mapId][j].targetType != "Passive" && projectileList[mapId][i].collisionCheck(connected[mapId][j]))
 						{
 							// tell the client that they took damage
 							io.to(connected[mapId][j].id).emit('damageIn', projectileList[mapId][i].x, projectileList[mapId][i].y, projectileList[mapId][i].damage);
@@ -977,7 +977,7 @@ function checkDamage()
 					// check every cpu to see if they were hit
 					for (var j in mapEntities[mapId])
 					{
-						if (projectileList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].entity.allyState != "Passive" && projectileList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
+						if (projectileList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].entity.targetType != "Passive" && projectileList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
 						{
 							// damage the entity
 							mapEntities[mapId][j].entity.takeDamage(projectileList[mapId][i].x, projectileList[mapId][i].y, projectileList[mapId][i].damage);
@@ -1231,14 +1231,18 @@ setInterval(function()
 			
 			for (var j in mapEntities[mapId])
 			{
-			    /*if (mapEntities[mapId][j].target == i)
+			    if (mapEntities[mapId][j].target == i)
 			    {
 			      	mapEntities[mapId][j].entity.allyState = "Enemy";
+			    }
+			    else if (mapEntities[mapId][j].targetType == "Passive")
+			    {
+			    	mapEntities[mapId][j].entity.allyState = "Ally";
 			    }
 			    else
 			    {
 			      	mapEntities[mapId][j].entity.allyState = "Neutral";
-			    }*/
+			    }
 
 				players.push(mapEntities[mapId][j].entity);
 			}

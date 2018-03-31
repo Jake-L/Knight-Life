@@ -31,7 +31,6 @@ initializeCutscene[0] = function(cutscene)
 function Cutscene(chatId)
 {
 	this.chatId = chatId;
-	console.log(chatId, this.chatId);
 	this.text;
 	this.node;
 	this.addItem;
@@ -90,9 +89,5 @@ Cutscene.prototype.isComplete = function()
 // Displays the cutscene
 Cutscene.prototype.render = function()
 {
-	context.fillStyle = "#000000";
-	context.font = "bold " + 4 * graphics_scaling + "px sans-serif";
-	context.fillText(this.text,
-		(width / 2) - (context.measureText(this.text).width / 2),
-		height * 3 / 4);
+	view.renderText(this.text);
 };
