@@ -78,6 +78,7 @@ var weaponSprite = {};
 var username = "";
 var playerXP = 0;
 var minimapScale = 16;
+var displayQuests = false;
 
 var view = new View();
 
@@ -744,6 +745,8 @@ Player.prototype.update = function()
 	// loops through every key currently pressed and performs an action
 	if (!this.entity.knockback || (Maths.abs(y_speed) <= 3 && Math.abs(x_speed) <= 3))
 	{
+		displayQuests = false;
+
 		for(var key in keysDown)
 		{
 			var value = Number(key);
@@ -788,6 +791,10 @@ Player.prototype.update = function()
 					initiateConversation();
 				}
 
+			}
+			else if (value == 81)
+			{
+				displayQuests = true;
 			}
 		}
 	}

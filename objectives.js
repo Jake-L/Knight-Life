@@ -10,7 +10,7 @@ initializeObjective[0] = function(Objective){
 }
 
 initializeObjective[1] = function(Objective){
-	Objective.tracker[0] = [{objectiveType: "enemy", counter: 1, description: "Defeat an enemy at least three levels about you", levelDifference: 3}];
+	Objective.tracker[0] = [{objectiveType: "enemy", counter: 1, description: "Defeat an enemy at least three levels above you", levelDifference: 3}];
 	Objective.reward = {xp: 20};
 	Objective.name = "David and Goliath";
 }
@@ -34,7 +34,7 @@ initializeObjective[4] = function(Objective){
 }
 
 initializeObjective[1000] = function(Objective){
-	Objective.tracker[0] = [{objectiveType: "enemy", counter: 1, description: "Defeat one enemy"}];
+	Objective.tracker[0] = [{objectiveType: "enemy", counter: 2, description: "Defeat {counter} icemen", faction: "iceman"}];
 	Objective.tracker[1] = [{objectiveType: "cutscene", counter: 1, description: "Return to Bob", id: "0"}];
 	Objective.reward = {xp: 50, items: [{name: "money", quantity: 100}]};
 	Objective.name = "Cleaning the Streets";

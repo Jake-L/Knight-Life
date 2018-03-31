@@ -70,6 +70,11 @@ var View = function()
 		}
 
 		player.entity.renderHealthBar();
+
+		if (displayQuests)
+		{
+			this.displayQuests();
+		}
 	}
 
 	this.renderAux = function(e)
@@ -317,5 +322,71 @@ var View = function()
 				(y + (h / 4) + (line_counter * 8 * graphics_scaling)));
 			line_counter++;
 		}
+	}
+
+	this.displayQuests = function()
+	{
+		var x = width / 4;
+		var y = height / 4;
+		var w = width / 2;
+		var h = height / 2;
+
+		if (player.entity.x_speed != 0 || player.entity.y_speed != 0)
+		{
+			context.globalAlpha = 0.7;
+		}
+
+		// draw the textbox
+		context.fillStyle = "#FFFFFF";
+		context.fillRect(x, y, w, h);
+		context.lineWidth = graphics_scaling * 2;
+		context.strokeStyle = "#000000";
+		context.beginPath();		
+		context.moveTo(x, y);
+		context.lineTo(x + w, y);
+		context.lineTo(x + w, y + h);
+		context.lineTo(x, y + h);
+		context.lineTo(x, y);
+		context.stroke();
+		context.beginPath();
+		context.moveTo(x + w / 3, y);
+		context.lineTo(x + w / 3, y + h);
+		context.stroke();
+
+		context.font = "bold " + 8 * graphics_scaling + "px sans-serif";
+		context.fillStyle = "#000000";
+		var line_counter = 0;
+
+		// 	draw the headers
+		context.fillText("Quests",
+			x + (4 * graphics_scaling),
+			y + (8 * graphics_scaling));
+
+		context.fillText("Quest Tasks",
+				x + (w/3) + (4 * graphics_scaling),
+				y + (8 * graphics_scaling));
+
+		context.font = "bold " + 4 * graphics_scaling + "px sans-serif";
+		for (var i in quests)
+		{
+			// 	draw the text
+			context.fillText(quests[i].name,
+				x + (4 * graphics_scaling),
+				y + ((4 + line_counter) * 4 * graphics_scaling));
+
+			var task_counter = 0;
+
+			for (var j in quests[i].tracker[0])
+			{
+				context.fillText(quests[i].tracker[0][j].description.replace("{counter}",quests[i].tracker[0][j].counter),
+					x + (w/3) + (4 * graphics_scaling),
+					y + ((4 + task_counter) * 4 * graphics_scaling));
+				task_counter++;
+			}
+
+			line_counter++;
+		}
+
+		context.globalAlpha = 1;
 	}
 }
