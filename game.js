@@ -209,6 +209,7 @@ function loadMap(mapId)
 		playerList[e.id].targetType = "Passive"; 
 		playerList[e.id].allyState = "Ally";
 		playerList[e.id].conversationId = 0; 
+		playerList[e.id].display_name = "Bob";
 	}
 
 	frameTime = new Date().getTime(); // reset update frame timer

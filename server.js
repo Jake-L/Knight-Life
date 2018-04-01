@@ -97,8 +97,12 @@ function initializeMap()
 	for (var i = 0; i < 6; i++)
 	{
 		mapEntities[0][i] = new CPU(0, 0, "player", i, i+1, 0);   
-		killParticipation[0][i] = [];
 	}
+
+	mapEntities[0][6] = new CPU(0, 0, "player", "0p1", 1, 0);
+	mapEntities[0][6].targetType = "Passive"; 
+	mapEntities[0][6].entity.conversationId = 1; 
+	mapEntities[0][6].entity.display_name = "Brian"; 
 
 	var n = mapEntities[0].length;
 
@@ -108,7 +112,6 @@ function initializeMap()
 		mapEntities[0][i] = new CPU(0, 0, "iceman", i, 5, 0);
 		mapEntities[0][i].entity.faction = "iceman";
 		mapEntities[0][i].targetType = "Aggressive";
-		killParticipation[0][i] = [];
 	}
 
 	// load Map 1
@@ -125,7 +128,6 @@ function initializeMap()
 		mapEntities[1][i] = new CPU(0, 0, "iceman", i, 5, 1);
 		mapEntities[1][i].entity.faction = "iceman";
 		mapEntities[1][i].targetType = "Aggressive";
-		killParticipation[1][i] = [];
 	}
 
 	// ALL MAPS
@@ -288,6 +290,7 @@ var CPU = function(x, y, spriteName, id, lvl, mapId)
 	this.entity.height = h;
 	this.entity.id = id;
 	this.entity.setLevel(lvl);
+	killParticipation[mapId][id] = [];
 
 	//configure CPU specific attributes
 	this.target = null;
@@ -752,8 +755,7 @@ function entityDeath(entity)
 			{
 				if (!Number.isInteger(killParticipation[entity.mapId][entity.id][i]))
 				{
-					io.to(killParticipation[entity.mapId][entity.id][i]).emit('xpgain', xp, entity);
-					io.to(killParticipation[entity.mapId][entity.id][i]).emit('itemreceived', {name: "money", quantity: Math.ceil((Math.random() + 1) * entity.lvl)});
+					awardKillRewards(killParticipation[entity.mapId][entity.id][i], xp, entity);
 				}
 			}
 
@@ -771,13 +773,23 @@ function entityDeath(entity)
 
 		if (!Number.isInteger(killParticipation[entity.mapId][entity.id][0]))
 		{
-			io.to(killParticipation[entity.mapId][entity.id][0]).emit('xpgain', xp, entity);
-			io.to(killParticipation[entity.mapId][entity.id][0]).emit('itemreceived', {name: "money", quantity: Math.ceil((Math.random() + 1) * entity.lvl)});
+			awardKillRewards(killParticipation[entity.mapId][entity.id][0], xp, entity);
 		}
 	}
 
 	killParticipation[entity.mapId][entity.id] = [];
 	clearAgro(entity.id, entity.mapId);
+}
+
+function awardKillRewards(id, xp, entity)
+{
+	io.to(id).emit('xpgain', xp, entity);
+	io.to(id).emit('itemreceived', {name: "money", quantity: Math.ceil((Math.random() + 1) * entity.lvl), type: "currency"});
+
+	if (Math.random() > 0.7)
+	{
+		io.to(id).emit('itemreceived', {name: "apple", quantity: 1, type: "food"});
+	}
 }
 
 // holds information about where damage will be applied
@@ -914,7 +926,7 @@ function checkDamage()
 				// check every cpu to see if they were hit
 				for (var j in mapEntities[mapId])
 				{
-					if (damageList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].entity.targetType != "Passive"  && damageList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
+					if (damageList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].targetType != "Passive"  && damageList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
 					{
 						// damage the entity
 						mapEntities[mapId][j].entity.takeDamage(damageList[mapId][i].x, damageList[mapId][i].y, damageList[mapId][i].damage);
@@ -977,7 +989,7 @@ function checkDamage()
 					// check every cpu to see if they were hit
 					for (var j in mapEntities[mapId])
 					{
-						if (projectileList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].entity.targetType != "Passive" && projectileList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
+						if (projectileList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].targetType != "Passive" && projectileList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
 						{
 							// damage the entity
 							mapEntities[mapId][j].entity.takeDamage(projectileList[mapId][i].x, projectileList[mapId][i].y, projectileList[mapId][i].damage);

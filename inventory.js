@@ -132,13 +132,13 @@ function Item(spriteName, quantity, type)
 	}
 };
 
-Item.prototype.Initialize = function()
+Item.prototype.initialize = function()
 {
 	this.sprite = new Image();
 	this.sprite.src = "img//" + this.spriteName + ".png";
 };
 
-Item.prototype.Render = function()
+Item.prototype.render = function()
 {
 	context.drawImage(this.sprite, this.x * graphics_scaling, this.y * graphics_scaling, this.sprite.width * graphics_scaling, this.sprite.height * graphics_scaling);
 };

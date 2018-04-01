@@ -1,7 +1,6 @@
 initializeCutscene = [];
 initializeCutscene[0] = function(cutscene)
 {
-	console.log(quests);
 	if (typeof(completedQuests[1000]) !== 'undefined')
 	{
 		cutscene.text = "Thanks for your help! I feel much safer now";
@@ -11,18 +10,37 @@ initializeCutscene[0] = function(cutscene)
 		cutscene.text = "Hello! The ice men scare me! Please kill two of them.";
 		cutscene.addQuest = 1000;
 	}
-	else if (quests[1000].isComplete())
-	{
-		cutscene.text = "Thanks for your help."
-	}
 	else if (quests[1000].tracker.length == 1)
 	{
 		cutscene.text = "Wow, you did it! Thanks for your help. Here is a reward.";
-		quests[1000].conversationCompleted(0); //chatId = 0
+		quests[1000].conversationCompleted(cutscene.chatId); 
 	}
 	else
 	{
 		cutscene.text = "Good luck fighting those monsters, let me know when you're done!";
+	}
+};
+
+initializeCutscene[1] = function(cutscene)
+{
+	if (typeof(completedQuests[1001]) !== 'undefined')
+	{
+		cutscene.text = "That apple was very tasty!";
+	}
+	else if (typeof(quests[1001]) === 'undefined')
+	{
+		cutscene.text = "I am so hungry... can you please get me an apple?";
+		cutscene.addQuest = 1001;
+	}
+	else if (player.inventory.getItem("apple").quantity > 0)
+	{
+		cutscene.text = "Wow, you actually brought me an apple, thanks so much!";
+		player.inventory.removeItem({name: "apple", quantity: 1});
+		quests[1001].conversationCompleted(cutscene.chatId);
+	}
+	else
+	{
+		cutscene.text = "So... hungry... need... apple...";
 	}
 }
 
