@@ -28,11 +28,11 @@ server.listen(5000, function() {
 	initializeMap();
 
 	// check if the users.txt file exists, and it create it if it does not
-	fs.exists('C:\\Users\\ryand_000\\GitHub\\Knight Life\\users.txt', function(exists)
+	fs.exists('users.txt', function(exists)
 	{
 		if (exists == false)
 		{
-			fs.writeFile('C:\\Users\\ryand_000\\GitHub\\Knight Life\\users.txt', '', function(err) 
+			fs.writeFile('users.txt', '', function(err) 
 			{
 				if (err)
 				{
@@ -1114,7 +1114,7 @@ io.on('connection', function(socket)
 
 	socket.on('login', function(username, password)
 	{
-		fs.readFile('C:\\Users\\ryand_000\\GitHub\\Knight Life\\users.txt', function(err, data) 
+		fs.readFile('users.txt', function(err, data) 
 		{
 		    if(err) 
 		    {
@@ -1161,7 +1161,7 @@ io.on('connection', function(socket)
 
 		if (username != null && username.length >= 2 && password != null && password.length >= 4)
 		{
-			fs.readFile('C:\\Users\\ryand_000\\GitHub\\Knight Life\\users.txt', function(err, data) 
+			fs.readFile('users.txt', function(err, data) 
 			{
 			    if(err) 
 			    {
@@ -1184,7 +1184,7 @@ io.on('connection', function(socket)
 				    // username is not already in use, so it is registered
 				    if (valid == true)
 				    {
-				    	fs.appendFile('C:\\Users\\ryand_000\\GitHub\\Knight Life\\users.txt', username + "," + password + "\n", function(err) 
+				    	fs.appendFile('users.txt', username + "," + password + "\n", function(err) 
 				    	{
 						    if(err) 
 						    {
