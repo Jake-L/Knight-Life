@@ -786,9 +786,13 @@ function awardKillRewards(id, xp, entity)
 	io.to(id).emit('xpgain', xp, entity);
 	io.to(id).emit('itemreceived', {name: "money", quantity: Math.ceil((Math.random() + 1) * entity.lvl), type: "currency"});
 
-	if (Math.random() > 0.7)
+	if (Math.random() > 0.7 && entity.faction != "iceman")
 	{
 		io.to(id).emit('itemreceived', {name: "apple", quantity: 1, type: "food"});
+	}
+	if (Math.random() > 0.5 && entity.faction == "iceman")
+	{
+		io.to(id).emit('itemreceived', {name: "crystal", quantity: 1});
 	}
 }
 

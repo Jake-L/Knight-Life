@@ -75,6 +75,10 @@ var View = function()
 		{
 			this.displayQuests();
 		}
+		else if (displayInventory)
+		{
+			this.displayInventory();
+		}
 	}
 
 	this.renderAux = function(e)
@@ -383,6 +387,73 @@ var View = function()
 					y + ((4 + task_counter) * 4 * graphics_scaling));
 				task_counter++;
 			}
+
+			line_counter++;
+		}
+
+		context.globalAlpha = 1;
+	}
+
+	this.displayInventory = function()
+	{
+		var w = Math.max(width * 0.2,250);
+		var h = Math.max(height * 0.5,100);
+		var x = (width / 2) - (w/2);
+		var y = (height / 2) - (h/2);
+
+		if (player.entity.x_speed != 0 || player.entity.y_speed != 0)
+		{
+			context.globalAlpha = 0.7;
+		}
+
+		// draw the textbox
+		context.fillStyle = "#FFFFFF";
+		context.fillRect(x, y, w, h);
+		context.lineWidth = graphics_scaling * 2;
+		context.strokeStyle = "#000000";
+		context.beginPath();		
+		context.moveTo(x, y);
+		context.lineTo(x + w, y);
+		context.lineTo(x + w, y + h);
+		context.lineTo(x, y + h);
+		context.lineTo(x, y);
+		context.stroke();
+
+		context.font = "bold " + 8 * graphics_scaling + "px sans-serif";
+		context.fillStyle = "#000000";
+		var line_counter = 0;
+
+		// 	draw the headers
+		context.fillText("Items",
+			x + (4 * graphics_scaling),
+			y + (8 * graphics_scaling));
+
+		context.fillText("Quantity",
+				x + (w/2) + (4 * graphics_scaling),
+				y + (8 * graphics_scaling));
+
+		context.font = "bold " + Math.max(12, 4 * graphics_scaling) + "px sans-serif";
+
+		for (var i in player.inventory.items)
+		{
+			if (typeof(player.inventory.items[i].sprite) !== "undefined" && player.inventory.items[i].sprite.complete)
+			{
+				context.drawImage(player.inventory.items[i].sprite,
+					x + 16,
+					y + ((1 + line_counter) * 20) + (8 * graphics_scaling) - player.inventory.items[i].sprite.height + 2,
+					player.inventory.items[i].sprite.width,
+					player.inventory.items[i].sprite.height);
+			}
+
+			// 	display the items name
+			context.fillText(player.inventory.items[i].name,
+				x + 48,
+				y + ((1 + line_counter) * 20) + (8 * graphics_scaling));
+
+			// 	display the items quantity
+			context.fillText("x" + player.inventory.items[i].quantity,
+				x + (w/2) + 16,
+				y + ((1 + line_counter) * 20) + (8 * graphics_scaling));
 
 			line_counter++;
 		}

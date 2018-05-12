@@ -32,6 +32,8 @@ Inventory.prototype.addItem = function(item)
 	else
 	{
 		this.items[item.name] = item;
+		this.items[item.name].sprite = new Image();
+		this.items[item.name].sprite.src = "img//" + item.name + ".png";
 	}
 };
 

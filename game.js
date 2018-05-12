@@ -79,6 +79,7 @@ var username = "";
 var playerXP = 0;
 var minimapScale = 16;
 var displayQuests = false;
+var displayInventory = false;
 
 var view = new View();
 
@@ -747,6 +748,7 @@ Player.prototype.update = function()
 	if (!this.entity.knockback || (Maths.abs(y_speed) <= 3 && Math.abs(x_speed) <= 3))
 	{
 		displayQuests = false;
+		displayInventory = false;
 
 		for(var key in keysDown)
 		{
@@ -793,9 +795,13 @@ Player.prototype.update = function()
 				}
 
 			}
-			else if (value == 81)
+			else if (value == 81 && !displayInventory)
 			{
 				displayQuests = true;
+			}
+			else if (value == 73 && !displayQuests)
+			{
+				displayInventory = true;
 			}
 		}
 	}
