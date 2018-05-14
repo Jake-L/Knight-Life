@@ -1099,6 +1099,51 @@ io.on('connection', function(socket)
 		connection[socket.id].last_update = new Date().getTime();
 	});
 
+	socket.on('save', function(username, savedata)
+	{
+		fs.writeFile('saves//' + username + '.txt', savedata, function(err) 
+		{
+			if (err)
+			{
+				console.log("unable to create save data for user " + username);
+			}
+			else
+			{
+				console.log("save data file created successfully for user " + username);
+			}
+		});
+	});
+
+	socket.on('load', function(username)
+	{
+		// check if the user has existing save data
+		fs.exists('saves//' + username + '.txt', function(exists)
+		{
+			if (exists == true)
+			{
+				fs.readFile('saves//' + username + '.txt', function(err, data) 
+				{
+				    if(err) 
+				    {
+				    	console.log("error reading save data for user " + username);
+				    	io.to(socket.id).emit('load', "false");
+					}
+					else
+					{
+						// check if the username is already in use
+						console.log("save data read successfully for user " + username);
+					    io.to(socket.id).emit('load', data.toString());
+					}
+				});
+			}
+			else
+			{
+				console.log("no save data exists for user " + username);
+				io.to(socket.id).emit('load', "false");
+			}
+		});
+	});
+
 	socket.on('disconnect', function()
 	{
 		console.log(socket.id + " disconnected");

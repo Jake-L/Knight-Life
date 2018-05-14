@@ -21,7 +21,7 @@ exports.Entity = function(x,y,spriteName,mapId)
 	this.sprite;
 	this.spriteName = spriteName;
 	this.weaponSprite;
-	this.id = Math.ceil(new Date().getTime() * Math.random());
+	this.id = Math.ceil(new Date().getTime() * (Math.random() + 0.01));
 
 	// stats
 	this.max_health = 100;
@@ -49,41 +49,38 @@ exports.Entity = function(x,y,spriteName,mapId)
 	{
 		var old_lvl = this.lvl;
 		this.xp += xp;
-		this.updateLevel();
+		this.lvl = Math.floor(Math.pow(this.xp / 5, 4/10)) + 1;
+		while (old_lvl < this.lvl)
+		{
+			old_lvl++;
+			this.updateStats();
+			if(typeof(module) === 'undefined')
+			{
+				notificationList.push(new Notification("Level Up!","You reached level " + old_lvl)); 
+			}
+		}
 		flyTextList.push(new flyText(this.x, this.y - (this.height * 1.5), "+" + xp + " XP", "#0000C0"));
 	};
 
 	this.setLevel = function(lvl)
 	{
 		this.xp = Math.ceil(Math.pow(lvl-1, 10/4) * 5);
-		this.updateLevel();
+		this.lvl = Math.floor(Math.pow(this.xp / 5, 4/10)) + 1;
+		var i = 1;
+		while (i < lvl)
+		{
+			this.updateStats();
+			i++;
+		}
 	}
 
-	this.updateLevel = function()
+	this.updateStats = function()
 	{
-		var old_lvl = this.lvl;
-		var updated = false;
-		this.lvl = Math.floor(Math.pow(this.xp / 5, 4/10)) + 1;
-		while (old_lvl < this.lvl)
-		{
-			old_lvl++;
-			this.defence++;
-			this.attack_damage++;
-			this.attack_speed += 0.01 / this.attack_speed;
-			this.max_health += 5;
-			this.current_health = this.max_health;
-
-			if(typeof(module) === 'undefined')
-			{
-				notificationList.push(new Notification("Level Up!","You reached level " + old_lvl)); 
-			}
-
-			updated = true;
-		}
-		if (updated)
-		{
-			this.loadAttacks();
-		}
+		this.defence++;
+		this.attack_damage++;
+		this.attack_speed += 0.01 / this.attack_speed;
+		this.max_health += 5;
+		this.current_health = this.max_health;
 	};
 
 	this.loadAttacks = function()

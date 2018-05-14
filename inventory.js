@@ -4,6 +4,33 @@ function Inventory()
 	this.items = {};
 }
 
+Inventory.prototype.loadInventory = function(items)
+{
+	for (var i in items)
+	{
+		this.addItem(items[i]);
+	}
+}
+
+Inventory.prototype.jsonString = function()
+{
+	var s = "[";
+	var counter = 0;
+
+	for (var i in this.items)
+	{
+		if (counter > 0)
+		{
+			s+= ","; // add commas between any elements after the first element
+		}
+
+		// add the item to the json list
+		s += "{\"name\": \"" + this.items[i].name + "\", \"quantity\": " + this.items[i].quantity + "}";  
+
+		counter++;
+	}
+}
+
 // Displays the inventory view
 Inventory.prototype.render = function(x, y, width, height)
 {

@@ -130,7 +130,7 @@ var mapObject = share.mapObject;
 var Attack = shareAttack.Attack;
 var Entity = shareEntity.Entity;
 
-var defaultmapId = -1;
+var defaultmapId = 0;
 var player;
 var quests = {};
 var completedQuests = {};
@@ -140,35 +140,32 @@ var achievementCount = 5;
 window.onload = function()
 {
 	document.body.appendChild(canvas);
-	loadMap(defaultmapId);
-	loadSprite("player",["Punch","Sword","Arrow"]);
-	loadSprite("iceman",["Punch","Snowball"]);
-	loadWeapons();
 
 	//get the player's username
 	username = getUsername();
-	spawnPlayer(defaultmapId);
-	
-	//audio.play(); //must come after loadMap
 
+	//check with the server for savedata
+	socket.emit('load', username);
+
+	// load images and data that don't depend on player information while waiting for server response
 	for (var i = 0; i < achievementCount; i++)
 	{
 		achievements[i] = new Objective(i);
 	}
 
-	frameTime = new Date().getTime();
-	startTime = frameTime;
-	step();
-
+	loadSprite("player",["Punch","Sword","Arrow"]);
+	loadSprite("iceman",["Punch","Snowball"]);
+	loadWeapons();
 };
 
 // create the player
-function spawnPlayer(mapId)
+function respawn()
 {
-	player = new Player(mapId);
-	player.entity.display_name = username;
-	player.entity.xp = playerXP;
-	player.entity.updateLevel();
+	var oldPlayer = player;
+	player = new Player(oldPlayer.entity.mapId);
+	player.entity.setLevel(oldPlayer.entity.lvl);
+	player.entity.xp = oldPlayer.entity.xp;
+	player.inventory = oldPlayer.inventory;
 	get_offset();
 }
 
@@ -458,7 +455,7 @@ var update = function()
 	{
 		playerXP = player.entity.xp;
 		socket.emit('death');
-		spawnPlayer(player.entity.mapId);
+		respawn();
 	}
 	else
 	{
@@ -631,6 +628,7 @@ function Player(mapId)
 	this.healthRegenCounter = 0;
 	this.portalCounter = 0;
 	this.conversationCounter = 0;
+	this.entity.display_name = username;
 	this.inventory = new Inventory();
 }
 
@@ -1235,6 +1233,43 @@ socket.on('viewOnly', function(p, items)
 		view.insertDynamic(array);
 	}
 });
+
+
+socket.on('load', function(savedata)
+{
+	if (savedata == "false")
+	{
+		player = new Player(defaultmapId);
+		console.log("no load data received");
+	}
+	else
+	{
+		var data = JSON.parse(savedata);
+		player = new Player(data.mapId);
+		player.inventory.loadInventory(data.items);
+		player.entity.setLevel(data.lvl);
+		player.entity.xp = data.xp;
+	}
+
+	loadMap(player.entity.mapId);
+	
+	//audio.play(); //must come after loadMap
+	frameTime = new Date().getTime();
+	startTime = frameTime;
+	step();
+});
+
+// save your data every 5 seconds
+setInterval(function()
+{
+	socket.emit('save',player.entity.display_name,
+			"{" + 
+			"\"mapId\": \"" + player.entity.mapId + "\", " + 
+			"\"items\": " + JSON.stringify(player.inventory.items) + "," + //player.inventory +
+			"\"xp\": " + player.entity.xp + "," +
+			"\"lvl\": " + player.entity.lvl +
+			"}");
+}, 5000);
 
 // check current ping
 socket.on('ping', function(serverTime)
