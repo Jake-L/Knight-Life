@@ -51,10 +51,8 @@ function Objective(id)
 {
 	this.id = id;
 	this.tracker = [];
-	this.next_node;
 	this.reward;
 	this.name;
-	this.completionDescription; //for missions that require a conversation at the end
 
 	initializeObjective[id](this);
 }

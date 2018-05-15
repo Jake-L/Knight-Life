@@ -135,6 +135,7 @@ var player;
 var quests = {};
 var completedQuests = {};
 var achievements = {};
+var completedAchievements = {};
 var achievementCount = 5;
 
 window.onload = function()
@@ -148,11 +149,6 @@ window.onload = function()
 	socket.emit('load', username);
 
 	// load images and data that don't depend on player information while waiting for server response
-	for (var i = 0; i < achievementCount; i++)
-	{
-		achievements[i] = new Objective(i);
-	}
-
 	loadSprite("player",["Punch","Sword","Arrow"]);
 	loadSprite("iceman",["Punch","Snowball"]);
 	loadWeapons();
@@ -496,7 +492,7 @@ var update = function()
 	// check if any achievements have been completed
 	for (var i in achievements)
 	{
-		if (achievements[i].isComplete())
+		if (achievements[i].isComplete() && typeof(completedAchievements[i]) === 'undefined')
 		{
 			notificationList.push(new Notification("Achievement Complete","You completed the achievement " + achievements[i].name))
 			var r = achievements[i].reward;
@@ -516,7 +512,7 @@ var update = function()
 				}
 			}
 
-			delete achievements[i];
+			completedAchievements[i] = true;
 		}
 	}
 
@@ -1096,6 +1092,7 @@ function renderMinimap()
 // check if the user clicks the mouse
 function printMousePos(event) {
   console.log("clientX: " + event.clientX + " - clientY: " + event.clientY);
+  view.clickPosition(event.clientX, event.clientY);
 }
 
 document.addEventListener("click", printMousePos);
@@ -1239,8 +1236,12 @@ socket.on('load', function(savedata)
 {
 	if (savedata == "false")
 	{
-		player = new Player(defaultmapId);
 		console.log("no load data received");
+		player = new Player(defaultmapId);
+		for (var i = 0; i < achievementCount; i++)
+		{
+			achievements[i] = new Objective(i);
+		}
 	}
 	else
 	{
@@ -1249,6 +1250,10 @@ socket.on('load', function(savedata)
 		player.inventory.loadInventory(data.items);
 		player.entity.setLevel(data.lvl);
 		player.entity.xp = data.xp;
+		quests = loadObjective(data.quests);
+		completedQuests = data.completedQuests;
+		achievements = loadObjective(data.achievements);
+		completedAchievements = data.completedAchievements;
 	}
 
 	loadMap(player.entity.mapId);
@@ -1259,6 +1264,19 @@ socket.on('load', function(savedata)
 	step();
 });
 
+function loadObjective(data)
+{
+	var objectives = {};
+
+	for (var i in data)
+	{
+		objectives[i] = new Objective(i);
+		objectives[i].tracker = data[i].tracker;
+	}
+
+	return objectives;
+}
+
 // save your data every 5 seconds
 setInterval(function()
 {
@@ -1267,7 +1285,11 @@ setInterval(function()
 			"\"mapId\": \"" + player.entity.mapId + "\", " + 
 			"\"items\": " + JSON.stringify(player.inventory.items) + "," + //player.inventory +
 			"\"xp\": " + player.entity.xp + "," +
-			"\"lvl\": " + player.entity.lvl +
+			"\"lvl\": " + player.entity.lvl + "," +
+			"\"quests\": " + JSON.stringify(quests) + "," + 
+			"\"completedQuests\": " + JSON.stringify(completedQuests) + "," + 
+			"\"achievements\": " + JSON.stringify(achievements) + "," + 
+			"\"completedAchievements\": " + JSON.stringify(completedAchievements) +  
 			"}");
 }, 5000);
 

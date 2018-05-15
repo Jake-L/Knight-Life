@@ -7,9 +7,14 @@ var View = function()
 	this.renderList = [];
 	this.staticCounter = 0;
 	this.referenceList = [];
+	this.clickX;
+	this.clickY;
+	this.selection;
 
 	this.render = function()
 	{
+		this.renderBackground();
+
 		// a sorted list to hold all objects that must be rendered
 		sortedIndexList = [];
 
@@ -61,6 +66,8 @@ var View = function()
 			}
 		}
 
+		this.renderWeather();
+
 		for (var i in sortedIndexList)
 		{
 			 if (sortedIndexList[i].type == "playerList")
@@ -78,6 +85,12 @@ var View = function()
 		else if (displayInventory)
 		{
 			this.displayInventory();
+		}
+		else
+		{
+			this.clickX = 0;
+			this.clickY = 0;
+			this.selection = "-1";
 		}
 	}
 
@@ -103,6 +116,11 @@ var View = function()
 			context.shadowBlur = 15 + object.z;
 			context.shadowOffsetX = 0;
 			context.shadowOffsetY = (3 + object.z) * graphics_scaling;
+
+			if (typeof(object.opacity) !== 'undefined')
+			{
+				context.globalAlpha = object.opacity;
+			}
 
 			// if the object keeps track of when it was spawned and it's speed
 			if (typeof(object.update_time) !== 'undefined')
@@ -371,24 +389,36 @@ var View = function()
 				y + (8 * graphics_scaling));
 
 		context.font = "bold " + 4 * graphics_scaling + "px sans-serif";
+
 		for (var i in quests)
 		{
+			if (this.clickX > x && this.clickX < x + (w/2) && this.clickY > y + ((4 + line_counter) * 4 * graphics_scaling) && this.clickY < y + ((4 + line_counter + 1) * 4 * graphics_scaling))
+			{
+				this.selection = i;
+				console.log(this.selection);
+			}
+			else if (this.selection == "-1")
+			{
+				this.selection = i;
+			}
+
 			// 	draw the text
 			context.fillText(quests[i].name,
 				x + (4 * graphics_scaling),
 				y + ((4 + line_counter) * 4 * graphics_scaling));
 
-			var task_counter = 0;
-
-			for (var j in quests[i].tracker[0])
-			{
-				context.fillText(quests[i].tracker[0][j].description.replace("{counter}",quests[i].tracker[0][j].counter),
-					x + (w/3) + (4 * graphics_scaling),
-					y + ((4 + task_counter) * 4 * graphics_scaling));
-				task_counter++;
-			}
-
 			line_counter++;
+		}
+
+
+		var task_counter = 0;
+
+		for (var j in quests[this.selection].tracker[0])
+		{
+			context.fillText(quests[this.selection].tracker[0][j].description.replace("{counter}",quests[this.selection].tracker[0][j].counter),
+				x + (w/3) + (4 * graphics_scaling),
+				y + ((4 + task_counter) * 4 * graphics_scaling));
+			task_counter++;
 		}
 
 		context.globalAlpha = 1;
@@ -436,28 +466,47 @@ var View = function()
 
 		for (var i in player.inventory.items)
 		{
-			if (typeof(player.inventory.items[i].sprite) !== "undefined" && player.inventory.items[i].sprite.complete)
+			if (player.inventory.items[i].quantity > 0)
 			{
-				context.drawImage(player.inventory.items[i].sprite,
-					x + 16,
-					y + ((1 + line_counter) * 20) + (8 * graphics_scaling) - player.inventory.items[i].sprite.height + 2,
-					player.inventory.items[i].sprite.width,
-					player.inventory.items[i].sprite.height);
+				if (this.clickX > x && this.clickX < x + (w/2) && this.clickY > y + ((1 + line_counter) * 20) + (8 * graphics_scaling) && this.clickY < y + ((2 + line_counter) * 20) + (8 * graphics_scaling))
+				{
+					console.log("user clicked " + player.inventory.items[i].name);
+					this.selection = i;
+				}
+
+				if (typeof(player.inventory.items[i].sprite) !== "undefined" && player.inventory.items[i].sprite.complete)
+				{
+					context.drawImage(player.inventory.items[i].sprite,
+						x + 16,
+						y + ((1 + line_counter) * 20) + (8 * graphics_scaling) - player.inventory.items[i].sprite.height + 2,
+						player.inventory.items[i].sprite.width,
+						player.inventory.items[i].sprite.height);
+				}
+
+				// 	display the items name
+				context.fillText(player.inventory.items[i].name,
+					x + 48,
+					y + ((1 + line_counter) * 20) + (8 * graphics_scaling));
+
+				// 	display the items quantity
+				context.fillText("x" + player.inventory.items[i].quantity,
+					x + (w/2) + 16,
+					y + ((1 + line_counter) * 20) + (8 * graphics_scaling));
+
+				if (this.selection == i)
+				{
+					line_counter++;
+				}
+				line_counter++;
 			}
-
-			// 	display the items name
-			context.fillText(player.inventory.items[i].name,
-				x + 48,
-				y + ((1 + line_counter) * 20) + (8 * graphics_scaling));
-
-			// 	display the items quantity
-			context.fillText("x" + player.inventory.items[i].quantity,
-				x + (w/2) + 16,
-				y + ((1 + line_counter) * 20) + (8 * graphics_scaling));
-
-			line_counter++;
 		}
 
 		context.globalAlpha = 1;
+	}
+
+	this.clickPosition = function(x, y)
+	{
+		this.clickX = x;
+		this.clickY = y;
 	}
 }
