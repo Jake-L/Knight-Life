@@ -646,12 +646,6 @@ setInterval(function()
 	}
 	checkDamage();
 
-	// spawn money on the map
-	if (new Date().getTime() % 2000 == 0 && items[0].length < 10)
-	{
-		items[0].push(new Item("money", Math.ceil(Math.random() * 5) + 1, Math.ceil(Math.random() * maxX[0]), Math.ceil(Math.random() * (maxY[0] - minY[0])) + minY[0]));
-	}
-
 	// update all the entities on the map
 	for (var mapId in mapEntities)
 	{
@@ -673,6 +667,12 @@ setInterval(function()
 	// check if any players have picked up items
 	for (var mapId in items)
 	{
+			// spawn money on the map
+		if (new Date().getTime() % 2000 == 0 && items[mapId].length < 10)
+		{
+			items[mapId].push(new Item("money", Math.ceil(Math.random() * 5) + 1, Math.ceil(Math.random() * maxX[mapId]), Math.ceil(Math.random() * (maxY[mapId] - minY[mapId])) + minY[mapId]));
+		}
+
 		for (var j in connected[mapId])
 		{
 			var i = 0;
@@ -774,6 +774,18 @@ function entityDeath(entity)
 		if (!Number.isInteger(killParticipation[entity.mapId][entity.id][0]))
 		{
 			awardKillRewards(killParticipation[entity.mapId][entity.id][0], xp, entity);
+		}
+	}
+
+	for (var i in connected[entity.mapId])
+	{
+		if (entity.faction == "iceman")
+		{
+			io.to(connected[entity.mapId][i].id).emit('createEffect', "puddle", entity.x, entity.y, 180);
+		}
+		else
+		{
+			io.to(connected[entity.mapId][i].id).emit('createEffect', "blood", entity.x, entity.y, 180);
 		}
 	}
 

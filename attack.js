@@ -4,14 +4,14 @@
 var frame_length = {};
 frame_length["Punch"] = 60;
 frame_length["Sword"] = 60;
-frame_length["Snowball"] = 60;
-frame_length["Arrow"] = 60;
+frame_length["Snowball"] = 39;
+frame_length["Arrow"] = 39;
 
 var damage_frame = {};
 damage_frame["Punch"] = 30;
 damage_frame["Sword"] = 30;
-damage_frame["Snowball"] = 40;
-damage_frame["Arrow"] = 40;
+damage_frame["Snowball"] = 27;
+damage_frame["Arrow"] = 27;
 
 var damage_factor = {};
 damage_factor["Punch"] = 0.8;

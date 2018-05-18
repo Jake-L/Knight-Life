@@ -71,6 +71,7 @@ var flyTextList = [];
 var notificationList = [];
 var portalList = [];
 var cutscene = null;
+var effects = [];
 
 var playerSprite = [];
 var playerAttackSprite = [];
@@ -584,6 +585,16 @@ var update = function()
 		if (notificationList[0].counter <= 0 && cutscene == null) // only start new notifications outside of cutscenes
 		{
 			notificationList.splice(0,1);
+		}
+	}
+
+	// update visual effects
+	for (var i in effects)
+	{
+		effects[i].update();
+		if (effects[i].counter <= 0)
+		{
+			effects.splice(i,1); // delete effect if it's animation has ended
 		}
 	}
 
@@ -1147,18 +1158,49 @@ socket.on('mapObjects', function(a)
 			var p = new mapObject(a[i].x, a[i].y, a[i].spriteName);
 			p.initialize();
 			mapObjects[p.id] = p;
+			view.insertStatic(p);
 		}
-
-		view.insertStatic(mapObjects);
 	}
 
 	updateNearbyObjects();
 });
 
+var Effect = function(spriteName, x, y, counter)
+{
+	this.spriteName = spriteName;
+	this.x = x;
+	this.y = y;
+	this.z = 0;
+	this.totalCounter = counter;
+	this.counter = counter;
+	this.height;
+	this.width;
+	this.alpha = 1;
+	this.sprite = new Image();
+	/*this.sprite.onload = function()
+	{
+		this.width = this.sprite.width;
+		this.height = this.sprite.height / 2;
+	}*/
+	this.sprite.src = "img//" + this.spriteName + ".png";
+};
+
+Effect.prototype.update = function()
+{
+	this.counter--;
+	this.alpha = this.counter * 1.000 / this.totalCounter;
+};
+
+socket.on('createEffect', function(spriteName, x, y, counter)
+{
+	var e = new Effect(spriteName, x, y, counter);
+	effects.push(e);
+});
+
 // update position of other players from the server
 socket.on('players', function(players)
 {
-	if (players[0].mapId == player.entity.mapId)
+	if (players[0].mapId == player.entity.mapId) // make sure the data is relevant, for example not something the server sent as the player changed maps
 	{
 		var needUpdate = false;
 		if (playerList.length == 0)

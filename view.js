@@ -15,6 +15,11 @@ var View = function()
 	{
 		this.renderBackground();
 
+		for (var i in effects)
+		{
+			this.genericRender(effects[i]);
+		}
+
 		// a sorted list to hold all objects that must be rendered
 		sortedIndexList = [];
 
@@ -117,9 +122,10 @@ var View = function()
 			context.shadowOffsetX = 0;
 			context.shadowOffsetY = (3 + object.z) * graphics_scaling;
 
-			if (typeof(object.opacity) !== 'undefined')
+			if (typeof(object.alpha) !== 'undefined')
 			{
-				context.globalAlpha = object.opacity;
+				context.globalAlpha = object.alpha;
+				console.log(object.alpha);
 			}
 
 			// if the object keeps track of when it was spawned and it's speed
@@ -146,36 +152,40 @@ var View = function()
 					(object.y - object.sprite.height - object.z - y_offset) * graphics_scaling,
 					object.sprite.width * graphics_scaling, 
 					object.sprite.height * graphics_scaling);
+
+				if (object.spriteName == "blood")
+				{
+					console.log(object.sprite.width, object.sprite.height);
+				}
+
 			}
 
 			context.restore();
 		}
 	}
 
+	// remove all objects, even those that are static
 	this.clear = function()
 	{
 		this.renderList = [];
 		this.staticCounter = 0;
 	}
 
-	// insert items that persist through frames, like rocks which do not move
+	// insert a signle item that persist through frames, like rocks which do not move
 	this.insertStatic = function(a)
 	{
-		for (var i in a)
-		{
-			this.renderList.push(a[i]);
-			this.staticCounter += 1;
-		}
+		this.renderList.unshift(a); // add to start of list, so it does not matter if there are already dynamic elements included
+		this.staticCounter += 1;
 	}
 
 	// insert items that could change every frame, like a player or projectile
 	// remove the previous dynamic items, so that each object is only included once
-	this.insertDynamic = function(a)
+	this.insertDynamic = function(array)
 	{
 		this.renderList.splice(this.staticCounter, this.renderList.length - this.staticCounter);
-		for (var i in a)
+		for (var i in array)
 		{
-			this.renderList.push(a[i]);
+			this.renderList.push(array[i]);
 		}
 	}
 
@@ -509,4 +519,8 @@ var View = function()
 		this.clickX = x;
 		this.clickY = y;
 	}
+
+
 }
+
+
