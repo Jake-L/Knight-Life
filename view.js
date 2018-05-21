@@ -117,14 +117,17 @@ var View = function()
 		if (typeof(object.sprite) !== 'undefined' && object.sprite.complete && object.sprite.naturalHeight !== 0)
 		{
 			context.save();
-			context.shadowColor = "rgba(80, 80, 80, .4)";
-			context.shadowBlur = 15 + object.z;
-			context.shadowOffsetX = 0;
-			context.shadowOffsetY = (3 + object.z) * graphics_scaling;
 
 			if (typeof(object.alpha) !== 'undefined')
 			{
 				context.globalAlpha = object.alpha;
+			}
+			else
+			{
+				context.shadowColor = "rgba(80, 80, 80, .4)";
+				context.shadowBlur = 15 + object.z;
+				context.shadowOffsetX = 0;
+				context.shadowOffsetY = (3 + object.z) * graphics_scaling;
 			}
 
 			// if the object keeps track of when it was spawned and it's speed

@@ -131,7 +131,7 @@ var mapObject = share.mapObject;
 var Attack = shareAttack.Attack;
 var Entity = shareEntity.Entity;
 
-var defaultmapId = 0;
+var defaultmapId = 1;
 var player;
 var quests = {};
 var completedQuests = {};
@@ -165,6 +165,8 @@ function respawn()
 	player.inventory = oldPlayer.inventory;
 	get_offset();
 }
+
+var updateCounter = 0;
 
 function loadMap(mapId)
 {
@@ -599,6 +601,61 @@ var update = function()
 		{
 			notificationList.splice(0,1);
 		}
+	}
+
+	updateCounter++;
+
+	// animated footprints in the snow
+	if (player.entity.mapId == 1 && updateCounter % 15 == 1 && (player.entity.x_speed != 0 || player.entity.y_speed != 0))
+	{
+		if (player.entity.x_speed != 0 && player.entity.y_speed != 0)
+		{
+			if (player.entity.x_speed * player.entity.y_speed > 0)
+			{
+				if (Math.floor(new Date().getMilliseconds() / 250) % 2 == 0)
+				{
+					var e = new Effect("footprintslopedown", player.entity.x - 2, player.entity.y, 180);
+				}
+				else
+				{
+					var e = new Effect("footprintslopedown", player.entity.x + 2, player.entity.y, 180);
+				}
+			}
+			else
+			{
+				if (Math.floor(new Date().getMilliseconds() / 250) % 2 == 0)
+				{
+					var e = new Effect("footprintslopeup", player.entity.x - 2, player.entity.y, 180);
+				}
+				else
+				{
+					var e = new Effect("footprintslopeup", player.entity.x + 2, player.entity.y, 180);
+				}
+			}
+		}
+		else if (player.entity.direction == "Up" || player.entity.direction == "Down")
+		{
+			if (Math.floor(new Date().getMilliseconds() / 250) % 2 == 0)
+			{
+				var e = new Effect("footprinty", player.entity.x - 2, player.entity.y, 180);
+			}
+			else
+			{
+				var e = new Effect("footprinty", player.entity.x + 2, player.entity.y, 180);
+			}			
+		}
+		else
+		{
+			if (Math.floor(new Date().getMilliseconds() / 250) % 2 == 0)
+			{
+				var e = new Effect("footprintx", player.entity.x, player.entity.y - 1, 180);
+			}
+			else
+			{
+				var e = new Effect("footprintx", player.entity.x, player.entity.y, 180);
+			}
+		}
+		effects.push(e);
 	}
 
 	// update visual effects
