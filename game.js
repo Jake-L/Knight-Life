@@ -327,14 +327,18 @@ window.addEventListener("focus", function()
 
 var rfps = 0;
 var ufps = 0;
+var updateNearbyObjectsTimer = new Date().getTime(); 
 
 function step()
 {
-	while (new Date().getTime() > frameTime)
+	while (new Date().getTime() >= frameTime)
 	{
-		if (ucounter / 15 == 0)
+		// update the list of nearby objects every second
+		if (new Date().getTime() >= updateNearbyObjectsTimer)
 		{
 			updateNearbyObjects();
+			updateNearbyObjectsTimer = new Date().getTime() + 500;
+			console.log("updated "+ new Date().getTime());
 		}
 		update();
 		if (player.entity.mapId >= 0)
@@ -400,8 +404,10 @@ function updateNearbyObjects()
 
 	for (var j in mapObjects)
 	{
-		if (Math.abs(mapObjects[j].x - player.entity.x) <= 120 && Math.abs(mapObjects[j].y - player.entity.y) <= 120)
+		if (Math.min(Math.abs(mapObjects[j].x - (mapObjects[j].width / 2) - player.entity.x), Math.abs(player.entity.x - (mapObjects[j].x + (mapObjects[j].width / 2)))) <= 35 
+			&& Math.min(Math.abs(mapObjects[j].y - mapObjects[j].depth - player.entity.y), Math.abs(player.entity.y - player.entity.depth - mapObjects[j].y)) <= 35)
 		{
+			console.log(mapObjects[j]);
 			player.entity.nearbyObjects.push({id: mapObjects[j].id, type: "mapObject"});
 		}
 	}
@@ -1167,6 +1173,8 @@ socket.on('mapObjects', function(a)
 			mapObjects[p.id] = p;
 			view.insertStatic(p);
 		}
+
+		console.log(mapObjects);
 	}
 
 	updateNearbyObjects();

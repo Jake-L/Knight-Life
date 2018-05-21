@@ -13,7 +13,7 @@
 		this.width = 20;
 		this.height = 20;
 		this.depth = 20;
-		this.id = x + y + spriteName;
+		this.id = x + " " + y + spriteName + Math.ceil(new Date().getTime() * (Math.random() + 0.01));
   };
 	
 	exports.mapObject.prototype.initialize = function()

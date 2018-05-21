@@ -183,7 +183,6 @@ exports.Entity.prototype.move = function(x_direction, y_direction)
 	}
 
 	blocked_directions = this.collisionCheck();
-	console.log(this.x_speed);
 
 	if (this.attack_counter <= 5)
 	{
@@ -449,7 +448,7 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 {
 	var c = [0,0,0];
 
-	var radius = Math.sqrt(Math.pow(e1.x - e2.x,2) + (Math.pow(e1.y - (e1.depth/2) - (e2.y - (e2.depth/2)),2)));
+	// check for overlap, treating the first entity as a circle and the second as a square
 	var angle = Math.atan(Math.abs(e1.y - (e1.depth/2) - (e2.y - (e2.depth/2))) / Math.abs(e1.x - e2.x));
 	if	((e1.x + e1.x_speed + Math.ceil((e1.width/2) * Math.cos(angle)) > e2.x - (e2.width/2) && e1.x + e1.x_speed - Math.ceil((e1.width/2) * Math.cos(angle)) < e2.x + (e2.width/2)) &&// check for x-axis interception
 		(e1.y + e1.y_speed - Math.ceil(e1.depth/2) + Math.ceil((e1.depth/2) * Math.sin(angle)) > e2.y - e2.depth && e1.y + e1.y_speed - Math.ceil(e1.depth/2) - Math.ceil((e1.depth/2) * Math.sin(angle)) < e2.y)) // check for y-axis interception
@@ -464,7 +463,7 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 
 		if (y_overlap >= x_overlap)
 		{
-					if (e1.x < e2.x)
+			if (e1.x < e2.x)
 			{
 				// you can't move right
 				c[0] = -1;
