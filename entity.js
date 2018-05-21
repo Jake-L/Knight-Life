@@ -44,6 +44,7 @@ exports.Entity = function(x,y,spriteName,mapId)
 	this.faction;
 
 	this.nearbyObjects = [];
+	//this.checkOverlap = false;
 
 	this.addXP = function(xp)
 	{
@@ -111,7 +112,9 @@ exports.Entity.prototype.initialize = function()
 
 exports.Entity.prototype.move = function(x_direction, y_direction)
 {
-	if (x_direction != 0 || y_direction != 0)
+	var blocked_directions;
+
+	if (x_direction != 0 || y_direction != 0)// || this.checkOverlap)
 	{
 		this.knockback = false;
 
@@ -140,36 +143,37 @@ exports.Entity.prototype.move = function(x_direction, y_direction)
 			}
 		}
 
+		this.x_speed = x_direction;
+		this.y_speed = y_direction;
+		/*if (this.checkOverlap && this.x_speed == 0 && this.y_speed == 0)
+		{
+			blocked_directions = this.collisionCheck();
+			console.log("extra collision check");
+		}
+		console.log(this.x_speed. this.y_speed);*/
+
 		// check if the character moves along the x-axis
-		if(this.x + x_direction - (this.width/2) <= 0) // at the left edge
+		if(this.x + this.x_speed - (this.width/2) <= 0) // at the left edge
 		{
 			this.x = (this.width/2);
 			this.x_speed = 0;
 		}
-		else if ((this.x + x_direction + (this.width/2)) >= maxX[this.mapId]) // at the right edge
+		else if ((this.x + this.x_speed + (this.width/2)) >= maxX[this.mapId]) // at the right edge
 		{
 			this.x = maxX[this.mapId] - (this.width/2);
 			this.x_speed = 0;
 		}
-		else
-		{
-			this.x_speed = x_direction;
-		}
 
 		//check if the character moves along the y-axis
-		if (this.y + y_direction - this.height <= minY[this.mapId]) // at the top edge
+		if (this.y + this.y_speed - this.height <= minY[this.mapId]) // at the top edge
 		{
 			this.y = minY[this.mapId] + this.height;
 			this.y_speed = 0;
 		}
-		else if (this.y + y_direction >= maxY[this.mapId]) // at the bottom edge
+		else if (this.y + this.y_speed >= maxY[this.mapId]) // at the bottom edge
 		{
 			this.y = maxY[this.mapId];
 			this.y_speed = 0;
-		}
-		else
-		{
-			this.y_speed = y_direction;
 		}
 	}
 	else
@@ -178,7 +182,8 @@ exports.Entity.prototype.move = function(x_direction, y_direction)
 		this.y_speed = 0;
 	}
 
-	var blocked_directions = this.collisionCheck();
+	blocked_directions = this.collisionCheck();
+	console.log(this.x_speed);
 
 	if (this.attack_counter <= 5)
 	{
@@ -379,6 +384,7 @@ exports.Entity.prototype.collisionCheck = function()
 {
 	var blocked_directions = [0,0,0,0];
 	var collisionList = this.getNearbyObjects();
+	//this.checkOverlap = false;
 
 	for (var i in collisionList)
 	{
@@ -443,6 +449,135 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 {
 	var c = [0,0,0];
 
+	var radius = Math.sqrt(Math.pow(e1.x - e2.x,2) + (Math.pow(e1.y - (e1.depth/2) - (e2.y - (e2.depth/2)),2)));
+	var angle = Math.atan(Math.abs(e1.y - (e1.depth/2) - (e2.y - (e2.depth/2))) / Math.abs(e1.x - e2.x));
+	if	((e1.x + e1.x_speed + Math.ceil((e1.width/2) * Math.cos(angle)) > e2.x - (e2.width/2) && e1.x + e1.x_speed - Math.ceil((e1.width/2) * Math.cos(angle)) < e2.x + (e2.width/2)) &&// check for x-axis interception
+		(e1.y + e1.y_speed - Math.ceil(e1.depth/2) + Math.ceil((e1.depth/2) * Math.sin(angle)) > e2.y - e2.depth && e1.y + e1.y_speed - Math.ceil(e1.depth/2) - Math.ceil((e1.depth/2) * Math.sin(angle)) < e2.y)) // check for y-axis interception
+	{
+		var x_overlap = Math.min(Math.abs(e1.x + (e1.width/2) - (e2.x - (e2.width / 2))), Math.abs(e1.x - (e1.width/2) - (e2.x + (e2.width / 2))));
+		var y_overlap = Math.min(Math.abs(e1.y - (e2.y - e2.depth)), Math.abs(e1.y - e1.depth - e2.y));
+
+		if(typeof(module) === 'undefined')
+		{
+			console.log(x_overlap, y_overlap);
+		}
+
+		if (y_overlap >= x_overlap)
+		{
+					if (e1.x < e2.x)
+			{
+				// you can't move right
+				c[0] = -1;
+
+				// TODO: MOVE this code out side of IF y_overlap >= x_overlap ??
+
+				if (x_overlap > 0)
+				{
+					if (e1.x < e2.x - (e2.width / 2))
+					{
+						this.x_speed = -1;
+						console.log("shifting player");
+					}
+					else if (e1.y - (e1.depth / 2) < e2.y - e2.depth)
+					{
+						this.y_speed = -1;
+						console.log("shifting player");
+					}
+					else if (e1.y - (e1.depth / 2) > e2.y)
+					{
+						this.y_speed = 1;
+						console.log("shifting player");
+					}
+				}
+			}
+			else if (e1.x > e2.x)
+			{
+				// you can't move left
+				c[0] = 1;
+
+				if (x_overlap > 0)
+				{
+					if (e1.x > e2.x + (e2.width / 2))
+					{
+						this.x_speed = 1;
+						console.log("shifting player");
+					}
+					if (e1.y - (e1.depth / 2) < e2.y - e2.depth)
+					{
+						this.y_speed = -1;
+						console.log("shifting player");
+					}
+					else if (e1.y - (e1.depth / 2) > e2.y)
+					{
+						this.y_speed = 1;
+						console.log("shifting player");
+					}
+				}
+			}
+		}
+		if (y_overlap <= x_overlap)
+		{
+			if (e1.y <= e2.y)
+			{
+				// you cant move down
+				c[1] = -1;
+
+				if (y_overlap > 0 && this.x_speed == 0)
+				{
+					if (e1.x > e2.x + (e2.width / 2))
+					{
+						this.x_speed = 1;
+						console.log("shifting player");
+					}
+					else if (e1.x < e2.x - (e2.width / 2))
+					{
+						this.x_speed = -1;
+						console.log("shifting player");
+					}
+				}
+			}
+			else if (e1.y > e2.y)
+			{
+				// you can't move up
+				c[1] = 1;
+
+				if (y_overlap > 0 && this.x_speed == 0)
+				{
+					if (e1.x > e2.x + (e2.width / 2))
+					{
+						this.x_speed = 1;
+						console.log("shifting player");
+					}
+					else if (e1.x < e2.x - (e2.width / 2))
+					{
+						this.x_speed = -1;
+						console.log("shifting player");
+					}
+				}
+			}
+		}
+/*
+		if (e1.x < e2.x)
+		{
+			var x_overlap = (e1.x + e1.x_speed + (e1.width / 2)) - (e2.x - (e2.width / 2));
+		}
+		else if (e1.x > e2.x)
+		{
+			var x_overlap =  (e1.x + e1.x_speed - (e1.width / 2)) - (e2.x + (e2.width / 2));
+		}
+		if (e1.y < e2.y)
+		{
+			// you cant move down
+			c[1] = -1;
+		}
+		else if (e1.y > e2.y)
+		{
+			// you can't move up
+			c[1] = 1;
+		}*/
+	}
+
+	/*
 	// check what x-directions the player can move (left / right)
 	if
 	(
@@ -490,7 +625,7 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 				//console.log("blocked on y");
 			}
 		}
-
+*/
 	// check what z-directions the player can move (upward / downward)
 	if
 	(
@@ -534,6 +669,13 @@ exports.Entity.prototype.update = function()
 			this.current_attack = -1;
 		}
 	}
+
+	// if they were standing on top of another entity, check if they still are so they can be moved
+	/*if (this.checkOverlap)
+	{
+		this.move(0,0);
+		console.log("forced collision check due to overlapping players", this.x_speed, this.y_speed);
+	}*/
 
 	// apply gravity if the player is jumping
 	if (this.z > 0 || this.z_speed > 0)

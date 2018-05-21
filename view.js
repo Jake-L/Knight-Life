@@ -125,7 +125,6 @@ var View = function()
 			if (typeof(object.alpha) !== 'undefined')
 			{
 				context.globalAlpha = object.alpha;
-				console.log(object.alpha);
 			}
 
 			// if the object keeps track of when it was spawned and it's speed

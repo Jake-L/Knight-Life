@@ -184,6 +184,13 @@ function loadMap(mapId)
 		portalList[1] = new Portal(254, 360, 20, 20, -1, 64, 127, "Up");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
 		weatherSprite = [];
+		for (var i = 0; i < 10; i++)
+		{
+			var p = new mapObject(Math.floor(Math.random() * maxX[mapId]), Math.floor(Math.random() * (maxY[mapId] - minY[mapId]) + minY[mapId]), "bush1");
+			p.initialize();
+			mapObjects[p.id] = p;
+			view.insertStatic(p);
+		}
 	}
 	else if (mapId == 1)
 	{
