@@ -1,4 +1,4 @@
 *.bak
 log.txt
 users.txt
-saves/Player.txt
+saves/

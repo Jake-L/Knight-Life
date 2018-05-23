@@ -131,7 +131,7 @@ var mapObject = share.mapObject;
 var Attack = shareAttack.Attack;
 var Entity = shareEntity.Entity;
 
-var defaultmapId = 1;
+var defaultmapId = 0;
 var player;
 var quests = {};
 var completedQuests = {};
@@ -463,16 +463,34 @@ var update = function()
 	}*/
 
 
-	if (player.entity.current_health <= 0)
+	if (cutscene != null)
 	{
-		playerXP = player.entity.xp;
-		socket.emit('death');
-		respawn();
+		cutscene.update();
+
+		if (cutscene.isComplete())
+		{
+			cutscene = null;
+			player.conversationCounter = 30;
+		}
 	}
+	// only update the player if they aren't in a conversation
 	else
 	{
-		//update player object
-		player.update();
+		if (player.conversationCounter > 0)
+		{
+			player.conversationCounter--;
+		}
+		if (player.entity.current_health <= 0)
+		{
+			playerXP = player.entity.xp;
+			socket.emit('death');
+			respawn();
+		}
+		else
+		{
+			//update player object
+			player.update();
+		}
 	}
 
 
@@ -560,20 +578,7 @@ var update = function()
 		}
 	}
 
-	if (cutscene != null)
-	{
-		cutscene.update();
 
-		if (cutscene.isComplete())
-		{
-			cutscene = null;
-			player.conversationCounter = 30;
-		}
-	}
-	else if (player.conversationCounter > 0)
-	{
-		player.conversationCounter--;
-	}
 
 	// update flytext and remove any that expired
 	var n = flyTextList.length;
@@ -1044,30 +1049,43 @@ function initiateConversation()
 	for (var i in collisionList)
 	{
 		// check that the entity is not fighting the player, and that they have a conversation
-		if (collisionList[i].conversationId != null)
+		if (collisionList[i].conversationId != null)// && cutscene == null) //make sure you can't be in multiple conversations
 		{
-			var c = player.entity.collisionCheckAux(player.entity, collisionList[i]);
-			console.log(c);
-			console.log(player.entity.x, player.entity.y, collisionList[i].x, collisionList[i].y);
-			if (c[0] == 1 && player.entity.direction == "Left")
+			if (player.entity.direction == "Left"
+				&& player.entity.y > collisionList[i].y - (collisionList[i].depth / 2)
+				&& player.entity.y - (player.entity.depth / 2) < collisionList[i].y
+				&& player.entity.x - (player.entity.width / 2) - 3 < collisionList[i].x + (collisionList[i].width / 2)
+				&& player.entity.x > collisionList[i].x)
 			{
 				collisionList[i].direction = "Right";
 				cutscene = new Cutscene(collisionList[i].conversationId);
 				break;
 			}
-			else if (c[0] == -1 && player.entity.direction == "Right")
+			else if (player.entity.direction == "Right"				
+				&& player.entity.y > collisionList[i].y - (collisionList[i].depth / 2)
+				&& player.entity.y - (player.entity.depth / 2) < collisionList[i].y
+				&& player.entity.x < collisionList[i].x
+				&& player.entity.x + (player.entity.width / 2) + 3 > collisionList[i].x - (collisionList[i].width / 2))
 			{
 				collisionList[i].direction = "Left";
 				cutscene = new Cutscene(collisionList[i].conversationId);
 				break;
 			}
-			else if (c[1] == 1 && player.entity.direction == "Up")
+			else if (player.entity.direction == "Up" 
+				&& player.entity.y - player.entity.depth - 3 < collisionList[i].y
+				&& player.entity.y > collisionList[i].y
+				&& player.entity.x < collisionList[i].x + (collisionList[i].width / 2)
+				&& player.entity.x > collisionList[i].x - (collisionList[i].width / 2))
 			{
 				collisionList[i].direction = "Down";
 				cutscene = new Cutscene(collisionList[i].conversationId);
 				break;
 			}
-			else if (c[1] == -1 && player.entity.direction == "Down")
+			else if (player.entity.direction == "Down"
+				&& player.entity.y < collisionList[i].y
+				&& player.entity.y + 3 > collisionList[i].y - collisionList[i].y 
+				&& player.entity.x < collisionList[i].x + (collisionList[i].width / 2)
+				&& player.entity.x > collisionList[i].x - (collisionList[i].width / 2))
 			{
 				collisionList[i].direction = "Up";
 				cutscene = new Cutscene(collisionList[i].conversationId);
