@@ -182,13 +182,20 @@ function loadMap(mapId)
 	if (mapId == 0)
 	{
 		audio = new Audio("audio//track2.mp3");
-		portalList[0] = new Portal(990, 300, 20, 20, 1, 10, 300, "Right");
+
+		// create the portal to the snow world
+		portalList[0] = new Portal(992, 300, 20, 20, 1, 10, 300, "Right");
+		var p = new mapObject(portalList[0].x, portalList[0].y + 4, "snowportal");
+		p.initialize();
+		mapObjects[p.id] = p;
+		view.insertStatic(p);
+
 		portalList[1] = new Portal(254, 360, 20, 20, -1, 64, 127, "Up");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
 		weatherSprite = [];
 		for (var i = 0; i < 10; i++)
 		{
-			var p = new mapObject(Math.floor(Math.random() * maxX[mapId]), Math.floor(Math.random() * (maxY[mapId] - minY[mapId]) + minY[mapId]), "bush1");
+			p = new mapObject(Math.floor(Math.random() * maxX[mapId]), Math.floor(Math.random() * (maxY[mapId] - minY[mapId]) + minY[mapId]), "bush1");
 			p.initialize();
 			mapObjects[p.id] = p;
 			view.insertStatic(p);
@@ -197,7 +204,13 @@ function loadMap(mapId)
 	else if (mapId == 1)
 	{
 		audio = new Audio("audio//track1.mp3");
-		portalList[0] = new Portal(10, 300, 20, 20, 0, 990, 300, "Left");
+
+		// create portal to the grass world
+		portalList[0] = new Portal(8, 300, 20, 20, 0, 990, 300, "Left");
+		var p = new mapObject(portalList[0].x, portalList[0].y + 8, "grassportal");
+		p.initialize();
+		mapObjects[p.id] = p;
+		view.insertStatic(p);
 	}
 
 	/* mapId <= 0 means private maps with no other users */

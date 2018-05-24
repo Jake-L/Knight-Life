@@ -13,6 +13,13 @@
 		this.width = 20;
 		this.height = 20;
 		this.depth = 20;
+		this.priority = 0;
+
+		if (spriteName == "snowportal" || spriteName == "grassportal")
+		{
+			this.priority = -1;
+		}
+
 		this.id = x + " " + y + spriteName + Math.ceil(new Date().getTime() * (Math.random() + 0.01));
   };
 	
@@ -32,10 +39,14 @@
 			this.height = this.sprite.height / 2;
 			
 			context.save();
-			context.shadowColor = "rgba(80, 80, 80, .4)";
-			context.shadowBlur = 15 + this.z;
-			context.shadowOffsetX = 0;
-			context.shadowOffsetY = (3 + this.z) * graphics_scaling;
+
+			if (this.priority >= 0)
+			{
+				context.shadowColor = "rgba(80, 80, 80, .4)";
+				context.shadowBlur = 15 + this.z;
+				context.shadowOffsetX = 0;
+				context.shadowOffsetY = (3 + this.z) * graphics_scaling;
+			}
 			
 			context.drawImage(
 				this.sprite, 

@@ -26,12 +26,20 @@ var View = function()
 		// add rocks, projectiles, etc to sorted render list
 		for (var i in this.renderList)
 		{
-			var j = 0;
-			while (j < sortedIndexList.length && this.renderList[i].y > sortedIndexList[j].y)
+			// if it is a background image that should always be behind all other objects
+			if (this.renderList[i].priority == -1)
 			{
-				j++;
+				this.renderAux(this.renderList[i]);
 			}
-			sortedIndexList.splice(j,0,{id: i, type: "renderList", y: this.renderList[i].y});
+			else
+			{
+				var j = 0;
+				while (j < sortedIndexList.length && this.renderList[i].y > sortedIndexList[j].y)
+				{
+					j++;
+				}
+				sortedIndexList.splice(j,0,{id: i, type: "renderList", y: this.renderList[i].y});
+			}
 		}
 
 		// add other entities to the sorted render list
