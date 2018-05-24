@@ -99,10 +99,16 @@ function initializeMap()
 		mapEntities[0][i] = new CPU(0, 0, "player", i, i+1, 0);   
 	}
 
-	mapEntities[0][6] = new CPU(0, 0, "player", "0p1", 1, 0);
-	mapEntities[0][6].targetType = "Passive"; 
-	mapEntities[0][6].entity.conversationId = 1; 
-	mapEntities[0][6].entity.display_name = "Brian"; 
+	var e = new CPU(0, 0, "player", "garymap0", 6, 0)
+	e.entity.targetType = "Aggressive"; 
+	e.entity.display_name = "Gary"; 
+	mapEntities[0][e.entity.id] = e;
+
+	var e  = new CPU(0, 0, "player", "0p1", 1, 0);
+	e.entity.targetType = "Passive"; 
+	e.entity.conversationId = 1; 
+	e.entity.display_name = "Brian"; 
+	mapEntities[0][e.entity.id] = e;
 
 	var n = mapEntities[0].length;
 
@@ -111,7 +117,7 @@ function initializeMap()
 	{
 		mapEntities[0][i] = new CPU(0, 0, "iceman", i, 5, 0);
 		mapEntities[0][i].entity.faction = "iceman";
-		mapEntities[0][i].targetType = "Aggressive";
+		mapEntities[0][i].entity.targetType = "Aggressive";
 	}
 
 	// load Map 1
@@ -127,8 +133,13 @@ function initializeMap()
 	{
 		mapEntities[1][i] = new CPU(0, 0, "iceman", i, 5, 1);
 		mapEntities[1][i].entity.faction = "iceman";
-		mapEntities[1][i].targetType = "Aggressive";
+		mapEntities[1][i].entity.targetType = "Aggressive";
 	}
+
+	var e = new CPU(0, 0, "player", "stevemap1", 6, 1); //last parameter is mapId, make sure it's correct
+	e.entity.targetType = "Aggressive"; 
+	e.entity.display_name = "Steve"; 
+	mapEntities[1][e.entity.id] = e; //index must be equal to id
 
 	// ALL MAPS
 	// set dimensions of map objects for each mapId
@@ -139,6 +150,22 @@ function initializeMap()
 			mapObjects[mapId][i].width = sizeOf("img//" + mapObjects[mapId][i].spriteName + ".png").width;
 			mapObjects[mapId][i].height = sizeOf("img//" + mapObjects[mapId][i].spriteName + ".png").height;
 			mapObjects[mapId][i].depth = sizeOf("img//" + mapObjects[mapId][i].spriteName + ".png").height;
+		}
+	}
+
+	// debug code to catch annoying mistakes
+	for (var mapId in mapEntities)
+	{
+		for (var i in mapEntities[mapId])
+		{
+			if (mapEntities[mapId][i].entity.mapId != mapId)
+			{
+				console.log("ERROR: CPU " + mapEntities[mapId][i].entity.display_name + " " + mapEntities[mapId][i].entity.id + " has incorrect mapId");
+			}
+			if (mapEntities[mapId][i].entity.id != i)
+			{
+				console.log("ERROR: CPU " + mapEntities[mapId][i].entity.display_name + " " + mapEntities[mapId][i].entity.id + " has incorrect id");
+			}
 		}
 	}
 }
@@ -294,7 +321,6 @@ var CPU = function(x, y, spriteName, id, lvl, mapId)
 
 	//configure CPU specific attributes
 	this.target = null;
-	this.targetType = "Neutral";
 	this.directionCounter = 0;
 	this.x_direction = 0;
 	this.y_direction = 0;
@@ -305,7 +331,7 @@ var CPU = function(x, y, spriteName, id, lvl, mapId)
 	    for (var i in targetList)
 	    {
 			// only target enemies not in your faction
-			if ((targetList[i].faction == null || targetList[i].faction != this.entity.faction) && targetList[i].targetType != "Passive")
+			if ((targetList[i].faction == null || targetList[i].faction != this.entity.faction) && targetList[i].targetType != "Passive" && targetList[i].id != this.entity.id)
 			{
 				// only target entities within 100 units
 				if (nearest_target == null)
@@ -338,26 +364,25 @@ var CPU = function(x, y, spriteName, id, lvl, mapId)
 CPU.prototype.update = function()
 {
 	// if an entity is aggressive, check once every 2 seconds if there are any nearby entities for them to fight
-	if (new Date().getTime() % 2000 < 20 && this.targetType == "Aggressive")
+	if (new Date().getTime() % 2000 < 20 && this.entity.targetType == "Aggressive")
 	{
 		var targetList = [];
 		for (var i in connected[this.entity.mapId])
 		{
-			if (connected[this.entity.mapId][i].faction == null || connected[this.entity.mapId][i].faction != this.entity.faction || connected[this.entity.mapId][i].id == this.target)
+			if (this.entity.faction == null || connected[this.entity.mapId][i].faction == null || connected[this.entity.mapId][i].faction != this.entity.faction || connected[this.entity.mapId][i].id == this.target)
 			{
 				targetList.push(connected[this.entity.mapId][i]);
 			}
 		}
 		for (var i in mapEntities[this.entity.mapId])
 		{
-			if (mapEntities[this.entity.mapId][i].entity.faction == null || mapEntities[this.entity.mapId][i].entity.faction != this.entity.faction || mapEntities[this.entity.mapId][i].id == this.target)
+			if (this.entity.faction == null || mapEntities[this.entity.mapId][i].entity.faction == null || mapEntities[this.entity.mapId][i].entity.faction != this.entity.faction || mapEntities[this.entity.mapId][i].id == this.target)
 			{
 				targetList.push(mapEntities[this.entity.mapId][i].entity);
 			}
 		}
 
 		this.getTarget(targetList);
-		
 	}
 
 	var e = getEntity(this.target, this.entity.mapId);
@@ -370,7 +395,6 @@ CPU.prototype.update = function()
 
 	if (e != null)
 	{
-
 		if (this.directionCounter <= 0)
 		{
 			this.x_direction = 0;
@@ -604,7 +628,6 @@ CPU.prototype.setTarget = function(id)
 // may be a player or CPU
 function getEntity(id, mapId)
 {
-
 	if (id == null)
 	{
 		return null;
@@ -658,7 +681,8 @@ setInterval(function()
 				entityDeath(mapEntities[mapId][i].entity);
 				var e = new CPU(0,0,mapEntities[mapId][i].entity.spriteName, mapEntities[mapId][i].entity.id, mapEntities[mapId][i].entity.lvl, mapId);
 				e.entity.faction = mapEntities[mapId][i].entity.faction;
-				e.targetType = mapEntities[mapId][i].targetType;
+				e.entity.targetType = mapEntities[mapId][i].entity.targetType;
+				e.entity.display_name = mapEntities[mapId][i].entity.display_name;
 				mapEntities[mapId][i] = e;
 			}
 		}
@@ -935,14 +959,14 @@ function checkDamage()
 						// track most recent attackers
 						addKillParticipation(connected[mapId][j].id, damageList[mapId][i].source, mapId);
 
-						console.log(connected[mapId][j].display_name + " took " + damageList[mapId][i].damage + " damage");
+						//console.log(connected[mapId][j].display_name + " took " + damageList[mapId][i].damage + " damage");
 					}
 				}
 
 				// check every cpu to see if they were hit
 				for (var j in mapEntities[mapId])
 				{
-					if (damageList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].targetType != "Passive"  && damageList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
+					if (damageList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].entity.targetType != "Passive"  && damageList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
 					{
 						// damage the entity
 						mapEntities[mapId][j].entity.takeDamage(damageList[mapId][i].x, damageList[mapId][i].y, damageList[mapId][i].damage);
@@ -953,7 +977,7 @@ function checkDamage()
 						// track most recent attackers
 						addKillParticipation(mapEntities[mapId][j].entity.id, damageList[mapId][i].source, mapId);
 
-						console.log(mapEntities[mapId][j].entity.display_name + mapEntities[mapId][j].entity.id + " took " + damageList[mapId][i].damage + " damage");
+						//console.log(mapEntities[mapId][j].entity.display_name + mapEntities[mapId][j].entity.id + " took " + damageList[mapId][i].damage + " damage");
 					}
 				}
 
@@ -997,7 +1021,7 @@ function checkDamage()
 							// track most recent attackers
 							addKillParticipation(connected[mapId][j].id, projectileList[mapId][i].source, mapId);
 
-							console.log(connected[mapId][j].display_name + " took " + projectileList[mapId][i].damage + " damage");
+							//console.log(connected[mapId][j].display_name + " took " + projectileList[mapId][i].damage + " damage");
 							dmg = true;
 						}
 					}
@@ -1005,7 +1029,7 @@ function checkDamage()
 					// check every cpu to see if they were hit
 					for (var j in mapEntities[mapId])
 					{
-						if (projectileList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].targetType != "Passive" && projectileList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
+						if (projectileList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].entity.targetType != "Passive" && projectileList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
 						{
 							// damage the entity
 							mapEntities[mapId][j].entity.takeDamage(projectileList[mapId][i].x, projectileList[mapId][i].y, projectileList[mapId][i].damage);
@@ -1016,7 +1040,7 @@ function checkDamage()
 							// track most recent attackers
 							addKillParticipation(mapEntities[mapId][j].entity.id, projectileList[mapId][i].source, mapId);
 
-							console.log(mapEntities[mapId][j].entity.display_name + mapEntities[mapId][j].entity.id + " took " + projectileList[mapId][i].damage + " damage");
+							//console.log(mapEntities[mapId][j].entity.display_name + mapEntities[mapId][j].entity.id + " took " + projectileList[mapId][i].damage + " damage");
 							dmg = true;
 						}
 					}
@@ -1308,7 +1332,7 @@ setInterval(function()
 			    {
 			      	mapEntities[mapId][j].entity.allyState = "Enemy";
 			    }
-			    else if (mapEntities[mapId][j].targetType == "Passive")
+			    else if (mapEntities[mapId][j].entity.targetType == "Passive")
 			    {
 			    	mapEntities[mapId][j].entity.allyState = "Ally";
 			    }

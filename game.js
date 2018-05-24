@@ -449,8 +449,6 @@ Entity.prototype.getNearbyObjects = function()
 // when the tab is inactive assume this function runs at 1 fps
 var update = function()
 {
-	//console.log(player.entity.x, player.entity.y);
-
 	//restart background music at the end of the song
 	/*if (audio.currentTime + (8/60) > audio.duration)
 	{
@@ -508,6 +506,7 @@ var update = function()
 				player.entity.y = portalList[i].destination_y;
 				player.entity.mapId = portalList[i].destination_mapId;
 				player.entity.nearbyObjects = [];
+				effects = [];
 				loadMap(portalList[i].destination_mapId);
 				player.portalCounter = 30;
 				if (player.entity.mapId < 0)
@@ -611,56 +610,20 @@ var update = function()
 	updateCounter++;
 
 	// animated footprints in the snow
-	if (player.entity.mapId == 1 && updateCounter % 15 == 1 && (player.entity.x_speed != 0 || player.entity.y_speed != 0))
+	if (updateCounter % 15 == 1)
 	{
-		if (player.entity.x_speed != 0 && player.entity.y_speed != 0)
+		for (var i in playerList)
 		{
-			if (player.entity.x_speed * player.entity.y_speed > 0)
+			if ((player.entity.mapId == 1 || playerList[i].faction == "iceman") && (playerList[i].x_speed != 0 || playerList[i].y_speed != 0))
 			{
-				if (Math.floor(new Date().getMilliseconds() / 250) % 2 == 0)
-				{
-					var e = new Effect("footprintslopedown", player.entity.x - 2, player.entity.y, 180);
-				}
-				else
-				{
-					var e = new Effect("footprintslopedown", player.entity.x + 2, player.entity.y, 180);
-				}
-			}
-			else
-			{
-				if (Math.floor(new Date().getMilliseconds() / 250) % 2 == 0)
-				{
-					var e = new Effect("footprintslopeup", player.entity.x - 2, player.entity.y, 180);
-				}
-				else
-				{
-					var e = new Effect("footprintslopeup", player.entity.x + 2, player.entity.y, 180);
-				}
+				playerList[i].createFootPrint();
 			}
 		}
-		else if (player.entity.direction == "Up" || player.entity.direction == "Down")
+
+		if (player.entity.mapId == 1 && (player.entity.x_speed != 0 || player.entity.y_speed != 0))
 		{
-			if (Math.floor(new Date().getMilliseconds() / 250) % 2 == 0)
-			{
-				var e = new Effect("footprinty", player.entity.x - 2, player.entity.y, 180);
-			}
-			else
-			{
-				var e = new Effect("footprinty", player.entity.x + 2, player.entity.y, 180);
-			}			
+			player.entity.createFootPrint();
 		}
-		else
-		{
-			if (Math.floor(new Date().getMilliseconds() / 250) % 2 == 0)
-			{
-				var e = new Effect("footprintx", player.entity.x, player.entity.y - 1, 180);
-			}
-			else
-			{
-				var e = new Effect("footprintx", player.entity.x, player.entity.y, 180);
-			}
-		}
-		effects.push(e);
 	}
 
 	// update visual effects
@@ -697,6 +660,7 @@ function copyEntity(old)
 	p.allyState = old.allyState;
 	p.id = old.id;
 	p.conversationId = old.conversationId;
+	p.faction = old.faction;
 	return p;
 }
 

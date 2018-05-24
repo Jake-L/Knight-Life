@@ -42,6 +42,7 @@ exports.Entity = function(x,y,spriteName,mapId)
 	this.allyState = "Neutral";
 	this.conversationId;
 	this.faction;
+	this.targetType = "Neutral";
 
 	this.nearbyObjects = [];
 	//this.checkOverlap = false;
@@ -714,6 +715,58 @@ exports.Entity.prototype.update = function()
 		this.y += this.y_speed;
 	}
 };
+
+exports.Entity.prototype.createFootPrint = function()
+{
+	if (this.x_speed != 0 && this.y_speed != 0)
+	{
+		if (this.x_speed * this.y_speed > 0)
+		{
+			if (Math.floor(new Date().getMilliseconds() / 250) % 2 == 0)
+			{
+				var e = new Effect("footprintslopedown", this.x - 2, this.y, 180);
+			}
+			else
+			{
+				var e = new Effect("footprintslopedown", this.x + 2, this.y, 180);
+			}
+		}
+		else
+		{
+			if (Math.floor(new Date().getMilliseconds() / 250) % 2 == 0)
+			{
+				var e = new Effect("footprintslopeup", this.x - 2, this.y, 180);
+			}
+			else
+			{
+				var e = new Effect("footprintslopeup", this.x + 2, this.y, 180);
+			}
+		}
+	}
+	else if (this.direction == "Up" || this.direction == "Down")
+	{
+		if (Math.floor(new Date().getMilliseconds() / 250) % 2 == 0)
+		{
+			var e = new Effect("footprinty", this.x - 2, this.y, 180);
+		}
+		else
+		{
+			var e = new Effect("footprinty", this.x + 2, this.y, 180);
+		}			
+	}
+	else
+	{
+		if (Math.floor(new Date().getMilliseconds() / 250) % 2 == 0)
+		{
+			var e = new Effect("footprintx", this.x, this.y - 1, 180);
+		}
+		else
+		{
+			var e = new Effect("footprintx", this.x, this.y, 180);
+		}
+	}
+	effects.push(e);
+}
 
 exports.Entity.prototype.takeDamage = function(x, y, damage)
 {
