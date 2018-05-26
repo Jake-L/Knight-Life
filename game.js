@@ -55,14 +55,17 @@ var maxX = {};
 maxX[0] = 1000;
 maxX[1] = 1000;
 maxX[-1] = 127;
+maxX[-2] = 127;
 var minY = {};
 minY[0] = 30;
 minY[1] = 30;
 minY[-1] = 0;
+minY[-2] = 0;
 var maxY = {};
 maxY[0] = 500;
 maxY[1] = 800;
 maxY[-1] = 127;
+maxY[-2] = 127;
 
 var playerList = {};
 var mapObjects = {};
@@ -191,6 +194,7 @@ function loadMap(mapId)
 		view.insertStatic(p);
 
 		portalList[1] = new Portal(254, 360, 20, 20, -1, 64, 127, "Up");
+		portalList[2] = new Portal(454, 260, 20, 20, -2, 64, 127, "Up");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
 		weatherSprite = [];
 		for (var i = 0; i < 10; i++)
@@ -228,6 +232,22 @@ function loadMap(mapId)
 		playerList[e.id].conversationId = 0; 
 		playerList[e.id].display_name = "Bob";
 	}
+
+	else if (mapId == -2)
+	{
+		audio = new Audio("audio//track2.mp3");
+		portalList[0] = new Portal(64, 127, 20, 20, 0, 454, 260, "Down");
+		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
+		weatherSprite = [];
+		var e = new Entity(64, 32, "player", -2);
+		e.id = "-2p1";
+		playerList[e.id] = e; 
+		playerList[e.id].targetType = "Passive"; 
+		playerList[e.id].allyState = "Ally";
+		playerList[e.id].conversationId = 2; 
+		playerList[e.id].display_name = "Kraven";
+	}
+
 
 	frameTime = new Date().getTime(); // reset update frame timer
 }
@@ -353,7 +373,6 @@ function step()
 		{
 			updateNearbyObjects();
 			updateNearbyObjectsTimer = new Date().getTime() + 500;
-			console.log("updated "+ new Date().getTime());
 		}
 		update();
 		if (player.entity.mapId >= 0)
@@ -383,6 +402,7 @@ function step()
 	context.fillText("FPS: " + rfps,10,10);
 	context.fillText("FPS: " + ufps,10,20);
 	context.fillText("Ping: " + ping,10,30);
+	context.fillText("Position: " + player.entity.x + "," + player.entity.y,10,40);
 	setTimeout(step, 4);
 }
 

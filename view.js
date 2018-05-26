@@ -227,7 +227,7 @@ var View = function()
 				weatherSprite[i].src = "img//snowfall" + i + ".png";
 			}
 		}
-		else if (mapId == -1)
+		else if (mapId < 0)
 		{
 			backgroundSprite.src = "img//loghouseinside.png";
 			backgroundSpriteTop.src = "img//loghouseinside.png";
@@ -430,15 +430,17 @@ var View = function()
 			line_counter++;
 		}
 
-
-		var task_counter = 0;
-
-		for (var j in quests[this.selection].tracker[0])
+		if (line_counter > 0)
 		{
-			context.fillText(quests[this.selection].tracker[0][j].description.replace("{counter}",quests[this.selection].tracker[0][j].counter),
-				x + (w/3) + (4 * graphics_scaling),
-				y + ((4 + task_counter) * 4 * graphics_scaling));
-			task_counter++;
+			var task_counter = 0;
+
+			for (var j in quests[this.selection].tracker[0])
+			{
+				context.fillText(quests[this.selection].tracker[0][j].description.replace("{counter}",quests[this.selection].tracker[0][j].counter),
+					x + (w/3) + (4 * graphics_scaling),
+					y + ((4 + task_counter) * 4 * graphics_scaling));
+				task_counter++;
+			}
 		}
 
 		context.globalAlpha = 1;

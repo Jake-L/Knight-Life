@@ -42,7 +42,32 @@ initializeCutscene[1] = function(cutscene)
 	{
 		cutscene.text = "So... hungry... need... apple...";
 	}
-}
+};
+
+initializeCutscene[2] = function(cutscene)
+{
+	if (typeof(completedQuests[1002]) !== 'undefined')
+	{
+		cutscene.text = "Thanks again for the crystals!";
+	}
+	else if (typeof(quests[1002]) === 'undefined')
+	{
+		cutscene.text = "Hey there young man, would you mind getting me some crystals? How does 5 sound?";
+		cutscene.addQuest = 1002;
+	}
+	else if (player.inventory.getItem("crystal").quantity >= 5)
+	{
+		cutscene.text = "Thanks for the crystals! Maybe these will win my ex-wife back...";
+		player.inventory.removeItem({name: "crystals", quantity: 5});
+		quests[1002].conversationCompleted(cutscene.chatId);
+	}
+	else
+	{
+		cutscene.text = "Some of the those vicious icemen might have crystals";
+	}
+};
+
+
 
 
 // holds items, and provides an interface to use them

@@ -46,6 +46,12 @@ initializeObjective[1001] = function(Objective){
 	Objective.name = "An Apple a day";
 }
 
+initializeObjective[1002] = function(Objective){
+	Objective.tracker[0] = [{objectiveType: "cutscene", counter: 1, description: "Give Kraven 5 crystals", id: 2}];
+	Objective.reward = {xp: 100, items: [{name: "money", quantity: 100}]};
+	Objective.name = "Treasure Hunt";
+}
+
 // create the objectives class
 function Objective(id)
 {
