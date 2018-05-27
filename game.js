@@ -442,7 +442,6 @@ function updateNearbyObjects()
 		if (Math.min(Math.abs(mapObjects[j].x - (mapObjects[j].width / 2) - player.entity.x), Math.abs(player.entity.x - (mapObjects[j].x + (mapObjects[j].width / 2)))) <= 35 
 			&& Math.min(Math.abs(mapObjects[j].y - mapObjects[j].depth - player.entity.y), Math.abs(player.entity.y - player.entity.depth - mapObjects[j].y)) <= 35)
 		{
-			console.log(mapObjects[j]);
 			player.entity.nearbyObjects.push({id: mapObjects[j].id, type: "mapObject"});
 		}
 	}

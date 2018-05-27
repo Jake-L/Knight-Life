@@ -59,8 +59,6 @@ Inventory.prototype.addItem = function(item)
 	else
 	{
 		this.items[item.name] = item;
-		this.items[item.name].sprite = new Image();
-		this.items[item.name].sprite.src = "img//" + item.name + ".png";
 	}
 };
 
@@ -152,7 +150,6 @@ function Item(spriteName, quantity, type)
 {
 	this.spriteName = spriteName;
 	this.type = type;
-	this.sprite;
 	this.quantity = 1;
 
 	if (quantity != null)
@@ -161,13 +158,3 @@ function Item(spriteName, quantity, type)
 	}
 };
 
-Item.prototype.initialize = function()
-{
-	this.sprite = new Image();
-	this.sprite.src = "img//" + this.spriteName + ".png";
-};
-
-Item.prototype.render = function()
-{
-	context.drawImage(this.sprite, this.x * graphics_scaling, this.y * graphics_scaling, this.sprite.width * graphics_scaling, this.sprite.height * graphics_scaling);
-};

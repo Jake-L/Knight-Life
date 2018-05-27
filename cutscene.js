@@ -58,7 +58,7 @@ initializeCutscene[2] = function(cutscene)
 	else if (player.inventory.getItem("crystal").quantity >= 5)
 	{
 		cutscene.text = "Thanks for the crystals! Maybe these will win my ex-wife back...";
-		player.inventory.removeItem({name: "crystals", quantity: 5});
+		player.inventory.removeItem({name: "crystal", quantity: 5});
 		quests[1002].conversationCompleted(cutscene.chatId);
 	}
 	else

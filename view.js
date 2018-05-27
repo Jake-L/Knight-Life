@@ -1,6 +1,8 @@
 var weatherSprite = [];
 var backgroundSprite = new Image();
 var backgroundSpriteTop = new Image();
+var itemSprite = {};
+
 
 var View = function()
 {
@@ -9,7 +11,14 @@ var View = function()
 	this.referenceList = [];
 	this.clickX;
 	this.clickY;
-	this.selection;
+	this.selection = -1;
+
+	itemSprite["money"] = new Image();
+	itemSprite["money"].src = "img//money.png";
+	itemSprite["apple"] = new Image();
+	itemSprite["apple"].src = "img//apple.png";
+	itemSprite["crystal"] = new Image();
+	itemSprite["crystal"].src = "img//crystal.png";
 
 	this.render = function()
 	{
@@ -408,6 +417,10 @@ var View = function()
 				x + (w/3) + (4 * graphics_scaling),
 				y + (8 * graphics_scaling));
 
+		context.fillText("Quest Rewards",
+				x + (w/3) + (4 * graphics_scaling),
+				y + (h/2));
+
 		context.font = "bold " + 4 * graphics_scaling + "px sans-serif";
 
 		for (var i in quests)
@@ -434,12 +447,36 @@ var View = function()
 		{
 			var task_counter = 0;
 
+			// display the various tasks required for the mission
 			for (var j in quests[this.selection].tracker[0])
 			{
 				context.fillText(quests[this.selection].tracker[0][j].description.replace("{counter}",quests[this.selection].tracker[0][j].counter),
 					x + (w/3) + (4 * graphics_scaling),
 					y + ((4 + task_counter) * 4 * graphics_scaling));
 				task_counter++;
+			}
+
+			// display the XP reward for completing the mission
+			context.fillText(quests[this.selection].reward.xp + " XP",
+					x + (w/3) + (4 * graphics_scaling),
+					y + (h/2) + 8 * graphics_scaling);
+
+			// display the item rewards for completing the mission
+			for (var j in quests[this.selection].reward.items)
+			{
+				var item = quests[this.selection].reward.items[j];
+
+				context.drawImage(itemSprite[item.name],
+					x + (w/3) + (4 * graphics_scaling),
+					y + (h/2) + 8 * (j+2) * graphics_scaling - itemSprite[item.name].height + 2,
+					itemSprite[item.name].width,
+					itemSprite[item.name].height);
+
+				context.fillText(item.name + " x" + item.quantity,
+					x + (w/3) + (4 * graphics_scaling) + itemSprite[item.name].width,
+					y + (h/2) + 8 * (j+2) * graphics_scaling);
+
+
 			}
 		}
 
@@ -488,30 +525,32 @@ var View = function()
 
 		for (var i in player.inventory.items)
 		{
-			if (player.inventory.items[i].quantity > 0)
+			var item = player.inventory.items[i];
+
+			if (item.quantity > 0)
 			{
 				if (this.clickX > x && this.clickX < x + (w/2) && this.clickY > y + ((1 + line_counter) * 20) + (8 * graphics_scaling) && this.clickY < y + ((2 + line_counter) * 20) + (8 * graphics_scaling))
 				{
-					console.log("user clicked " + player.inventory.items[i].name);
+					console.log("user clicked " + item.name);
 					this.selection = i;
 				}
 
-				if (typeof(player.inventory.items[i].sprite) !== "undefined" && player.inventory.items[i].sprite.complete)
+				if (typeof(itemSprite[item.name]) !== "undefined" && itemSprite[item.name].complete)
 				{
-					context.drawImage(player.inventory.items[i].sprite,
+					context.drawImage(itemSprite[item.name],
 						x + 16,
-						y + ((1 + line_counter) * 20) + (8 * graphics_scaling) - player.inventory.items[i].sprite.height + 2,
-						player.inventory.items[i].sprite.width,
-						player.inventory.items[i].sprite.height);
+						y + ((1 + line_counter) * 20) + (8 * graphics_scaling) - itemSprite[item.name].height + 2,
+						itemSprite[item.name].width,
+						itemSprite[item.name].height);
 				}
 
 				// 	display the items name
-				context.fillText(player.inventory.items[i].name,
+				context.fillText(item.name,
 					x + 48,
 					y + ((1 + line_counter) * 20) + (8 * graphics_scaling));
 
 				// 	display the items quantity
-				context.fillText("x" + player.inventory.items[i].quantity,
+				context.fillText("x" + item.quantity,
 					x + (w/2) + 16,
 					y + ((1 + line_counter) * 20) + (8 * graphics_scaling));
 
