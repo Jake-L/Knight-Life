@@ -151,13 +151,21 @@ window.onload = function()
 	//get the player's username
 	username = getUsername();
 
-	//check with the server for savedata
-	socket.emit('load', username);
+	if (username != "Player") // user progress not saved if they don't login
+	{
+		//check with the server for savedata
+		socket.emit('load', username);
+	}
 
 	// load images and data that don't depend on player information while waiting for server response
 	loadSprite("player",["Punch","Sword","Arrow"]);
 	loadSprite("iceman",["Punch","Snowball"]);
 	loadWeapons();
+
+	if (username == "Player") // load a user who hasn't logged in
+	{
+		loadPlayer("false");
+	}
 };
 
 // create the player
@@ -355,10 +363,18 @@ function loadWeapons()
 var ucounter = 0;
 var rcounter = 0;
 
-// update's the time when a user re-opens the game window
+// events triggered when a user re-opens the game window
 window.addEventListener("focus", function()
 {
-	frameTime = new Date().getTime();
+	frameTime = new Date().getTime(); // ensures animations display properly
+	keysDown = {}; 
+}
+);
+
+// events triggered when a user leaves the game window (switches to another tab / focus' a different application)
+window.addEventListener("blur", function()
+{
+	keysDown = {}; // player stops moving when game loses focus
 }
 );
 
@@ -1389,6 +1405,11 @@ socket.on('viewOnly', function(p, items)
 
 
 socket.on('load', function(savedata)
+	{
+		loadPlayer(savedata);
+	});
+
+function loadPlayer(savedata)
 {
 	if (savedata == "false")
 	{
@@ -1406,10 +1427,28 @@ socket.on('load', function(savedata)
 		player.inventory.loadInventory(data.items);
 		player.entity.setLevel(data.lvl);
 		player.entity.xp = data.xp;
+		player.entity.current_health = data.current_health;
 		quests = loadObjective(data.quests);
 		completedQuests = data.completedQuests;
 		achievements = loadObjective(data.achievements);
 		completedAchievements = data.completedAchievements;
+
+		// save your data every 5 seconds
+		setInterval(function()
+		{
+			socket.emit('save',player.entity.display_name,
+				"{" + 
+				"\"mapId\": \"" + player.entity.mapId + "\", " + 
+				"\"items\": " + JSON.stringify(player.inventory.items) + "," + 
+				"\"xp\": " + player.entity.xp + "," +
+				"\"lvl\": " + player.entity.lvl + "," +
+				"\"current_health\": " + player.entity.current_health + "," +
+				"\"quests\": " + JSON.stringify(quests) + "," + 
+				"\"completedQuests\": " + JSON.stringify(completedQuests) + "," + 
+				"\"achievements\": " + JSON.stringify(achievements) + "," + 
+				"\"completedAchievements\": " + JSON.stringify(completedAchievements) +  
+				"}");
+		}, 5000);
 	}
 
 	loadMap(player.entity.mapId);
@@ -1418,7 +1457,7 @@ socket.on('load', function(savedata)
 	frameTime = new Date().getTime();
 	startTime = frameTime;
 	step();
-});
+};
 
 function loadObjective(data)
 {
@@ -1432,22 +1471,6 @@ function loadObjective(data)
 
 	return objectives;
 }
-
-// save your data every 5 seconds
-setInterval(function()
-{
-	socket.emit('save',player.entity.display_name,
-			"{" + 
-			"\"mapId\": \"" + player.entity.mapId + "\", " + 
-			"\"items\": " + JSON.stringify(player.inventory.items) + "," + //player.inventory +
-			"\"xp\": " + player.entity.xp + "," +
-			"\"lvl\": " + player.entity.lvl + "," +
-			"\"quests\": " + JSON.stringify(quests) + "," + 
-			"\"completedQuests\": " + JSON.stringify(completedQuests) + "," + 
-			"\"achievements\": " + JSON.stringify(achievements) + "," + 
-			"\"completedAchievements\": " + JSON.stringify(completedAchievements) +  
-			"}");
-}, 5000);
 
 // check current ping
 socket.on('ping', function(serverTime)

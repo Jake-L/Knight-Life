@@ -1138,47 +1138,57 @@ io.on('connection', function(socket)
 
 	socket.on('save', function(username, savedata)
 	{
-		fs.writeFile('saves//' + username + '.txt', savedata, function(err) 
+		if (username != "Player") // user progress not saved if they don't login
 		{
-			if (err)
+			fs.writeFile('saves//' + username + '.txt', savedata, function(err) 
 			{
-				console.log("unable to create save data for user " + username);
-			}
-			else
-			{
-				console.log("save data file created successfully for user " + username);
-			}
-		});
+				if (err)
+				{
+					console.log("unable to create save data for user " + username);
+				}
+				else
+				{
+					console.log("save data file created successfully for user " + username);
+				}
+			});
+		}
 	});
 
 	socket.on('load', function(username)
 	{
-		// check if the user has existing save data
-		fs.exists('saves//' + username + '.txt', function(exists)
+		if (username != "Player") // user progress not saved if they don't login
 		{
-			if (exists == true)
+			// check if the user has existing save data
+			fs.exists('saves//' + username + '.txt', function(exists)
 			{
-				fs.readFile('saves//' + username + '.txt', function(err, data) 
+				if (exists == true)
 				{
-				    if(err) 
-				    {
-				    	console.log("error reading save data for user " + username);
-				    	io.to(socket.id).emit('load', "false");
-					}
-					else
+					fs.readFile('saves//' + username + '.txt', function(err, data) 
 					{
-						// check if the username is already in use
-						console.log("save data read successfully for user " + username);
-					    io.to(socket.id).emit('load', data.toString());
-					}
-				});
-			}
-			else
-			{
-				console.log("no save data exists for user " + username);
-				io.to(socket.id).emit('load', "false");
-			}
-		});
+					    if(err) 
+					    {
+					    	console.log("error reading save data for user " + username);
+					    	io.to(socket.id).emit('load', "false");
+						}
+						else
+						{
+							// check if the username is already in use
+							console.log("save data read successfully for user " + username);
+						    io.to(socket.id).emit('load', data.toString());
+						}
+					});
+				}
+				else
+				{
+					console.log("no save data exists for user " + username);
+					io.to(socket.id).emit('load', "false");
+				}
+			});
+		}
+		else
+		{
+			io.to(socket.id).emit('load', "false");
+		}
 	});
 
 	socket.on('disconnect', function()
