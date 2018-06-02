@@ -85,6 +85,8 @@ var minimapScale = 16;
 var displayQuests = false;
 var displayInventory = false;
 
+var clickCounter = 0;
+
 var view = new View();
 
 function getDirName(n)
@@ -658,6 +660,9 @@ var update = function()
 		}
 	}
 
+	// adds a delay to prevent instant double clicking
+	clickCounter++;
+
 	// update visual effects
 	for (var i in effects)
 	{
@@ -1186,15 +1191,38 @@ function renderMinimap()
 
 // check if the user clicks the mouse
 function printMousePos(event) {
-  console.log("clientX: " + event.clientX + " - clientY: " + event.clientY);
-  view.clickPosition(event.clientX, event.clientY);
+	if (clickCounter > 15)
+	{
+	  console.log("clientX: " + event.clientX + " - clientY: " + event.clientY);
+	  view.clickPosition(event.clientX, event.clientY);
+	  clickCounter = 0;
+	}
 }
 
 document.addEventListener("click", printMousePos);
 window.addEventListener("resize", setScreenSize);
 //document.addEventListener("fullscreenchange", setScreenSize);
 
-
+function useItem(itemName)
+{
+	if (player.inventory.getItem(itemName).quantity > 0)
+	{
+		if (itemName == "apple")
+		{
+			player.entity.current_health = Math.min(player.entity.max_health, player.entity.current_health + 10);
+			player.inventory.removeItem({name: itemName, quantity: 1});
+			flyTextList.push(new flyText(player.entity.x, player.entity.y - (player.entity.height * 1.5), "+10 health", "#00C000"));
+		}
+		else 
+		{
+			console.log("cannot use item " + itemName)
+		}
+	}
+	else
+	{
+		console.log("failed to use item " + item.name);
+	}
+}
 
 function setScreenSize(event)
 {

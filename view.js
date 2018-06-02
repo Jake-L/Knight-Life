@@ -110,10 +110,11 @@ var View = function()
 		}
 		else
 		{
-			this.clickX = 0;
-			this.clickY = 0;
 			this.selection = "-1";
 		}
+
+		this.clickX = null;
+		this.clickY = null;
 	}
 
 	this.renderAux = function(e)
@@ -557,6 +558,16 @@ var View = function()
 				if (this.selection == i)
 				{
 					line_counter++;
+					// 	display the option to use the item
+					if (this.clickX > x && this.clickX < x + (w/2) && this.clickY > y + ((1 + line_counter) * 20) + (8 * graphics_scaling) && this.clickY < y + ((2 + line_counter) * 20) + (8 * graphics_scaling))
+					{
+						console.log("user clicked use" + item.name);
+						useItem(item.name);
+					}
+
+					context.fillText("use item",
+						x + 48,
+						y + ((1 + line_counter) * 20) + (8 * graphics_scaling));
 				}
 				line_counter++;
 			}

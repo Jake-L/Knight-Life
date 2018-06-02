@@ -80,10 +80,12 @@ Inventory.prototype.getItem = function(itemName)
 // takes item as a parameter so it knows the quantity of the item used 
 Inventory.prototype.removeItem = function(item)
 {
+	console.log("attemping to remove " + item.quantity + " " + item.name);
+
 	if (typeof(item.name) !== 'undefined' && typeof(this.items[item.name]) !== 'undefined')
 	{
 		// if the quantity was specified and is less than the quantity in your possession
-		if (typeof(item.quantity) !== 'undefined' && item.quantity >= this.items[item.name].quantity)
+		if (typeof(item.quantity) !== 'undefined' && item.quantity <= this.items[item.name].quantity)
 		{
 			this.items[item.name].quantity -= item.quantity;
 			return true;
