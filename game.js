@@ -1008,12 +1008,21 @@ function flyText(x, y, s, colour)
 
 	this.render = function()
 	{
-		context.fillStyle = this.colour;
-		context.font = "bold" + 4 * graphics_scaling + "px sans-serif";
 		context.globalAlpha = this.counter / 100;
+		context.font = "bold " + (4 * graphics_scaling) + "px sans-serif";
+
+		// display a black outline of the text
+		context.strokeStyle = "#000000";
+		context.lineWidth = 2;
+		context.strokeText(this.msg,
+			((x - x_offset) * graphics_scaling) - (context.measureText(this.msg).width/2),
+			(y - y_offset - ((100-this.counter) / 10)) * graphics_scaling);
+
+		// display the text in colour
+		context.fillStyle = this.colour;
 		context.fillText(this.msg,
-		((x - x_offset) * graphics_scaling) - (context.measureText(this.msg).width/2),
-		(y - y_offset - ((100-this.counter) / 10)) * graphics_scaling);
+			((x - x_offset) * graphics_scaling) - (context.measureText(this.msg).width/2),
+			(y - y_offset - ((100-this.counter) / 10)) * graphics_scaling);
 		context.globalAlpha = 1;
 	}
 }
@@ -1227,7 +1236,7 @@ function useItem(itemName)
 		{
 			player.entity.current_health = Math.min(player.entity.max_health, player.entity.current_health + 10);
 			player.inventory.removeItem({name: itemName, quantity: 1});
-			flyTextList.push(new flyText(player.entity.x, player.entity.y - (player.entity.height * 1.5), "+10 health", "#00C000"));
+			flyTextList.push(new flyText(player.entity.x, player.entity.y - (player.entity.height * 1.5), "+10 health", "#00FF00"));
 		}
 		else 
 		{

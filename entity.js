@@ -61,7 +61,7 @@ exports.Entity = function(x,y,spriteName,mapId)
 				notificationList.push(new Notification("Level Up!","You reached level " + old_lvl)); 
 			}
 		}
-		flyTextList.push(new flyText(this.x, this.y - (this.height * 1.5), "+" + xp + " XP", "#0000C0"));
+		flyTextList.push(new flyText(this.x, this.y - (this.height * 1.5), "+" + xp + " XP", "#0080FF"));
 	};
 
 	this.setLevel = function(lvl)
@@ -327,7 +327,7 @@ exports.Entity.prototype.renderHealthBar = function()
 	// show coloured nameplates on most screens
 	if (graphics_scaling > 1)
 	{
-		context.font = "bold " + 4 * graphics_scaling + "px sans-serif";
+		context.font = "bold " + 4 * graphics_scaling + "px serif";
 
 		// display the black outline of their name
 		context.strokeStyle = "#000000";
@@ -784,7 +784,7 @@ exports.Entity.prototype.takeDamage = function(x, y, damage)
 
 	if(typeof(module) === 'undefined')
 	{
-		flyTextList.push(new flyText(this.x, this.y - (this.height * 1.5), "-" + damage + " health", "#C00000"));
+		flyTextList.push(new flyText(x, y - this.height, "-" + damage + " health", "#FF0000"));
 	}
 };
 
