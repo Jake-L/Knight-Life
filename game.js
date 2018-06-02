@@ -213,6 +213,11 @@ function loadMap(mapId)
 			p.initialize();
 			mapObjects[p.id] = p;
 			view.insertStatic(p);
+
+			p = new mapObject(Math.floor(Math.random() * maxX[mapId]), Math.floor(Math.random() * (maxY[mapId] - minY[mapId]) + minY[mapId]), "flower" + (i % 2));
+			p.initialize();
+			mapObjects[p.id] = p;
+			view.insertStatic(p);
 		}
 	}
 	else if (mapId == 1)
