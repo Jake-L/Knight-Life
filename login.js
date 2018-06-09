@@ -26,7 +26,9 @@ socket.on('loginresult', function(result, username)
 
 	if (result == true)
 	{
-		document.cookie = "username=" + username;
+		var date = new Date();
+		date.setTime(date.getTime()+(2*24*60*60*1000)); // cookie lasts for 2 days
+		document.cookie = "username=" + username + "; expires="+date.toGMTString();
 		document.getElementById('loginstatus').innerHTML = "login successful!";
 	}
 	else
