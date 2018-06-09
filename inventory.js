@@ -31,14 +31,6 @@ Inventory.prototype.jsonString = function()
 	}
 }
 
-// Displays the inventory view
-Inventory.prototype.render = function(x, y, width, height)
-{
-	for (var i in this.items)
-	{
-
-	}
-};
 
 // Adds an item into your inventory
 Inventory.prototype.addItem = function(item)
@@ -106,57 +98,3 @@ Inventory.prototype.removeItem = function(item)
 		return false;
 	}
 };
-
-// Removes an item from the inventory
-// returns true if it is removed and false if it was not in your inventory
-/*
-Inventory.removeItem = function(item)
-{
-	var n = this.getIndex(item);
-
-	if (n == -1 || typeof(item.quantity) === 'undefined' || item.quantity == null || item.quantity <= 0)
-	{
-		return null
-	}
-	else if (item.quantity >= this.items[n].quantity)
-	{
-		this.items.splice(n, 1);
-	}
-	else
-	{
-		this.items[n].quantity -= item.quantity;
-	}
-};
-
-// gets the index of an item in your inventory, or -1 if it's not in your inventory
-Inventory.getIndex = function(item)
-{
-	if (typeof(item.spriteName) === 'undefined' || item.spriteName == null)
-	{
-		return -1;
-	}
-
-	for (var i in this.items)
-	{
-		if (this.items[i].spriteName == item.spriteName)
-		{
-			return i;
-		}
-	}
-
-	return -1;
-}*/
-
-// an item to be used by the player, such as food or a weapon
-function Item(spriteName, quantity, type)
-{
-	this.spriteName = spriteName;
-	this.type = type;
-	this.quantity = 1;
-
-	if (quantity != null)
-	{
-		this.quantity = quantity;
-	}
-};
-
