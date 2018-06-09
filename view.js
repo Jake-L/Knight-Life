@@ -12,6 +12,7 @@ var View = function()
 	this.clickX;
 	this.clickY;
 	this.selection = -1;
+	this.oldDisplayWindow;
 
 	itemSprite["money"] = new Image();
 	itemSprite["money"].src = "img//money.png";
@@ -100,13 +101,16 @@ var View = function()
 
 		player.entity.renderHealthBar();
 
-		if (displayQuests)
+		if (displayWindow != null)
 		{
-			this.displayQuests();
-		}
-		else if (displayInventory)
-		{
-			this.displayInventory();
+			if (displayWindow != this.oldDisplayWindow)
+			{
+				this.selection = "-1";
+			}
+
+			this.renderOptions(displayWindow);
+
+			this.oldDisplayWindow = displayWindow;
 		}
 		else
 		{
@@ -153,12 +157,15 @@ var View = function()
 			{
 				var n = (new Date().getTime() - object.update_time)/(1000/60);
 
+				context.shadowOffsetY = (3 + object.z + (n * object.z_speed)) * graphics_scaling;
+				context.shadowBlur = 15 + object.z + (n * object.z_speed);
+
 				if (n >= 0)
 				{
 					context.drawImage(
 						object.sprite, 
 						(object.x + (n * object.x_speed) - (object.sprite.width/2) - x_offset) * graphics_scaling,
-						(object.y + (n * object.y_speed) - object.sprite.height - object.z - y_offset) * graphics_scaling,
+						(object.y + (n * object.y_speed) - object.sprite.height - object.z - (n * object.z_speed) - y_offset) * graphics_scaling,
 						object.sprite.width * graphics_scaling,
 						object.sprite.height * graphics_scaling);
 				}
@@ -172,12 +179,6 @@ var View = function()
 					(object.y - object.sprite.height - object.z - y_offset) * graphics_scaling,
 					object.sprite.width * graphics_scaling, 
 					object.sprite.height * graphics_scaling);
-
-				if (object.spriteName == "blood")
-				{
-					console.log(object.sprite.width, object.sprite.height);
-				}
-
 			}
 
 			context.restore();
@@ -376,12 +377,42 @@ var View = function()
 		}
 	}
 
-	this.displayQuests = function()
+	this.renderOptions = function(type, a)
 	{
-		var x = width / 4;
-		var y = height / 4;
-		var w = width / 2;
-		var h = height / 2;
+		if (type == "Quests")
+		{
+			a = quests;
+			var w = Math.max(width * 0.5,250);
+			var h = Math.max(height * 0.5,100);
+			var x = (width / 2) - (w/2);
+			var y = (height / 2) - (h/2);
+		}
+		else if (type == "Achievements")
+		{
+			a = achievements;
+			var w = Math.max(width * 0.5,250);
+			var h = Math.max(height * 0.5,100);
+			var x = (width / 2) - (w/2);
+			var y = (height / 2) - (h/2);
+		}
+		else if (type == "Inventory")
+		{
+			a = player.inventory.items;
+			var w = Math.max(width * 0.2,250);
+			var h = Math.max(height * 0.5,100);
+			var x = (width / 2) - (w/2);
+			var y = (height / 2) - (h/2);
+		}
+		else
+		{		
+			var w = Math.max(width * 0.2,250);
+			var h = Math.max(height * 0.5,100);
+			var x = (width / 2) - (w/2);
+			var y = (height / 2) - (h/2);
+		}
+		// other: type == "DialogOption"
+
+		//var textSpacing = 
 
 		if (player.entity.x_speed != 0 || player.entity.y_speed != 0)
 		{
@@ -400,178 +431,203 @@ var View = function()
 		context.lineTo(x, y + h);
 		context.lineTo(x, y);
 		context.stroke();
-		context.beginPath();
-		context.moveTo(x + w / 3, y);
-		context.lineTo(x + w / 3, y + h);
-		context.stroke();
 
-		context.font = "bold " + 8 * graphics_scaling + "px sans-serif";
+		
 		context.fillStyle = "#000000";
 		var line_counter = 0;
+		var TEXTSIZE = Math.max(12, 4 * graphics_scaling);
+		context.font = "bold " + TEXTSIZE + "px sans-serif";
 
-		// 	draw the headers
-		context.fillText("Quests",
-			x + (4 * graphics_scaling),
-			y + (8 * graphics_scaling));
 
-		context.fillText("Quest Tasks",
-				x + (w/3) + (4 * graphics_scaling),
-				y + (8 * graphics_scaling));
 
-		context.fillText("Quest Rewards",
-				x + (w/3) + (4 * graphics_scaling),
-				y + (h/2));
-
-		context.font = "bold " + 4 * graphics_scaling + "px sans-serif";
-
-		for (var i in quests)
+		for (var i in a)
 		{
-			if (this.clickX > x && this.clickX < x + (w/2) && this.clickY > y + ((4 + line_counter) * 4 * graphics_scaling) && this.clickY < y + ((4 + line_counter + 1) * 4 * graphics_scaling))
-			{
-				this.selection = i;
-				console.log(this.selection);
-			}
-			else if (this.selection == "-1")
+			if (this.clickX > x && this.clickX < x + (w/2) && this.clickY > y + (line_counter + 3 - 0.5) * (TEXTSIZE + graphics_scaling) && this.clickY <= y + (line_counter + 3 + 0.5) * (TEXTSIZE + graphics_scaling))
 			{
 				this.selection = i;
 			}
 
-			// 	draw the text
-			context.fillText(quests[i].name,
-				x + (4 * graphics_scaling),
-				y + ((4 + line_counter) * 4 * graphics_scaling));
+			if (type != "DialogOption")
+			{
+				var s = a[i].name;
+			}
+			else
+			{
+				var s = a[i];
+			}
 
+						// 	display the items name
+			context.fillText(s,
+				x + 52,
+				y + (line_counter + 3) * (TEXTSIZE + graphics_scaling));
+			
+			
+
+			if (type == "Inventory")
+			{
+				// display the item's sprite
+				if (typeof(itemSprite[s]) !== "undefined" && itemSprite[s].complete)
+				{
+					context.drawImage(itemSprite[s],
+						x + 20,
+						y + (line_counter + 3) * (TEXTSIZE + graphics_scaling) - itemSprite[s].height + graphics_scaling,
+						itemSprite[s].width,
+						itemSprite[s].height);
+				}
+
+				// 	display the items quantity
+				context.fillText("x" + a[i].quantity,
+					x + (w/2) + 16,
+					y + (line_counter + 3) * (TEXTSIZE + graphics_scaling));
+
+				if (this.selection == i)
+				{
+					line_counter++;
+
+					// 	display the option to use the item
+					if (this.clickX > x && this.clickX < x + (w/2) && this.clickY > y + (line_counter + 3 - 0.5) * (TEXTSIZE + graphics_scaling) && this.clickY < y + (line_counter + 3 + 0.5) * (TEXTSIZE + graphics_scaling))
+					{
+						console.log("user clicked use" + s);
+						useItem(s);
+					}
+
+					context.fillText("use item",
+						x + 48,
+						y + (line_counter + 3) * (TEXTSIZE + graphics_scaling));
+				}
+			}
+			else if (type == "Achievements" || type == "Quests")
+			{
+				// achievement or quest view always has the first item selected by default
+				if (this.selection == "-1")
+				{
+					this.selection = i;
+				}
+
+				var counter = 0;
+				for (var j in a[i].tracker)
+				{
+					for (var k in a[i].tracker[j])
+					{
+						counter += Math.min(a[i].tracker[j][k].counter, a[i].tracker[j][k].required);
+					}
+				}
+
+				if (counter == a[i].totalRequired)
+				{
+					// colour the text gold if they completed the achievement
+					context.fillStyle = "#F39C12";	
+				}
+
+				// show the % complete for the objective
+				context.fillText(Math.floor(counter * 100.00 / a[i].totalRequired) + "%",
+					x + 10,
+					y + (line_counter + 3) * (TEXTSIZE + graphics_scaling));	
+				context.fillStyle = "#000000";		
+			}
+			
 			line_counter++;
 		}
 
-		if (line_counter > 0)
+		if (line_counter > 0 && (type == "Achievements" || type == "Quests"))
 		{
 			var task_counter = 0;
 
 			// display the various tasks required for the mission
-			for (var j in quests[this.selection].tracker[0])
+			for (var j in a[this.selection].tracker[0])
 			{
-				context.fillText(quests[this.selection].tracker[0][j].description.replace("{counter}",quests[this.selection].tracker[0][j].counter),
+				if (a[this.selection].tracker[0][j].counter >= a[this.selection].tracker[0][j].required)
+				{
+					// colour the text gold if they completed the achievement
+					context.fillStyle = "#F39C12";	
+				}
+
+				// display the task description
+				context.fillText(a[this.selection].tracker[0][j].description.replace("{counter}",a[this.selection].tracker[0][j].counter),
 					x + (w/3) + (4 * graphics_scaling),
-					y + ((4 + task_counter) * 4 * graphics_scaling));
+					y + (task_counter + 3) * (TEXTSIZE + graphics_scaling));
+
+				// display the user's progress
+				context.fillText(a[this.selection].tracker[0][j].counter + " / " + a[this.selection].tracker[0][j].required,
+					x + w - (30 * graphics_scaling),
+					y + (task_counter + 3) * (TEXTSIZE + graphics_scaling));
+
 				task_counter++;
+				context.fillStyle = "#000000";	
 			}
 
 			// display the XP reward for completing the mission
-			context.fillText(quests[this.selection].reward.xp + " XP",
+			context.fillText(a[this.selection].reward.xp + " XP",
 					x + (w/3) + (4 * graphics_scaling),
-					y + (h/2) + 8 * graphics_scaling);
+					y + (h/2) + (TEXTSIZE + graphics_scaling));
 
 			// display the item rewards for completing the mission
-			for (var j in quests[this.selection].reward.items)
+			for (var j in a[this.selection].reward.items)
 			{
-				var item = quests[this.selection].reward.items[j];
+				var item = a[this.selection].reward.items[j];
 
 				context.drawImage(itemSprite[item.name],
 					x + (w/3) + (4 * graphics_scaling),
-					y + (h/2) + 8 * (j+2) * graphics_scaling - itemSprite[item.name].height + 2,
+					y + (h/2) + (j + 2) * (TEXTSIZE + graphics_scaling) - itemSprite[item.name].height + graphics_scaling,
 					itemSprite[item.name].width,
 					itemSprite[item.name].height);
 
 				context.fillText(item.name + " x" + item.quantity,
 					x + (w/3) + (4 * graphics_scaling) + itemSprite[item.name].width,
-					y + (h/2) + 8 * (j+2) * graphics_scaling);
+					y + (h/2) + (j + 2) * (TEXTSIZE + graphics_scaling));
 
 
 			}
-		}
-
-		context.globalAlpha = 1;
-	}
-
-	this.displayInventory = function()
-	{
-		var w = Math.max(width * 0.2,250);
-		var h = Math.max(height * 0.5,100);
-		var x = (width / 2) - (w/2);
-		var y = (height / 2) - (h/2);
-
-		if (player.entity.x_speed != 0 || player.entity.y_speed != 0)
-		{
-			context.globalAlpha = 0.7;
-		}
-
-		// draw the textbox
-		context.fillStyle = "#FFFFFF";
-		context.fillRect(x, y, w, h);
-		context.lineWidth = graphics_scaling * 2;
-		context.strokeStyle = "#000000";
-		context.beginPath();		
-		context.moveTo(x, y);
-		context.lineTo(x + w, y);
-		context.lineTo(x + w, y + h);
-		context.lineTo(x, y + h);
-		context.lineTo(x, y);
-		context.stroke();
-
-		context.font = "bold " + 8 * graphics_scaling + "px sans-serif";
-		context.fillStyle = "#000000";
-		var line_counter = 0;
+		}	
 
 		// 	draw the headers
-		context.fillText("Items",
-			x + (4 * graphics_scaling),
-			y + (8 * graphics_scaling));
-
-		context.fillText("Quantity",
-				x + (w/2) + (4 * graphics_scaling),
-				y + (8 * graphics_scaling));
-
-		context.font = "bold " + Math.max(12, 4 * graphics_scaling) + "px sans-serif";
-
-		for (var i in player.inventory.items)
+		context.font = "bold " + TEXTSIZE * 2 + "px sans-serif";
+		if (type == "Achievements" || type == "Quests")
 		{
-			var item = player.inventory.items[i];
-
-			if (item.quantity > 0)
+			if (type == "Achievements")
 			{
-				if (this.clickX > x && this.clickX < x + (w/2) && this.clickY > y + ((1 + line_counter) * 20) + (8 * graphics_scaling) && this.clickY < y + ((2 + line_counter) * 20) + (8 * graphics_scaling))
-				{
-					console.log("user clicked " + item.name);
-					this.selection = i;
-				}
-
-				if (typeof(itemSprite[item.name]) !== "undefined" && itemSprite[item.name].complete)
-				{
-					context.drawImage(itemSprite[item.name],
-						x + 16,
-						y + ((1 + line_counter) * 20) + (8 * graphics_scaling) - itemSprite[item.name].height + 2,
-						itemSprite[item.name].width,
-						itemSprite[item.name].height);
-				}
-
-				// 	display the items name
-				context.fillText(item.name,
-					x + 48,
-					y + ((1 + line_counter) * 20) + (8 * graphics_scaling));
-
-				// 	display the items quantity
-				context.fillText("x" + item.quantity,
-					x + (w/2) + 16,
-					y + ((1 + line_counter) * 20) + (8 * graphics_scaling));
-
-				if (this.selection == i)
-				{
-					line_counter++;
-					// 	display the option to use the item
-					if (this.clickX > x && this.clickX < x + (w/2) && this.clickY > y + ((1 + line_counter) * 20) + (8 * graphics_scaling) && this.clickY < y + ((2 + line_counter) * 20) + (8 * graphics_scaling))
-					{
-						console.log("user clicked use" + item.name);
-						useItem(item.name);
-					}
-
-					context.fillText("use item",
-						x + 48,
-						y + ((1 + line_counter) * 20) + (8 * graphics_scaling));
-				}
-				line_counter++;
+				var title = "Achievement";
+				context.fillText("Achievements",
+					x + (4 * graphics_scaling),
+					y + TEXTSIZE * 2);
 			}
+			else if (type == "Quests")
+			{
+				var title = "Quest";
+				context.fillText("Quests",
+					x + (4 * graphics_scaling),
+					y + TEXTSIZE * 2);
+			}
+			if (this.selection != "-1")
+			{
+				// if a quest or achievemnt has been selected, use it's name for the headers
+				var title = a[this.selection].name;
+			}
+
+			context.fillText(title + " Tasks",
+				x + (w/3) + (4 * graphics_scaling),
+				y + TEXTSIZE * 2);
+
+			context.fillText(title + " Rewards",
+				x + (w/3) + (4 * graphics_scaling),
+				y + (h/2) - (2 * graphics_scaling));
+
+			// draw an extra box to hold the objective's details
+			context.beginPath();
+			context.moveTo(x + w / 3, y);
+			context.lineTo(x + w / 3, y + h);
+			context.stroke();
 		}
+		else if (type == "Inventory")
+		{
+			context.fillText("Items",
+				x + (4 * graphics_scaling),
+				y + TEXTSIZE * 2);
+
+			context.fillText("Quantity",
+				x + (w/2) + (4 * graphics_scaling),
+				y + TEXTSIZE * 2);
+		}	
 
 		context.globalAlpha = 1;
 	}

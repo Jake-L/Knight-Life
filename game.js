@@ -82,8 +82,7 @@ var weaponSprite = {};
 var username = "";
 var playerXP = 0;
 var minimapScale = 16;
-var displayQuests = false;
-var displayInventory = false;
+var displayWindow = null;
 
 var clickCounter = 0;
 
@@ -849,8 +848,7 @@ Player.prototype.update = function()
 	// loops through every key currently pressed and performs an action
 	if (!this.entity.knockback || (Maths.abs(y_speed) <= 3 && Math.abs(x_speed) <= 3))
 	{
-		displayQuests = false;
-		displayInventory = false;
+		displayWindow = null;
 
 		for(var key in keysDown)
 		{
@@ -897,13 +895,17 @@ Player.prototype.update = function()
 				}
 
 			}
-			else if (value == 81 && !displayInventory)
+			else if (value == 81 && displayWindow == null)
 			{
-				displayQuests = true;
+				displayWindow = "Quests";
 			}
-			else if (value == 73 && !displayQuests)
+			else if (value == 73 && displayWindow == null)
 			{
-				displayInventory = true;
+				displayWindow = "Inventory";
+			}
+			else if (value == 65 && displayWindow == null)
+			{
+				displayWindow = "Achievements";
 			}
 		}
 	}
@@ -971,8 +973,9 @@ function InitializeProjectile(p)
 	p.sprite = new Image();
 	p.x = p.spawn_x;
 	p.y = p.spawn_y;
+	p.z = p.spawn_z;
 
-	if (p.spriteName == "Snowball")
+	if (p.spriteName == "Snowball" || p.spriteName == "meteor")
 	{
 		p.sprite.src = "img//" + p.spriteName + ".png";
 	}
@@ -1446,8 +1449,11 @@ function loadPlayer(savedata)
 		completedQuests = data.completedQuests;
 		achievements = loadObjective(data.achievements);
 		completedAchievements = data.completedAchievements;
+	}
 
-		// save your data every 5 seconds
+	if (username != "Player")
+	{
+				// save your data every 5 seconds
 		setInterval(function()
 		{
 			socket.emit('save',player.entity.display_name,

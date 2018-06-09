@@ -661,6 +661,7 @@ function clearAgro(id, mapId)
 	killParticipation[mapId][id] = [];
 }
 
+
 // move computer controlled NPCs
 setInterval(function()
 {
@@ -668,6 +669,7 @@ setInterval(function()
 	{
 		updateNearbyObjects();
 	}
+
 	checkDamage();
 
 	// update all the entities on the map
@@ -858,15 +860,17 @@ global.Damage = function(x, y, source, damage_time, damage, mapId)
 };
 
 // holds information about projectiles on-screen
-global.Projectile = function(x, y, x_speed, y_speed, source, update_time, damage, spriteName, mapId)
+global.Projectile = function(x, y, z, x_speed, y_speed, z_speed, source, update_time, damage, spriteName, mapId)
 {
 	this.x = x;
 	this.y = y;
+	this.z = z;
 	this.spawn_x = x;
 	this.spawn_y = y;
-	this.z = 4;
+	this.spawn_z = z;
 	this.x_speed = x_speed;
 	this.y_speed = y_speed;
+	this.z_speed = z_speed;
 	this.source = source;
 	this.damage = damage;
 	this.spriteName = spriteName;
@@ -883,13 +887,15 @@ global.Projectile = function(x, y, x_speed, y_speed, source, update_time, damage
 			var n = Math.floor((new Date().getTime() - this.update_time)/(1000/60));
 			this.x = this.spawn_x + (n * this.x_speed);
 			this.y = this.spawn_y + (n * this.y_speed);
+			this.z = this.spawn_z + (n * this.z_speed);			
 		}
 	};
 
 	this.collisionCheck = function(e)
 	{
 		if ((this.x + (this.width/2) >= e.x - (e.width / 2) && this.x - (this.width/2) <= e.x + (e.width / 2))
-			&& (this.y + (this.depth/2) >= e.y - e.depth && this.y - (this.depth/2) <= e.y))
+			&& (this.y + (this.depth/2) >= e.y - e.depth && this.y - (this.depth/2) <= e.y)
+			&& this.z < e.z + e.height)
 		{
 			return true;
 		}
@@ -901,7 +907,7 @@ global.Projectile = function(x, y, x_speed, y_speed, source, update_time, damage
 
 	this.offscreen = function()
 	{
-		if (this.x - this.width > maxX[this.mapId] || this.x + this.width < 0 || this.y < 0 || this.y - this.height > maxY[this.mapId])
+		if (this.x - this.width > maxX[this.mapId] || this.x + this.width < 0 || this.y < 0 || this.y - this.height > maxY[this.mapId] || this.z < 0)
 		{
 			return true;
 		}
@@ -1125,9 +1131,9 @@ io.on('connection', function(socket)
 		damageList[mapId].push(new Damage(x, y, socket.id, damage_time, damage, mapId));
 	});
 
-	socket.on('createProjectile', function(x, y, x_speed, y_speed, update_time, damage, spriteName, mapId)
+	socket.on('createProjectile', function(x, y, z, x_speed, y_speed, z_speed, update_time, damage, spriteName, mapId)
 	{
-		projectileList[mapId].push(new Projectile(x, y, x_speed, y_speed, socket.id, Math.max(update_time, new Date().getTime()), damage, spriteName, mapId));
+		projectileList[mapId].push(new Projectile(x, y, z, x_speed, y_speed, z_speed, socket.id, Math.max(update_time, new Date().getTime()), damage, spriteName, mapId));
 	});
 
 	socket.on('death', function()

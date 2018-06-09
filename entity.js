@@ -878,13 +878,13 @@ exports.Entity.prototype.createAttack = function(attack)
 		{
 			if (this.mapId >= 0)
 			{
-				socket.emit('createProjectile', x + (this.x_speed * 2), y + (this.y_speed * 2), x_speed, y_speed,
+				socket.emit('createProjectile', x + (this.x_speed * 2), y + (this.y_speed * 2), 4, x_speed, y_speed, 0,
 					 new Date().getTime() + (2000/60), attack.damage, attack.weapons[0].name, this.mapId);
 			}
 		}
 		else
 		{
-			projectileList[this.mapId].push(new Projectile(x + (this.x_speed * 2), y + (this.y_speed * 2), x_speed, y_speed,
+			projectileList[this.mapId].push(new Projectile(x + (this.x_speed * 2), y + (this.y_speed * 2), 4, x_speed, y_speed, 0,
 				this.id, new Date().getTime() + (2000/60), attack.damage, attack.weapons[0].name, this.mapId));
 		}
 	}
