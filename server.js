@@ -48,9 +48,9 @@ server.listen(5000, function() {
 });
 
 // Constants
-global.maxX = [1000,1000];
-global.minY = [30,30];
-global.maxY = [500,800];
+global.maxX = [1000,1000,127];
+global.minY = [30,30,0];
+global.maxY = [500,800,127];
 
 // other shared variables
 global.projectileList = []; // keep track of all active projectiles
@@ -107,7 +107,7 @@ function initializeMap()
 
 	var e  = new CPU(0, 0, "player", "0p1", 1, 0);
 	e.entity.targetType = "Passive"; 
-	e.entity.conversationId = 1; 
+	e.entity.cutsceneId = 1; 
 	e.entity.display_name = "Brian"; 
 	mapEntities[0][e.entity.id] = e;
 
@@ -128,6 +128,7 @@ function initializeMap()
 	mapObjects[1].push(new mapObject(400,400,"snowman"));
 	mapObjects[1].push(new mapObject(200,500,"snowtreestump"));
 	mapObjects[1].push(new mapObject(600,150,"snowtreestump"));
+	mapObjects[1].push(new mapObject(400,500,"snowhouse"));
 
 	// spawn icemen
 	for (var i = 0; i < 3; i++)
@@ -141,6 +142,11 @@ function initializeMap()
 	e.entity.targetType = "Aggressive"; 
 	e.entity.display_name = "Steve"; 
 	mapEntities[1][e.entity.id] = e; //index must be equal to id
+
+	// spawn boss in Map 2
+	mapEntities[2]["iceboss"] = new CPU(0, 0, "iceboss", "iceboss", 1, 2);
+	mapEntities[2]["iceboss"].entity.faction = "iceman";
+	//mapEntities[2]["iceboss"].entity.targetType = "Aggressive";
 
 	// ALL MAPS
 	// set dimensions of map objects for each mapId
@@ -364,8 +370,8 @@ var CPU = function(x, y, spriteName, id, lvl, mapId)
 
 CPU.prototype.update = function()
 {
-	// if an entity is aggressive, check once every 2 seconds if there are any nearby entities for them to fight
-	if (new Date().getTime() % 2000 < 20 && this.entity.targetType == "Aggressive")
+	// if an entity is aggressive, check once every second if there are any nearby entities for them to fight
+	if (new Date().getTime() % 1000 < 20 && this.entity.targetType == "Aggressive")
 	{
 		var targetList = [];
 		for (var i in connected[this.entity.mapId])
@@ -670,6 +676,21 @@ setInterval(function()
 		updateNearbyObjects();
 	}
 
+	if (updateCounter % 30 == 0)
+	{
+		var playerOnMap = 0;
+		for (var i in connected[2])
+		{
+			playerOnMap++;
+			break;
+		}
+		if (playerOnMap > 0)
+		{
+			// spawn falling rocks on the map
+			projectileList[2].push(new Projectile(Math.ceil(Math.random() * maxX[2]) + 100, Math.ceil(Math.random() * (maxY[2] - minY[2])) + minY[2], 100, -1, 0, -1, "iceboss", new Date().getTime(), 10, "meteor", 1));
+		}
+	}
+
 	checkDamage();
 
 	// update all the entities on the map
@@ -808,11 +829,11 @@ function entityDeath(entity)
 	{
 		if (entity.faction == "iceman")
 		{
-			io.to(connected[entity.mapId][i].id).emit('createEffect', "puddle", entity.x, entity.y, 180);
+			io.to(connected[entity.mapId][i].id).emit('createEffect', "puddle", entity.x, entity.y, 180, entity.mapId);
 		}
 		else
 		{
-			io.to(connected[entity.mapId][i].id).emit('createEffect', "blood", entity.x, entity.y, 180);
+			io.to(connected[entity.mapId][i].id).emit('createEffect', "blood", entity.x, entity.y, 180, entity.mapId);
 		}
 	}
 
@@ -874,11 +895,42 @@ global.Projectile = function(x, y, z, x_speed, y_speed, z_speed, source, update_
 	this.source = source;
 	this.damage = damage;
 	this.spriteName = spriteName;
-	this.height = 8;
-	this.width = 8;
-	this.depth = 6;
+	this.height;
+	this.width;
+	this.depth;
 	this.update_time = update_time;
 	this.mapId = mapId;
+
+	this.setSize = function()
+	{
+		var s = "";
+		if (this.spriteName != "Snowball" && this.spriteName != "meteor")
+		{
+			if (this.x_speed > 0)
+			{
+				s = "Right";
+			}
+			else if (this.x_speed < 0)
+			{
+				s = "Left";
+			}
+			else if (this.y_speed > 0)
+			{
+				s = "Down";
+			}
+			else if (this.y_speed < 0)
+			{
+				s = "Up";
+			}
+		}
+
+		this.height = sizeOf("img//" + this.spriteName + s + ".png").height;
+		this.width = sizeOf("img//" + this.spriteName + s + ".png").width;
+		this.depth = Math.min(this.height, this.width);
+		console.log(this.height, this.width, this.depth);
+	}
+
+	this.setSize();
 
 	this.update = function()
 	{
@@ -955,6 +1007,35 @@ function checkDamage()
 			// check if the animation reached the frame where it does damage
 			if (currentTime.getTime() >= damageList[mapId][i].damage_time)
 			{
+				if (damageList[mapId][i].source == "iceboss")
+				{
+					var e = getEntity("iceboss",2);
+					for (var j in connected[mapId])
+					{
+						if (e.direction == "Up")
+						{
+							io.to(connected[mapId][j].id).emit('createEffect', "groundcrack", e.x, e.y - e.depth, 600, mapId);
+							//io.to(connected[mapId][j].id).emit('createEffect', "dust", e.x, e.y - e.depth, 30, mapId);
+						}
+						else if (e.direction == "Down")
+						{
+							io.to(connected[mapId][j].id).emit('createEffect', "groundcrack", e.x, e.y + e.depth, 600, mapId);
+							//io.to(connected[mapId][j].id).emit('createEffect', "dust", e.x, e.y + e.depth, 30, mapId);
+						}
+						else if (e.direction == "Left")
+						{
+							io.to(connected[mapId][j].id).emit('createEffect', "groundcrack", e.x - e.width / 2, e.y, 600, mapId);
+							//io.to(connected[mapId][j].id).emit('createEffect', "dust", e.x - e.width / 2, e.y, 30, mapId);
+						}
+						else if (e.direction == "Right")
+						{
+							io.to(connected[mapId][j].id).emit('createEffect', "groundcrack", e.x + e.width / 2, e.y, 600, mapId);
+							//io.to(connected[mapId][j].id).emit('createEffect', "dust", e.x + e.width / 2, e.y, 30, mapId);
+						}
+					}
+				}
+
+
 				// check every connected player to see if they were hit
 				for (var j in connected[mapId])
 				{

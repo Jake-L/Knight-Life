@@ -54,16 +54,19 @@ var startTime = 0;
 var maxX = {};
 maxX[0] = 1000;
 maxX[1] = 1000;
+maxX[2] = 127;
 maxX[-1] = 127;
 maxX[-2] = 127;
 var minY = {};
 minY[0] = 30;
 minY[1] = 30;
+minY[2] = 0;
 minY[-1] = 0;
 minY[-2] = 0;
 var maxY = {};
 maxY[0] = 500;
 maxY[1] = 800;
+maxY[2] = 127;
 maxY[-1] = 127;
 maxY[-2] = 127;
 
@@ -159,6 +162,7 @@ window.onload = function()
 	// load images and data that don't depend on player information while waiting for server response
 	loadSprite("player",["Punch","Sword","Arrow"]);
 	loadSprite("iceman",["Punch","Snowball"]);
+	loadSprite("iceboss",["Punch","Snowball"]);
 	loadWeapons();
 
 	if (username == "Player") // load a user who hasn't logged in
@@ -171,7 +175,16 @@ window.onload = function()
 function respawn()
 {
 	var oldPlayer = player;
-	player = new Player(oldPlayer.entity.mapId);
+	if (oldPlayer.entity.mapId == 2)
+	{
+		loadMap(1);
+		player = new Player(1);
+	}
+	else
+	{
+		player = new Player(oldPlayer.entity.mapId);
+	}
+	
 	player.entity.setLevel(oldPlayer.entity.lvl);
 	player.entity.xp = oldPlayer.entity.xp;
 	player.inventory = oldPlayer.inventory;
@@ -183,6 +196,8 @@ var updateCounter = 0;
 function loadMap(mapId)
 {
 	console.log("loading map " + mapId);
+	effects = [];
+	flyTextList = [];
 
 	view.loadMap(mapId);
 	// clear any entities or map objects from the previous map
@@ -225,10 +240,19 @@ function loadMap(mapId)
 
 		// create portal to the grass world
 		portalList[0] = new Portal(8, 300, 20, 20, 0, 990, 300, "Left");
+		// create portal to ice cave
+		portalList[1] = new Portal(404, 510, 20, 20, 2, 64, 127, "Up");
 		var p = new mapObject(portalList[0].x, portalList[0].y + 8, "grassportal");
 		p.initialize();
 		mapObjects[p.id] = p;
 		view.insertStatic(p);
+	}
+	else if (mapId == 2)
+	{
+		audio = new Audio("audio//track1.mp3");
+
+		// create portal to the ice world
+		portalList[1] = new Portal(64, 127, 20, 20, 1, 404, 510, "Down");
 	}
 
 	/* mapId <= 0 means private maps with no other users */
@@ -243,7 +267,7 @@ function loadMap(mapId)
 		playerList[e.id] = e; 
 		playerList[e.id].targetType = "Passive"; 
 		playerList[e.id].allyState = "Ally";
-		playerList[e.id].conversationId = 0; 
+		playerList[e.id].cutsceneId = 0; 
 		playerList[e.id].display_name = "Bob";
 	}
 
@@ -258,7 +282,7 @@ function loadMap(mapId)
 		playerList[e.id] = e; 
 		playerList[e.id].targetType = "Passive"; 
 		playerList[e.id].allyState = "Ally";
-		playerList[e.id].conversationId = 2; 
+		playerList[e.id].cutsceneId = 2; 
 		playerList[e.id].display_name = "Kraven";
 	}
 
@@ -305,12 +329,24 @@ function loadSprite(spriteName, attacks)
 			{
 				n = 4;
 			}
+			else if (spriteName == "iceboss")
+			{
+				n = 8;
+			}
 
 			for (var j = 0; j < n; j++)
 			{
 				img = new Image();
-				img.src = "img//" + spriteName + "Attack" + attacks[k] + getDirName(i) + j + ".png";
+				if (spriteName == "iceboss")
+				{
+					img.src = "img//" + spriteName + "Attack" + getDirName(i) + j + ".png";
+				}
+				else
+				{
+					img.src = "img//" + spriteName + "Attack" + attacks[k] + getDirName(i) + j + ".png";
+				}
 				s[j] = img;
+				console.log(img);
 			}
 
 			a[i] = s;
@@ -560,7 +596,6 @@ var update = function()
 				player.entity.y = portalList[i].destination_y;
 				player.entity.mapId = portalList[i].destination_mapId;
 				player.entity.nearbyObjects = [];
-				effects = [];
 				loadMap(portalList[i].destination_mapId);
 				player.portalCounter = 30;
 				if (player.entity.mapId < 0)
@@ -716,7 +751,7 @@ function copyEntity(old)
 	p.lvl = old.lvl;
 	p.allyState = old.allyState;
 	p.id = old.id;
-	p.conversationId = old.conversationId;
+	p.cutsceneId = old.cutsceneId;
 	p.faction = old.faction;
 	return p;
 }
@@ -1083,7 +1118,7 @@ function initiateConversation()
 	for (var i in collisionList)
 	{
 		// check that the entity is not fighting the player, and that they have a conversation
-		if (collisionList[i].conversationId != null)// && cutscene == null) //make sure you can't be in multiple conversations
+		if (collisionList[i].cutsceneId != null)// && cutscene == null) //make sure you can't be in multiple conversations
 		{
 			if (player.entity.direction == "Left"
 				&& player.entity.y > collisionList[i].y - (collisionList[i].depth / 2)
@@ -1092,7 +1127,7 @@ function initiateConversation()
 				&& player.entity.x > collisionList[i].x)
 			{
 				collisionList[i].direction = "Right";
-				cutscene = new Cutscene(collisionList[i].conversationId);
+				cutscene = new Cutscene(collisionList[i].cutsceneId);
 				break;
 			}
 			else if (player.entity.direction == "Right"				
@@ -1102,7 +1137,7 @@ function initiateConversation()
 				&& player.entity.x + (player.entity.width / 2) + 3 > collisionList[i].x - (collisionList[i].width / 2))
 			{
 				collisionList[i].direction = "Left";
-				cutscene = new Cutscene(collisionList[i].conversationId);
+				cutscene = new Cutscene(collisionList[i].cutsceneId);
 				break;
 			}
 			else if (player.entity.direction == "Up" 
@@ -1112,7 +1147,7 @@ function initiateConversation()
 				&& player.entity.x > collisionList[i].x - (collisionList[i].width / 2))
 			{
 				collisionList[i].direction = "Down";
-				cutscene = new Cutscene(collisionList[i].conversationId);
+				cutscene = new Cutscene(collisionList[i].cutsceneId);
 				break;
 			}
 			else if (player.entity.direction == "Down"
@@ -1122,7 +1157,7 @@ function initiateConversation()
 				&& player.entity.x > collisionList[i].x - (collisionList[i].width / 2))
 			{
 				collisionList[i].direction = "Up";
-				cutscene = new Cutscene(collisionList[i].conversationId);
+				cutscene = new Cutscene(collisionList[i].cutsceneId);
 				break;
 			}
 		}
@@ -1338,10 +1373,18 @@ Effect.prototype.update = function()
 	this.alpha = this.counter * 1.000 / this.totalCounter;
 };
 
-socket.on('createEffect', function(spriteName, x, y, counter)
+socket.on('createEffect', function(spriteName, x, y, counter, mapId)
 {
-	var e = new Effect(spriteName, x, y, counter);
-	effects.push(e);
+	if (mapId == player.entity.mapId)
+	{
+		var e = new Effect(spriteName, x, y, counter);
+		effects.push(e);
+
+		if (spriteName == "groundcrack")
+		{
+			playSoundEffect("slam.mp3");
+		}
+	}
 });
 
 // update position of other players from the server
@@ -1354,11 +1397,19 @@ socket.on('players', function(players)
 		{
 			needUpdate = true;
 		}
-		playerList = {};
+		//playerList = {};
 
 		for (var i in players)
 		{
-			playerList[players[i].id] = copyEntity(players[i]);
+			if (cutscene == null || players[i].cutsceneId != cutscene.cutsceneId)
+			{
+				playerList[players[i].id] = copyEntity(players[i]);
+			}
+			else
+			{
+				playerList[players[i].id].x_speed = 0;
+				playerList[players[i].id].y_speed = 0;
+			}
 		}
 		if (needUpdate == true)
 		{
@@ -1440,7 +1491,14 @@ function loadPlayer(savedata)
 	else
 	{
 		var data = JSON.parse(savedata);
-		player = new Player(data.mapId);
+		if (data.mapId == 2)
+		{
+			player = new Player(1);
+		}
+		else
+		{
+			player = new Player(data.mapId);
+		}
 		player.inventory.loadInventory(data.items);
 		player.entity.setLevel(data.lvl);
 		player.entity.xp = data.xp;

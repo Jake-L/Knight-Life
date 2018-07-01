@@ -219,18 +219,17 @@ var View = function()
 	{
 		backgroundSprite = new Image();
 		backgroundSpriteTop = new Image();
+		weatherSprite = [];
 
 		if (mapId == 0)
 		{
 			backgroundSprite.src = "img//grass1.png";
 			backgroundSpriteTop.src = "img//grass1top.png";
-			weatherSprite = [];
 		}
 		else if (mapId == 1)
 		{
 			backgroundSprite.src = "img//snow1.png";
 			backgroundSpriteTop.src = "img//snow1top.png";
-			weatherSprite = [];
 
 			for (var i = 0; i < 4; i++)
 			{
@@ -238,11 +237,15 @@ var View = function()
 				weatherSprite[i].src = "img//snowfall" + i + ".png";
 			}
 		}
+		else if (mapId == 2)
+		{
+			backgroundSprite.src = "img//snow1.png";
+			backgroundSpriteTop.src = "img//snow1.png";
+		}
 		else if (mapId < 0)
 		{
 			backgroundSprite.src = "img//loghouseinside.png";
 			backgroundSpriteTop.src = "img//loghouseinside.png";
-			weatherSprite = [];
 		}
 	}
 

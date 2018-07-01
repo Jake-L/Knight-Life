@@ -40,7 +40,7 @@ exports.Entity = function(x,y,spriteName,mapId)
 	this.spawn_time = new Date().getTime();
 
 	this.allyState = "Neutral";
-	this.conversationId;
+	this.cutsceneId;
 	this.faction;
 	this.targetType = "Neutral";
 
@@ -87,7 +87,7 @@ exports.Entity = function(x,y,spriteName,mapId)
 
 	this.loadAttacks = function()
 	{
-		if (spriteName == "iceman")
+		if (spriteName == "iceman" || spriteName == "iceboss")
 		{
 			this.attacks.push(new Attack("Punch", [], this));
 			this.attacks.push(new Attack("Snowball", [{name:"Snowball",damage:5}], this));
@@ -374,7 +374,7 @@ exports.Entity.prototype.updateSprite = function()
 	}
 	else
 	{
-		this.sprite = playerSprite[this.spriteName][getDirNum(this.direction)][Math.floor(new Date().getMilliseconds() / 250) % 4];
+		this.sprite = playerSprite[this.spriteName][getDirNum(this.direction)][Math.floor(new Date().getMilliseconds() / 250) % playerSprite[this.spriteName][getDirNum(this.direction)].length];
 	}
 };
 
@@ -830,12 +830,12 @@ exports.Entity.prototype.createAttack = function(attack)
 		{
 			if (this.mapId >= 0)
 			{
-				socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), attack.damage, this.mapId);
+				socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), attack.damage + this.attack_damage, this.mapId);
 			}
 		}
 		else
 		{
-			damageList[this.mapId].push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), attack.damage, this.mapId));
+			damageList[this.mapId].push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), attack.damage + this.attack_damage, this.mapId));
 		}
 	}
 
@@ -879,13 +879,13 @@ exports.Entity.prototype.createAttack = function(attack)
 			if (this.mapId >= 0)
 			{
 				socket.emit('createProjectile', x + (this.x_speed * 2), y + (this.y_speed * 2), 4, x_speed, y_speed, 0,
-					 new Date().getTime() + (2000/60), attack.damage, attack.weapons[0].name, this.mapId);
+					 new Date().getTime() + (2000/60), Math.ceil(attack.damage + this.attack_damage / 2), attack.weapons[0].name, this.mapId);
 			}
 		}
 		else
 		{
 			projectileList[this.mapId].push(new Projectile(x + (this.x_speed * 2), y + (this.y_speed * 2), 4, x_speed, y_speed, 0,
-				this.id, new Date().getTime() + (2000/60), attack.damage, attack.weapons[0].name, this.mapId));
+				this.id, new Date().getTime() + (2000/60), Math.ceil(attack.damage + this.attack_damage / 2), attack.weapons[0].name, this.mapId));
 		}
 	}
 	else

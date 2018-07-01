@@ -13,7 +13,7 @@ initializeCutscene[0] = function(cutscene)
 	else if (quests[1000].tracker.length == 1)
 	{
 		cutscene.text = "Wow, you did it! Thanks for your help. Here is a reward.";
-		quests[1000].conversationCompleted(cutscene.chatId); 
+		quests[1000].conversationCompleted(cutscene.cutsceneId); 
 	}
 	else
 	{
@@ -36,7 +36,7 @@ initializeCutscene[1] = function(cutscene)
 	{
 		cutscene.text = "Wow, you actually brought me an apple, thanks so much!";
 		player.inventory.removeItem({name: "apple", quantity: 1});
-		quests[1001].conversationCompleted(cutscene.chatId);
+		quests[1001].conversationCompleted(cutscene.cutsceneId);
 	}
 	else
 	{
@@ -59,7 +59,7 @@ initializeCutscene[2] = function(cutscene)
 	{
 		cutscene.text = "Thanks for the crystals! Maybe these will win my ex-wife back...";
 		player.inventory.removeItem({name: "crystal", quantity: 5});
-		quests[1002].conversationCompleted(cutscene.chatId);
+		quests[1002].conversationCompleted(cutscene.cutsceneId);
 	}
 	else
 	{
@@ -71,16 +71,16 @@ initializeCutscene[2] = function(cutscene)
 
 
 // holds items, and provides an interface to use them
-function Cutscene(chatId)
+function Cutscene(cutsceneId)
 {
-	this.chatId = chatId;
+	this.cutsceneId = cutsceneId;
 	this.text;
 	this.node;
 	this.addItem;
 	this.removeItem;
 	this.addQuest;
 	this.removeQuest;
-	initializeCutscene[chatId](this);
+	initializeCutscene[cutsceneId](this);
 	this.textCounter = 30;
 	this.complete = false;
 }
