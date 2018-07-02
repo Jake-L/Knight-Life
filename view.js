@@ -20,6 +20,8 @@ var View = function()
 	itemSprite["apple"].src = "img//apple.png";
 	itemSprite["crystal"] = new Image();
 	itemSprite["crystal"].src = "img//crystal.png";
+	itemSprite["icebosscrystal"] = new Image();
+	itemSprite["icebosscrystal"].src = "img//icebosscrystal.png";
 
 	this.render = function()
 	{
@@ -546,7 +548,7 @@ var View = function()
 				}
 
 				// display the task description
-				context.fillText(a[this.selection].tracker[0][j].description.replace("{counter}",a[this.selection].tracker[0][j].counter),
+				context.fillText(a[this.selection].tracker[0][j].description.replace("{counter}",a[this.selection].tracker[0][j].required),
 					x + (w/3) + (4 * graphics_scaling),
 					y + (task_counter + 3) * (TEXTSIZE + graphics_scaling));
 

@@ -3,7 +3,24 @@ initializeCutscene[0] = function(cutscene)
 {
 	if (typeof(completedQuests[1000]) !== 'undefined')
 	{
-		cutscene.text = "Thanks for your help! I feel much safer now";
+		if (typeof(completedQuests[1003]) !== 'undefined')
+		{
+			cutscene.text = "Thanks for your help! I feel much safer now";
+		}
+		else if (typeof(quests[1003]) === 'undefined')
+		{
+			cutscene.text = "I still think there's too many icemen. Can you kill 10 more?";
+			cutscene.addQuest = 1003;
+		}
+		else if (quests[1003].tracker.length == 1)
+		{
+			cutscene.text = "You did it again! You're very good at this. Here is a reward.";
+			quests[1003].conversationCompleted(cutscene.cutsceneId); 
+		}
+		else
+		{
+			cutscene.text = "Good luck fighting those monsters, let me know when you're done!";
+		}
 	}
 	else if (typeof(quests[1000]) === 'undefined')
 	{
@@ -67,8 +84,10 @@ initializeCutscene[2] = function(cutscene)
 	}
 };
 
-
-
+initializeCutscene[3] = function(cutscene)
+{
+	cutscene.text = "Nearby there is a cave with a very dangerous creature inside. He nearly killed me, and will do the same to you if given the opportunity.";
+};
 
 // holds items, and provides an interface to use them
 function Cutscene(cutsceneId)

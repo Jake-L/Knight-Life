@@ -143,6 +143,13 @@ function initializeMap()
 	e.entity.display_name = "Steve"; 
 	mapEntities[1][e.entity.id] = e; //index must be equal to id
 
+	var e  = new CPU(0, 0, "player", "0p2", 1, 1);
+	e.entity.targetType = "Passive"; 
+	e.entity.cutsceneId = 3; 
+	e.entity.display_name = "Logan";
+	e.entity.current_health = 1; 
+	mapEntities[1][e.entity.id] = e;
+
 	// spawn boss in Map 2
 	mapEntities[2]["iceboss"] = new CPU(0, 0, "iceboss", "iceboss", 1, 2);
 	mapEntities[2]["iceboss"].entity.faction = "iceman";
@@ -318,7 +325,7 @@ var CPU = function(x, y, spriteName, id, lvl, mapId)
 
 	//configure the entity
 	this.entity = new Entity(x, y, spriteName, mapId);
-	console.log("Spawning entity at (" + x + "," + y + ") on map " + mapId);
+	console.log("Spawning entity " + spriteName + id + " at (" + x + "," + y + ") on map " + mapId);
 	this.entity.width = w;
 	this.entity.depth = Math.ceil(h * 0.5);
 	this.entity.height = h;
@@ -853,6 +860,10 @@ function awardKillRewards(id, xp, entity)
 	if (Math.random() > 0.5 && entity.faction == "iceman")
 	{
 		io.to(id).emit('itemreceived', {name: "crystal", quantity: 1});
+	}
+	if (entity.id == "iceboss")
+	{
+		io.to(id).emit('itemreceived', {name: "icebosscrystal", quantity: 1});
 	}
 }
 

@@ -144,7 +144,7 @@ var quests = {};
 var completedQuests = {};
 var achievements = {};
 var completedAchievements = {};
-var achievementCount = 5;
+var achievementCount = 6;
 
 window.onload = function()
 {
@@ -1479,14 +1479,15 @@ socket.on('load', function(savedata)
 
 function loadPlayer(savedata)
 {
+	for (var i = 0; i < achievementCount; i++)
+	{
+		achievements[i] = new Objective(i);
+	}
+
 	if (savedata == "false")
 	{
 		console.log("no load data received");
 		player = new Player(defaultmapId);
-		for (var i = 0; i < achievementCount; i++)
-		{
-			achievements[i] = new Objective(i);
-		}
 	}
 	else
 	{
@@ -1505,7 +1506,10 @@ function loadPlayer(savedata)
 		player.entity.current_health = data.current_health;
 		quests = loadObjective(data.quests);
 		completedQuests = data.completedQuests;
-		achievements = loadObjective(data.achievements);
+		for (var i in data.achievements)
+		{
+			achievements[i].tracker = data.achievements[i].tracker;
+		}
 		completedAchievements = data.completedAchievements;
 	}
 

@@ -33,6 +33,12 @@ initializeObjective[4] = function(Objective){
 	Objective.name = "Punisher";
 }
 
+initializeObjective[5] = function(Objective){
+	Objective.tracker[0] = [{objectiveType: "enemy", counter: 0, required: 1, description: "Defeat the Ice Boss", id: "iceboss"}];
+	Objective.reward = {xp: 100};
+	Objective.name = "Ice Boss Slayer";
+}
+
 initializeObjective[1000] = function(Objective){
 	Objective.tracker[0] = [{objectiveType: "enemy", counter: 0, required: 2, description: "Defeat {counter} icemen", faction: "iceman"}];
 	Objective.tracker[1] = [{objectiveType: "cutscene", counter: 0, required: 1, description: "Return to Bob", id: 0}];
@@ -50,6 +56,13 @@ initializeObjective[1002] = function(Objective){
 	Objective.tracker[0] = [{objectiveType: "cutscene", counter: 0, required: 1, description: "Give Kraven 5 crystals", id: 2}];
 	Objective.reward = {xp: 100, items: [{name: "money", quantity: 100}]};
 	Objective.name = "Treasure Hunt";
+}
+
+initializeObjective[1003] = function(Objective){
+	Objective.tracker[0] = [{objectiveType: "enemy", counter: 0, required: 10, description: "Defeat {counter} icemen", faction: "iceman"}];
+	Objective.tracker[1] = [{objectiveType: "cutscene", counter: 0, required: 1, description: "Return to Bob", id: 0}];
+	Objective.reward = {xp: 100, items: [{name: "money", quantity: 100}]};
+	Objective.name = "Cleaning the Streets II";
 }
 
 // create the objectives class
@@ -91,6 +104,13 @@ Objective.prototype.enemyDefeated = function(entity)
 			else if (typeof(this.tracker[0][i].faction) !== "undefined")
 			{
 				if (this.tracker[0][i].faction == entity.faction)
+				{
+					this.tracker[0][i].counter++;
+				}
+			}
+			else if (typeof(this.tracker[0][i].id) !== "undefined")
+			{
+				if (this.tracker[0][i].id == entity.id)
 				{
 					this.tracker[0][i].counter++;
 				}
