@@ -579,94 +579,102 @@ var update = function()
 			//update player object
 			player.update();
 		}
-	}
 
-
-	// check if you are standing on a portal and need to switch maps
-	if (player.portalCounter == 0)
-	{
-		for (var i in portalList)
+		// check if you are standing on a portal and need to switch maps
+		if (player.portalCounter == 0)
 		{
-			if (portalList[i].collisionCheck(player.entity))
+			for (var i in portalList)
 			{
-				console.log(portalList);
-				console.log("moving to map " + portalList[i].destination_mapId)
-				view.clear();
-				player.entity.x = portalList[i].destination_x;
-				player.entity.y = portalList[i].destination_y;
-				player.entity.mapId = portalList[i].destination_mapId;
-				player.entity.nearbyObjects = [];
-				loadMap(portalList[i].destination_mapId);
-				player.portalCounter = 30;
-				if (player.entity.mapId < 0)
+				if (portalList[i].collisionCheck(player.entity))
 				{
-					socket.emit('movement', player.entity); //send new location to server
+					console.log(portalList);
+					console.log("moving to map " + portalList[i].destination_mapId)
+					view.clear();
+					player.entity.x = portalList[i].destination_x;
+					player.entity.y = portalList[i].destination_y;
+					player.entity.mapId = portalList[i].destination_mapId;
+					player.entity.nearbyObjects = [];
+					loadMap(portalList[i].destination_mapId);
+					player.portalCounter = 30;
+					if (player.entity.mapId < 0)
+					{
+						socket.emit('movement', player.entity); //send new location to server
+					}
+					break;
 				}
-				break;
 			}
 		}
-	}
-	else if (player.portalCounter > 0)
-	{
-		player.portalCounter--;
-	}
-
-	// check if any achievements have been completed
-	for (var i in achievements)
-	{
-		if (achievements[i].isComplete() && typeof(completedAchievements[i]) === 'undefined')
+		else if (player.portalCounter > 0)
 		{
-			notificationList.push(new Notification("Achievement Complete","You completed the achievement " + achievements[i].name))
-			var r = achievements[i].reward;
+			player.portalCounter--;
+		}
 
-			if (typeof(r) !== "undefined" && r != null)
+		// check if any achievements have been completed
+		for (var i in achievements)
+		{
+			if (achievements[i].isComplete() && typeof(completedAchievements[i]) === 'undefined')
 			{
-				if (typeof(r.xp) !== "undefined")
+				notificationList.push(new Notification("Achievement Complete","You completed the achievement " + achievements[i].name))
+				var r = achievements[i].reward;
+
+				if (typeof(r) !== "undefined" && r != null)
 				{
-					player.entity.addXP(r.xp);
-				}
-				if (typeof(r.items) !== "undefined")
-				{
-					for (var j in r.items)
+					if (typeof(r.xp) !== "undefined")
 					{
-						player.inventory.addItem(r.items[j]);
+						player.entity.addXP(r.xp);
+					}
+					if (typeof(r.items) !== "undefined")
+					{
+						for (var j in r.items)
+						{
+							player.inventory.addItem(r.items[j]);
+						}
 					}
 				}
+
+				completedAchievements[i] = true;
 			}
-
-			completedAchievements[i] = true;
 		}
-	}
 
-	// check if any quests have been completed
-	for (var i in quests)
-	{
-		if (quests[i].isComplete())
+		// check if any quests have been completed
+		for (var i in quests)
 		{
-			notificationList.push(new Notification("Quest Complete","You completed the quest " + quests[i].name))
-			var r = quests[i].reward;
-
-			if (typeof(r) !== "undefined" && r != null)
+			if (quests[i].isComplete())
 			{
-				if (typeof(r.xp) !== "undefined")
+				notificationList.push(new Notification("Quest Complete","You completed the quest " + quests[i].name))
+				var r = quests[i].reward;
+
+				if (typeof(r) !== "undefined" && r != null)
 				{
-					player.entity.addXP(r.xp);
-				}
-				if (typeof(r.items) !== "undefined")
-				{
-					for (var j in r.items)
+					if (typeof(r.xp) !== "undefined")
 					{
-						player.inventory.addItem(r.items[j]);
+						player.entity.addXP(r.xp);
+					}
+					if (typeof(r.items) !== "undefined")
+					{
+						for (var j in r.items)
+						{
+							player.inventory.addItem(r.items[j]);
+						}
 					}
 				}
-			}
 
-			completedQuests[i] = true;
-			delete quests[i];
+				completedQuests[i] = true;
+				delete quests[i];
+			}
+		}
+
+		// update current notifcation and check if it expired
+		if (notificationList[0] != null)
+		{
+			notificationList[0].update();
+
+			if (notificationList[0].counter <= 0 && cutscene == null) // only start new notifications outside of cutscenes
+			{
+				notificationList.splice(0,1);
+			}
 		}
 	}
-
-
 
 	// update flytext and remove any that expired
 	var n = flyTextList.length;
@@ -682,17 +690,6 @@ var update = function()
 				i--;
 				n--;
 			}
-		}
-	}
-
-	// update current notifcation and check if it expired
-	if (notificationList[0] != null)
-	{
-		notificationList[0].update();
-
-		if (notificationList[0].counter <= 0 && cutscene == null) // only start new notifications outside of cutscenes
-		{
-			notificationList.splice(0,1);
 		}
 	}
 
@@ -1128,6 +1125,8 @@ function initiateConversation()
 			{
 				collisionList[i].direction = "Right";
 				cutscene = new Cutscene(collisionList[i].cutsceneId);
+				player.entity.x_speed = 0;
+				player.entity.y_speed = 0;
 				break;
 			}
 			else if (player.entity.direction == "Right"				
@@ -1138,6 +1137,8 @@ function initiateConversation()
 			{
 				collisionList[i].direction = "Left";
 				cutscene = new Cutscene(collisionList[i].cutsceneId);
+				player.entity.x_speed = 0;
+				player.entity.y_speed = 0;
 				break;
 			}
 			else if (player.entity.direction == "Up" 
@@ -1148,6 +1149,8 @@ function initiateConversation()
 			{
 				collisionList[i].direction = "Down";
 				cutscene = new Cutscene(collisionList[i].cutsceneId);
+				player.entity.x_speed = 0;
+				player.entity.y_speed = 0;
 				break;
 			}
 			else if (player.entity.direction == "Down"
@@ -1158,6 +1161,8 @@ function initiateConversation()
 			{
 				collisionList[i].direction = "Up";
 				cutscene = new Cutscene(collisionList[i].cutsceneId);
+				player.entity.x_speed = 0;
+				player.entity.y_speed = 0;
 				break;
 			}
 		}

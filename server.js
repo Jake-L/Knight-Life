@@ -1087,7 +1087,7 @@ function checkDamage()
 		}
 	}
 
-	// go through every active projectile
+	// update projectile and check if it has gone offscreen or hit someone
 	for (var mapId in projectileList)
 	{
 		n = projectileList[mapId].length;
@@ -1140,6 +1140,15 @@ function checkDamage()
 							addKillParticipation(mapEntities[mapId][j].entity.id, projectileList[mapId][i].source, mapId);
 
 							//console.log(mapEntities[mapId][j].entity.display_name + mapEntities[mapId][j].entity.id + " took " + projectileList[mapId][i].damage + " damage");
+							dmg = true;
+						}
+					}
+
+					// check every mapobject to see if it's hit a solid object
+					for (var j in mapObjects[mapId])
+					{
+						if (projectileList[mapId][i].collisionCheck(mapObjects[mapId][j]))
+						{
 							dmg = true;
 						}
 					}
