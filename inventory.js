@@ -44,6 +44,12 @@ Inventory.prototype.addItem = function(item)
 		item.quantity = 0;
 	}
 
+	if (item.name == "money" && item.quantity > 0)
+	{
+		playSoundEffect("coin.mp3");
+		//flyTextList.push(new flyText(width/2, height/2, "+" + item.quantity + " money", "#00FF00"));
+	}
+
 	if (typeof(this.items[item.name]) !== 'undefined')
 	{
 		this.items[item.name].quantity += item.quantity;

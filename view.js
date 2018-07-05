@@ -12,7 +12,7 @@ var View = function()
 	this.clickX;
 	this.clickY;
 	this.selection = -1;
-	this.oldDisplayWindow;
+	this.oldDisplayWindow = null;
 
 	itemSprite["money"] = new Image();
 	itemSprite["money"].src = "img//money.png";
@@ -103,22 +103,25 @@ var View = function()
 
 		player.entity.renderHealthBar();
 
-		if (displayWindow != null)
+		if (cutscene != null && cutscene.displayWindow != null)
+		{
+			this.renderOptions(cutscene.displayWindow, cutscene.optionsArray);
+		}
+		else if (displayWindow != null)
 		{
 			if (displayWindow != this.oldDisplayWindow)
 			{
-				this.selection = "-1";
+				this.selection = "-1"; //reset selection when changing the displayed window
 			}
 
 			this.renderOptions(displayWindow);
-
-			this.oldDisplayWindow = displayWindow;
 		}
 		else
 		{
 			this.selection = "-1";
 		}
 
+		this.oldDisplayWindow = displayWindow;
 		this.clickX = null;
 		this.clickY = null;
 	}
@@ -384,6 +387,10 @@ var View = function()
 
 	this.renderOptions = function(type, a)
 	{
+		var TEXTSIZE = Math.max(8, 4 * graphics_scaling);
+		var x_indent = 0;
+		var line_counter = 0;
+
 		if (type == "Quests")
 		{
 			a = quests;
@@ -391,6 +398,8 @@ var View = function()
 			var h = Math.max(height * 0.5,100);
 			var x = (width / 2) - (w/2);
 			var y = (height / 2) - (h/2);
+			//x_indent = 10 * graphics_scaling;
+			line_counter = 1;
 		}
 		else if (type == "Achievements")
 		{
@@ -399,25 +408,45 @@ var View = function()
 			var h = Math.max(height * 0.5,100);
 			var x = (width / 2) - (w/2);
 			var y = (height / 2) - (h/2);
+			//x_indent = 10 * graphics_scaling;
+			line_counter = 1;
 		}
-		else if (type == "Inventory")
+		else if (type == "Inventory" || type == "Sell")
 		{
-			a = player.inventory.items;
+			a = {};
+			for (var i in player.inventory.items)
+			{
+				console.log(i);
+				if (player.inventory.items[i].quantity > 0 && (type == "Inventory" || player.inventory.items[i].name != "money"))
+				{
+					a[i] = player.inventory.items[i];
+				}
+			}
 			var w = Math.max(width * 0.2,250);
 			var h = Math.max(height * 0.5,100);
 			var x = (width / 2) - (w/2);
 			var y = (height / 2) - (h/2);
-		}
-		else
-		{		
-			var w = Math.max(width * 0.2,250);
-			var h = Math.max(height * 0.5,100);
-			var x = (width / 2) - (w/2);
-			var y = (height / 2) - (h/2);
-		}
-		// other: type == "DialogOption"
+			x_indent = Math.min(16, 10 * graphics_scaling);
+			line_counter = 1;
 
-		//var textSpacing = 
+		}
+		else //display plaintext
+		{	
+			TEXTSIZE = 8 * graphics_scaling;
+			context.font = "bold " + TEXTSIZE + "px sans-serif";
+			var line_length = 0;
+			for (var i in a)
+			{
+				line_counter++;
+				line_length = Math.max(line_length, context.measureText(a[i]).width);
+			}
+
+			var w = Math.min(Math.max(width * 0.2,250), line_length + (6 * graphics_scaling));
+			var h = Math.min(Math.max(height * 0.5,100), TEXTSIZE * (line_counter + 2));
+			var x = (width * 2 / 3) - (w/2);
+			var y = (height / 2) - (h/2);
+			line_counter = 0;
+		} 
 
 		if (player.entity.x_speed != 0 || player.entity.y_speed != 0)
 		{
@@ -436,23 +465,17 @@ var View = function()
 		context.lineTo(x, y + h);
 		context.lineTo(x, y);
 		context.stroke();
-
-		
 		context.fillStyle = "#000000";
-		var line_counter = 0;
-		var TEXTSIZE = Math.max(12, 4 * graphics_scaling);
 		context.font = "bold " + TEXTSIZE + "px sans-serif";
-
-
 
 		for (var i in a)
 		{
-			if (this.clickX > x && this.clickX < x + (w/2) && this.clickY > y + (line_counter + 3 - 0.5) * (TEXTSIZE + graphics_scaling) && this.clickY <= y + (line_counter + 3 + 0.5) * (TEXTSIZE + graphics_scaling))
+			if (this.clickX > x && this.clickX < x + Math.max((w/2), 50) && this.clickY > y + (line_counter + 0.5) * (TEXTSIZE * 1.5) + graphics_scaling && this.clickY < y + (line_counter + 1.5) * (TEXTSIZE * 1.5) + graphics_scaling)
 			{
 				this.selection = i;
 			}
 
-			if (type != "DialogOption")
+			if (type != "CutsceneOption")
 			{
 				var s = a[i].name;
 			}
@@ -461,21 +484,19 @@ var View = function()
 				var s = a[i];
 			}
 
-						// 	display the items name
+			// 	display the items name
 			context.fillText(s,
-				x + 52,
-				y + (line_counter + 3) * (TEXTSIZE + graphics_scaling));
+				x + (graphics_scaling * 3) + x_indent,
+				y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
 			
-			
-
-			if (type == "Inventory")
+			if (type == "Inventory" || type == "Sell")
 			{
 				// display the item's sprite
 				if (typeof(itemSprite[s]) !== "undefined" && itemSprite[s].complete)
 				{
 					context.drawImage(itemSprite[s],
-						x + 20,
-						y + (line_counter + 3) * (TEXTSIZE + graphics_scaling) - itemSprite[s].height + graphics_scaling,
+						x + (graphics_scaling * 3),
+						y + (line_counter + 1) * (TEXTSIZE * 1.5) - (itemSprite[s].height * 0.875) + graphics_scaling,
 						itemSprite[s].width,
 						itemSprite[s].height);
 				}
@@ -483,22 +504,42 @@ var View = function()
 				// 	display the items quantity
 				context.fillText("x" + a[i].quantity,
 					x + (w/2) + 16,
-					y + (line_counter + 3) * (TEXTSIZE + graphics_scaling));
+					y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
 
 				if (this.selection == i)
 				{
 					line_counter++;
 
 					// 	display the option to use the item
-					if (this.clickX > x && this.clickX < x + (w/2) && this.clickY > y + (line_counter + 3 - 0.5) * (TEXTSIZE + graphics_scaling) && this.clickY < y + (line_counter + 3 + 0.5) * (TEXTSIZE + graphics_scaling))
+					if (this.clickX > x && this.clickX < x + (w/2) && this.clickY > y + (line_counter + 0.5) * (TEXTSIZE * 1.5) + graphics_scaling && this.clickY < y + (line_counter + 1.5) * (TEXTSIZE * 1.5) + graphics_scaling)
 					{
-						console.log("user clicked use" + s);
-						useItem(s);
+						if (type == "Inventory")
+						{
+							console.log("user clicked use" + s);
+							useItem(s);
+						}
+						else if (type == "Sell")
+						{
+
+							console.log("user clicked sell" + s + clickCounter);
+							sellItem(s);
+							this.clickX = null;
+							this.clickY = null;
+						}
 					}
 
-					context.fillText("use item",
-						x + 48,
-						y + (line_counter + 3) * (TEXTSIZE + graphics_scaling));
+					if (type == "Inventory")
+					{
+						context.fillText("use item",
+							x + (graphics_scaling * 3) + x_indent,
+							y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
+					}
+					else if (type == "Sell")
+					{
+						context.fillText("sell item",
+							x + (graphics_scaling * 3) + x_indent,
+							y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
+					}
 				}
 			}
 			else if (type == "Achievements" || type == "Quests")
@@ -526,15 +567,15 @@ var View = function()
 
 				// show the % complete for the objective
 				context.fillText(Math.floor(counter * 100.00 / a[i].totalRequired) + "%",
-					x + 10,
-					y + (line_counter + 3) * (TEXTSIZE + graphics_scaling));	
+					x + w / 3 - context.measureText(Math.floor(counter * 100.00 / a[i].totalRequired) + "%").width - (graphics_scaling * 2),
+					y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
 				context.fillStyle = "#000000";		
 			}
 			
 			line_counter++;
 		}
 
-		if (line_counter > 0 && (type == "Achievements" || type == "Quests"))
+		if (line_counter > 0 && (type == "Achievements" || type == "Quests") && this.selection != "-1")
 		{
 			var task_counter = 0;
 
@@ -623,7 +664,7 @@ var View = function()
 			context.lineTo(x + w / 3, y + h);
 			context.stroke();
 		}
-		else if (type == "Inventory")
+		else if (type == "Inventory" || type == "Sell")
 		{
 			context.fillText("Items",
 				x + (4 * graphics_scaling),
@@ -635,6 +676,12 @@ var View = function()
 		}	
 
 		context.globalAlpha = 1;
+
+		if (type == "CutsceneOption" && this.selection != "-1")
+		{
+			console.log("send to cutscene.js: " + a[this.selection]);
+			cutscene.optionsAction[a[this.selection]]();
+		}
 	}
 
 	this.clickPosition = function(x, y)

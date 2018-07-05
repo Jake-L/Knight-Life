@@ -89,6 +89,29 @@ initializeCutscene[3] = function(cutscene)
 	cutscene.text = "Nearby there is a cave with a very dangerous creature inside. He nearly killed me, and will do the same to you if given the opportunity.";
 };
 
+initializeCutscene[4] = function(cutscene)
+{
+	displayWindow = null;
+	cutscene.displayWindow = "CutsceneOption";
+	cutscene.text = "Would you like to buy or sell?";
+	cutscene.optionsArray = ["Buy", "Sell"];
+	cutscene.optionsAction = {};
+	cutscene.optionsAction["Buy"] = function(){
+		displayWindow = null;
+		cutscene.optionsArray = {};
+		cutscene.optionsArray["Apple"] = {name:"Apple"};
+		cutscene.displayWindow = "Buy";
+		cutscene.text = "What would you like to buy?";
+	};
+	cutscene.optionsAction["Sell"] = function(){
+		displayWindow = null;
+		cutscene.optionsArray = null;
+		cutscene.displayWindow = "Sell";
+		cutscene.text = "What would you like to sell?";
+	};
+
+}
+
 // holds items, and provides an interface to use them
 function Cutscene(cutsceneId)
 {
@@ -102,6 +125,9 @@ function Cutscene(cutsceneId)
 	initializeCutscene[cutsceneId](this);
 	this.textCounter = 30;
 	this.complete = false;
+	this.displayWindow;
+	this.optionsArray;
+	this.optionsAction;
 }
 
 function CutsceneNode()
@@ -114,7 +140,11 @@ function CutsceneNode()
 
 Cutscene.prototype.update = function()
 {
-	if (this.textCounter > 0)
+	if (this.displayWindow != null)
+	{
+		view.renderOptions(this.displayWindow, this.optionsArray);
+	}
+	else if (this.textCounter > 0)
 	{
 		this.textCounter--;
 	}
@@ -143,6 +173,14 @@ Cutscene.prototype.update = function()
 	}
 }
 
+Cutscene.prototype.optionsResult = function(r)
+{
+	if (typeof(this.optionsAction[r]) !== "undefined")
+	{
+		this.optionsAction[r]();
+	}
+}
+
 Cutscene.prototype.isComplete = function()
 {
 	return this.complete;
@@ -151,5 +189,8 @@ Cutscene.prototype.isComplete = function()
 // Displays the cutscene
 Cutscene.prototype.render = function()
 {
-	view.renderText(this.text);
+	if (this.text != null)
+	{
+		view.renderText(this.text);
+	}
 };

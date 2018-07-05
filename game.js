@@ -157,6 +157,11 @@ window.onload = function()
 	{
 		//check with the server for savedata
 		socket.emit('load', username);
+
+		// update the cookie to last 2 more days
+		var date = new Date();
+		date.setTime(date.getTime()+(2*24*60*60*1000)); // cookie lasts for 2 days
+		document.cookie = "username=" + username + "; expires="+date.toGMTString();
 	}
 
 	// load images and data that don't depend on player information while waiting for server response
@@ -346,7 +351,6 @@ function loadSprite(spriteName, attacks)
 					img.src = "img//" + spriteName + "Attack" + attacks[k] + getDirName(i) + j + ".png";
 				}
 				s[j] = img;
-				console.log(img);
 			}
 
 			a[i] = s;
@@ -559,6 +563,7 @@ var update = function()
 		{
 			cutscene = null;
 			player.conversationCounter = 30;
+			player.entity.targetType = "Neutral";
 		}
 	}
 	// only update the player if they aren't in a conversation
@@ -587,7 +592,6 @@ var update = function()
 			{
 				if (portalList[i].collisionCheck(player.entity))
 				{
-					console.log(portalList);
 					console.log("moving to map " + portalList[i].destination_mapId)
 					view.clear();
 					player.entity.x = portalList[i].destination_x;
@@ -1037,6 +1041,8 @@ function flyText(x, y, s, colour)
 	this.msg = s;
 	this.colour = colour;
 	this.counter = 100;
+	this.x = x;
+	this.y = y;
 
 	this.update = function()
 	{
@@ -1048,6 +1054,8 @@ function flyText(x, y, s, colour)
 
 	this.render = function()
 	{
+		console.log(this.x, this.y);
+
 		context.globalAlpha = this.counter / 100;
 		context.font = "bold " + (4 * graphics_scaling) + "px sans-serif";
 
@@ -1055,14 +1063,14 @@ function flyText(x, y, s, colour)
 		context.strokeStyle = "#000000";
 		context.lineWidth = 2;
 		context.strokeText(this.msg,
-			((x - x_offset) * graphics_scaling) - (context.measureText(this.msg).width/2),
-			(y - y_offset - ((100-this.counter) / 10)) * graphics_scaling);
+			((this.x - x_offset) * graphics_scaling) - (context.measureText(this.msg).width/2),
+			(this.y - y_offset - ((100-this.counter) / 10)) * graphics_scaling);
 
 		// display the text in colour
 		context.fillStyle = this.colour;
 		context.fillText(this.msg,
-			((x - x_offset) * graphics_scaling) - (context.measureText(this.msg).width/2),
-			(y - y_offset - ((100-this.counter) / 10)) * graphics_scaling);
+			((this.x - x_offset) * graphics_scaling) - (context.measureText(this.msg).width/2),
+			(this.y - y_offset - ((100-this.counter) / 10)) * graphics_scaling);
 		context.globalAlpha = 1;
 	}
 }
@@ -1127,6 +1135,7 @@ function initiateConversation()
 				cutscene = new Cutscene(collisionList[i].cutsceneId);
 				player.entity.x_speed = 0;
 				player.entity.y_speed = 0;
+				player.entity.targetType = "Passive";
 				break;
 			}
 			else if (player.entity.direction == "Right"				
@@ -1139,6 +1148,7 @@ function initiateConversation()
 				cutscene = new Cutscene(collisionList[i].cutsceneId);
 				player.entity.x_speed = 0;
 				player.entity.y_speed = 0;
+				player.entity.targetType = "Passive";
 				break;
 			}
 			else if (player.entity.direction == "Up" 
@@ -1151,6 +1161,7 @@ function initiateConversation()
 				cutscene = new Cutscene(collisionList[i].cutsceneId);
 				player.entity.x_speed = 0;
 				player.entity.y_speed = 0;
+				player.entity.targetType = "Passive";
 				break;
 			}
 			else if (player.entity.direction == "Down"
@@ -1163,6 +1174,7 @@ function initiateConversation()
 				cutscene = new Cutscene(collisionList[i].cutsceneId);
 				player.entity.x_speed = 0;
 				player.entity.y_speed = 0;
+				player.entity.targetType = "Passive";
 				break;
 			}
 		}
@@ -1263,16 +1275,22 @@ function renderMinimap()
 }
 
 // check if the user clicks the mouse
-function printMousePos(event) {
+function mouseClickDown(event) {
+	console.log(clickCounter);
 	if (clickCounter > 15)
 	{
-	  console.log("clientX: " + event.clientX + " - clientY: " + event.clientY);
 	  view.clickPosition(event.clientX, event.clientY);
-	  clickCounter = 0;
 	}
 }
 
-document.addEventListener("click", printMousePos);
+function mouseClickUp(event)
+{
+	clickCounter = 0;
+	console.log(clickCounter);
+}
+
+window.addEventListener("mousedown", mouseClickDown);
+window.addEventListener("mouseup", mouseClickUp);
 window.addEventListener("resize", setScreenSize);
 //document.addEventListener("fullscreenchange", setScreenSize);
 
@@ -1294,6 +1312,19 @@ function useItem(itemName)
 	else
 	{
 		console.log("failed to use item " + item.name);
+	}
+}
+
+function sellItem(itemName) 
+{
+	if (itemName != "money" && player.inventory.getItem(itemName).quantity > 0)
+	{
+		player.inventory.removeItem({name: itemName, quantity: 1});
+		player.inventory.addItem({name: "money", quantity: 10});
+	}
+	else
+	{
+		console.log("failed to sell item " + item.name);
 	}
 }
 
@@ -1345,8 +1376,6 @@ socket.on('mapObjects', function(a)
 			mapObjects[p.id] = p;
 			view.insertStatic(p);
 		}
-
-		console.log(mapObjects);
 	}
 
 	updateNearbyObjects();
@@ -1448,7 +1477,6 @@ socket.on('itemreceived', function(item)
 {
 	console.log(item);
 	player.inventory.addItem(item);
-	playSoundEffect("coin.mp3");
 });
 
 // server sends all the projectiles currently on screen

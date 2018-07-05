@@ -111,6 +111,12 @@ function initializeMap()
 	e.entity.display_name = "Brian"; 
 	mapEntities[0][e.entity.id] = e;
 
+	var e  = new CPU(0, 0, "player", "0p2", 1, 0);
+	e.entity.targetType = "Passive"; 
+	e.entity.cutsceneId = 4; 
+	e.entity.display_name = "Patch"; 
+	mapEntities[0][e.entity.id] = e;
+
 	var n = mapEntities[0].length;
 
 	// spawn icemen
@@ -238,6 +244,7 @@ function copyEntity(old)
 	p.depth = old.depth;
 	p.height = old.height;
 	p.id = old.id;
+	p.targetType = old.targetType;
 	return p;
 }
 
@@ -342,6 +349,12 @@ var CPU = function(x, y, spriteName, id, lvl, mapId)
 	this.getTarget = function(targetList)
 	{
 	    var nearest_target;
+
+	    if (typeof(targetList[this.target]) === 'undefined' || targetList[this.target].targetType == "Passive")
+	    {
+	    	this.target = null;
+	    }
+
 	    for (var i in targetList)
 	    {
 			// only target enemies not in your faction
@@ -1239,8 +1252,11 @@ io.on('connection', function(socket)
 
 	socket.on('death', function()
 	{
-		entityDeath(connected[connection[socket.id].mapId][socket.id]);
-		connection[socket.id].last_update = new Date().getTime();
+		if (typeof(connection[socket.id]) !== "undefined")
+		{
+			entityDeath(connected[connection[socket.id].mapId][socket.id]);
+			connection[socket.id].last_update = new Date().getTime();
+		}
 	});
 
 	socket.on('save', function(username, savedata)
