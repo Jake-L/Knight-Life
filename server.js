@@ -149,11 +149,17 @@ function initializeMap()
 	e.entity.display_name = "Steve"; 
 	mapEntities[1][e.entity.id] = e; //index must be equal to id
 
-	var e  = new CPU(0, 0, "player", "0p2", 1, 1);
+	var e  = new CPU(0, 0, "player", "1p1", 1, 1);
 	e.entity.targetType = "Passive"; 
 	e.entity.cutsceneId = 3; 
 	e.entity.display_name = "Logan";
 	e.entity.current_health = 1; 
+	mapEntities[1][e.entity.id] = e;
+
+	var e  = new CPU(0, 0, "player", "1p2", 1, 1);
+	e.entity.targetType = "Passive"; 
+	e.entity.cutsceneId = 4; 
+	e.entity.display_name = "Pete"; 
 	mapEntities[1][e.entity.id] = e;
 
 	// spawn boss in Map 2
@@ -951,7 +957,6 @@ global.Projectile = function(x, y, z, x_speed, y_speed, z_speed, source, update_
 		this.height = sizeOf("img//" + this.spriteName + s + ".png").height;
 		this.width = sizeOf("img//" + this.spriteName + s + ".png").width;
 		this.depth = Math.min(this.height, this.width);
-		console.log(this.height, this.width, this.depth);
 	}
 
 	this.setSize();

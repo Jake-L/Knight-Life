@@ -1,8 +1,6 @@
 var weatherSprite = [];
 var backgroundSprite = new Image();
 var backgroundSpriteTop = new Image();
-var itemSprite = {};
-
 
 var View = function()
 {
@@ -13,15 +11,6 @@ var View = function()
 	this.clickY;
 	this.selection = -1;
 	this.oldDisplayWindow = null;
-
-	itemSprite["money"] = new Image();
-	itemSprite["money"].src = "img//money.png";
-	itemSprite["apple"] = new Image();
-	itemSprite["apple"].src = "img//apple.png";
-	itemSprite["crystal"] = new Image();
-	itemSprite["crystal"].src = "img//crystal.png";
-	itemSprite["icebosscrystal"] = new Image();
-	itemSprite["icebosscrystal"].src = "img//icebosscrystal.png";
 
 	this.render = function()
 	{
@@ -430,6 +419,16 @@ var View = function()
 			line_counter = 1;
 
 		}
+		else if (type == "Buy")
+		{
+			// the array is already provided, so no need to set a 
+			var w = Math.max(width * 0.2,250);
+			var h = Math.max(height * 0.5,100);
+			var x = (width / 2) - (w/2);
+			var y = (height / 2) - (h/2);
+			x_indent = Math.min(16, 10 * graphics_scaling);
+			//line_counter = 1;
+		}
 		else //display plaintext
 		{	
 			TEXTSIZE = 8 * graphics_scaling;
@@ -489,22 +488,25 @@ var View = function()
 				x + (graphics_scaling * 3) + x_indent,
 				y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
 			
-			if (type == "Inventory" || type == "Sell")
+			if (type == "Inventory" || type == "Sell" || type == "Buy")
 			{
 				// display the item's sprite
-				if (typeof(itemSprite[s]) !== "undefined" && itemSprite[s].complete)
+				if (typeof(itemDetail[s].sprite) !== "undefined" && itemDetail[s].sprite.complete)
 				{
-					context.drawImage(itemSprite[s],
+					context.drawImage(itemDetail[s].sprite,
 						x + (graphics_scaling * 3),
-						y + (line_counter + 1) * (TEXTSIZE * 1.5) - (itemSprite[s].height * 0.875) + graphics_scaling,
-						itemSprite[s].width,
-						itemSprite[s].height);
+						y + (line_counter + 1) * (TEXTSIZE * 1.5) - (itemDetail[s].sprite.height * 0.875) + graphics_scaling,
+						itemDetail[s].sprite.width,
+						itemDetail[s].sprite.height);
 				}
 
 				// 	display the items quantity
-				context.fillText("x" + a[i].quantity,
-					x + (w/2) + 16,
-					y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
+				if (type != "Buy")
+				{				
+					context.fillText("x" + a[i].quantity,
+						x + (w/2) + 16,
+						y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
+				}
 
 				if (this.selection == i)
 				{
@@ -526,6 +528,14 @@ var View = function()
 							this.clickX = null;
 							this.clickY = null;
 						}
+						else if (type == "Buy")
+						{
+
+							console.log("user clicked buy" + s + clickCounter);
+							buyItem(s);
+							this.clickX = null;
+							this.clickY = null;
+						}
 					}
 
 					if (type == "Inventory")
@@ -537,6 +547,12 @@ var View = function()
 					else if (type == "Sell")
 					{
 						context.fillText("sell item",
+							x + (graphics_scaling * 3) + x_indent,
+							y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
+					}
+					else if (type == "Buy")
+					{
+						context.fillText("buy item",
 							x + (graphics_scaling * 3) + x_indent,
 							y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
 					}
@@ -612,14 +628,14 @@ var View = function()
 			{
 				var item = a[this.selection].reward.items[j];
 
-				context.drawImage(itemSprite[item.name],
+				context.drawImage(itemDetail[item.name].sprite,
 					x + (w/3) + (4 * graphics_scaling),
-					y + (h/2) + (j + 2) * (TEXTSIZE + graphics_scaling) - itemSprite[item.name].height + graphics_scaling,
-					itemSprite[item.name].width,
-					itemSprite[item.name].height);
+					y + (h/2) + (j + 2) * (TEXTSIZE + graphics_scaling) - itemDetail[item.name].sprite.height + graphics_scaling,
+					itemDetail[item.name].sprite.width,
+					itemDetail[item.name].sprite.height);
 
 				context.fillText(item.name + " x" + item.quantity,
-					x + (w/3) + (4 * graphics_scaling) + itemSprite[item.name].width,
+					x + (w/3) + (4 * graphics_scaling) + itemDetail[item.name].sprite.width,
 					y + (h/2) + (j + 2) * (TEXTSIZE + graphics_scaling));
 
 

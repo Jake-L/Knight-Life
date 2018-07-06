@@ -1320,11 +1320,24 @@ function sellItem(itemName)
 	if (itemName != "money" && player.inventory.getItem(itemName).quantity > 0)
 	{
 		player.inventory.removeItem({name: itemName, quantity: 1});
-		player.inventory.addItem({name: "money", quantity: 10});
+		player.inventory.addItem({name: "money", quantity: Math.ceil(itemDetail[itemName].price / 2)});
 	}
 	else
 	{
 		console.log("failed to sell item " + item.name);
+	}
+}
+
+function buyItem(itemName) 
+{
+	if (itemName != "money" && player.inventory.getItem("money").quantity >= itemDetail[itemName].price)
+	{
+		player.inventory.addItem({name: itemName, quantity: 1});
+		player.inventory.removeItem({name: "money", quantity: itemDetail[itemName].price});
+	}
+	else
+	{
+		console.log("failed to buy item " + item.name);
 	}
 }
 

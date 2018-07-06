@@ -92,6 +92,7 @@ initializeCutscene[3] = function(cutscene)
 initializeCutscene[4] = function(cutscene)
 {
 	displayWindow = null;
+	cutscene.textCounter = -1;
 	cutscene.displayWindow = "CutsceneOption";
 	cutscene.text = "Would you like to buy or sell?";
 	cutscene.optionsArray = ["Buy", "Sell"];
@@ -99,17 +100,18 @@ initializeCutscene[4] = function(cutscene)
 	cutscene.optionsAction["Buy"] = function(){
 		displayWindow = null;
 		cutscene.optionsArray = {};
-		cutscene.optionsArray["Apple"] = {name:"Apple"};
+		cutscene.optionsArray["apple"] = {name:"apple"};
 		cutscene.displayWindow = "Buy";
 		cutscene.text = "What would you like to buy?";
+		cutscene.textCounter = 30;
 	};
 	cutscene.optionsAction["Sell"] = function(){
 		displayWindow = null;
 		cutscene.optionsArray = null;
 		cutscene.displayWindow = "Sell";
 		cutscene.text = "What would you like to sell?";
+		cutscene.textCounter = 30;
 	};
-
 }
 
 // holds items, and provides an interface to use them
@@ -117,25 +119,16 @@ function Cutscene(cutsceneId)
 {
 	this.cutsceneId = cutsceneId;
 	this.text;
-	this.node;
 	this.addItem;
 	this.removeItem;
 	this.addQuest;
 	this.removeQuest;
-	initializeCutscene[cutsceneId](this);
 	this.textCounter = 30;
 	this.complete = false;
 	this.displayWindow;
 	this.optionsArray;
 	this.optionsAction;
-}
-
-function CutsceneNode()
-{
-	this.text;
-	this.nextNode;
-	this.decisionOptions;
-	this.decisionResult;
+	initializeCutscene[cutsceneId](this);
 }
 
 Cutscene.prototype.update = function()
@@ -144,17 +137,17 @@ Cutscene.prototype.update = function()
 	{
 		view.renderOptions(this.displayWindow, this.optionsArray);
 	}
-	else if (this.textCounter > 0)
+	if (this.textCounter > 0)
 	{
 		this.textCounter--;
 	}
-	else
+	// a text counter of -1 means the conversation cannot be exited by the user
+	else if (this.textCounter == 0)
 	{
 		for(var key in keysDown)
 		{
 			if (Number(key) == 13) // enter key
 			{
-
 				if (this.removeItem != null)
 				{
 					this.removeItem;
