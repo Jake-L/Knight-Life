@@ -943,6 +943,10 @@ Player.prototype.update = function()
 			{
 				displayWindow = "Achievements";
 			}
+			else if (value == 76 && displayWindow == null)
+			{
+				displayWindow = "Leaderboards";
+			}
 		}
 	}
 
@@ -1054,8 +1058,6 @@ function flyText(x, y, s, colour)
 
 	this.render = function()
 	{
-		console.log(this.x, this.y);
-
 		context.globalAlpha = this.counter / 100;
 		context.font = "bold " + (4 * graphics_scaling) + "px sans-serif";
 
@@ -1298,7 +1300,7 @@ function useItem(itemName)
 {
 	if (player.inventory.getItem(itemName).quantity > 0)
 	{
-		if (itemName == "apple")
+		if (itemName == "apple" || itemName == "carrot" || itemName == "leek")
 		{
 			player.entity.current_health = Math.min(player.entity.max_health, player.entity.current_health + 10);
 			player.inventory.removeItem({name: itemName, quantity: 1});
@@ -1604,5 +1606,14 @@ function loadObjective(data)
 socket.on('ping', function(serverTime)
 {
 	ping = new Date().getTime() - serverTime;
+});
+
+var leaderboards;
+
+// recieve updated leaderboards from the server
+socket.on('leaderboards', function(l)
+{
+	leaderboards = l;
+	console.log(leaderboards);
 });
 

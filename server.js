@@ -872,18 +872,31 @@ function awardKillRewards(id, xp, entity)
 	io.to(id).emit('xpgain', xp, entity);
 	io.to(id).emit('itemreceived', {name: "money", quantity: Math.ceil((Math.random() + 1) * entity.lvl), type: "currency"});
 
-	if (Math.random() > 0.7 && entity.faction != "iceman")
-	{
-		io.to(id).emit('itemreceived', {name: "apple", quantity: 1, type: "food"});
-	}
-	if (Math.random() > 0.5 && entity.faction == "iceman")
-	{
-		io.to(id).emit('itemreceived', {name: "crystal", quantity: 1});
-	}
 	if (entity.id == "iceboss")
 	{
 		io.to(id).emit('itemreceived', {name: "icebosscrystal", quantity: 1});
 	}
+	else if (Math.random() > 0.5 && entity.faction == "iceman")
+	{
+		io.to(id).emit('itemreceived', {name: "crystal", quantity: 1});
+	}
+	else if (entity.faction != "iceman")
+	{
+		if (Math.random() > 0.5) // 50% chance to get apple
+		{
+			io.to(id).emit('itemreceived', {name: "apple", quantity: 1, type: "food"});
+		}
+		if (Math.random() > 0.25) // 25% chance to get carrot
+		{
+			io.to(id).emit('itemreceived', {name: "carrot", quantity: 1, type: "food"});
+		}
+		if (Math.random() > 0.25) // 25% chance to get leek
+		{
+			io.to(id).emit('itemreceived', {name: "leek", quantity: 1, type: "food"});
+		}
+	}
+
+
 }
 
 // holds information about where damage will be applied
@@ -1197,6 +1210,7 @@ io.on('connection', function(socket)
 			console.log("new player on map " + mapId);
 			connection[socket.id] = {mapId: mapId, last_update: new Date().getTime()};
 			io.to(socket.id).emit('mapObjects', mapObjects[mapId]);
+			io.to(socket.id).emit('leaderboards',leaderboards);
 			killParticipation[mapId][socket.id] = [];
 		}
   	);
@@ -1229,6 +1243,7 @@ io.on('connection', function(socket)
 				{
 					connection[socket.id] = {mapId: player.mapId, last_update: new Date().getTime()};
 					io.to(socket.id).emit('mapObjects', mapObjects[connection[socket.id].mapId]);
+					io.to(socket.id).emit('leaderboards',leaderboards);
 					killParticipation[connection[socket.id].mapId][socket.id] = [];
 				}
 			}
@@ -1500,6 +1515,82 @@ setInterval(function()
 {
 	displayPlayerCount();
 }, 30000);
+
+var leaderboards = {};
+// update leaderboards once a minute
+setInterval(function()
+{
+	// read the list of user save files
+	var users = fs.readdirSync('saves//');
+	leaderboards["Level"] = [];
+	leaderboards["Money"] = [];
+	leaderboards["Kills"] = [];
+
+	for (var i in users)
+	{		
+		// add each user's statistics to the leaderboard
+		readLeaderboardData(users[i].slice(0,-4));
+	}
+
+	// transmit the updated leaderboard to every connected user
+	setTimeout(function()
+		{
+			console.log("updating leaderboards");
+			io.emit('leaderboards',leaderboards);
+		}, 5000);
+}, 5000);
+
+function readLeaderboardData(username)
+{
+	fs.readFile('saves//' + username + '.txt', function(err, data) 
+	{
+	    if(err) 
+	    {
+	    	console.log("error reading save data for user " + username);
+		}
+		else
+		{
+			// get the relevent attributes from the users save file
+		    var userdata = JSON.parse(data.toString());
+		    
+		    // insert the player's level into the leaderboards in sorted order
+		    var sort_counter = 0;
+		    for (var i in leaderboards["Level"])
+		    {
+		    	if (leaderboards["Level"][i].counter > userdata.lvl)
+		    	{
+		    		sort_counter++;
+		    	}
+		    }
+		    leaderboards["Level"].splice(sort_counter,0,{name:username, counter:userdata.lvl});
+
+		    if (typeof(userdata.items["money"]) !== 'undefined')
+		    {
+		    	// insert the player's money into the leaderboards in sorted order
+			    sort_counter = 0;
+			    for (var i in leaderboards["Money"])
+			    {
+			    	if (leaderboards["Money"][i].counter > userdata.items["money"].quantity)
+			    	{
+			    		sort_counter++;
+			    	}
+			    }
+			    leaderboards["Money"].splice(sort_counter,0,{name:username, counter:userdata.items["money"].quantity});
+			}
+
+			// insert the player's total number of kills into the leaderboards in sorted order
+		    sort_counter = 0;
+		    for (var i in leaderboards["Kills"])
+		    {
+		    	if (leaderboards["Kills"][i].counter > userdata.achievements[0].tracker[0][0].counter)
+		    	{
+		    		sort_counter++;
+		    	}
+		    }
+			leaderboards["Kills"].splice(sort_counter,0,{name:username, counter:userdata.achievements[0].tracker[0][0].counter})
+		}
+	});
+}
 
 // display current number of players connected
 function displayPlayerCount()

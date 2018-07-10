@@ -1,4 +1,4 @@
-var itemList = ["money", "apple", "crystal", "icebosscrystal"];
+var itemList = ["money", "apple", "carrot", "leek", "crystal", "icebosscrystal"];
 var itemDetail = {};
 for (var i in itemList)
 {
@@ -12,6 +12,8 @@ for (var i in itemList)
 }
 itemDetail["money"].price = 1;
 itemDetail["apple"].price = 10;
+itemDetail["leek"].price = 20;
+itemDetail["carrot"].price = 20;
 itemDetail["crystal"].price = 50;
 itemDetail["icebosscrystal"].price = 1000;
 

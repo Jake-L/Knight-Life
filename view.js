@@ -380,24 +380,24 @@ var View = function()
 		var x_indent = 0;
 		var line_counter = 0;
 
-		if (type == "Quests")
+		if (type == "Quests" || type == "Achievements" || type == "Leaderboards")
 		{
-			a = quests;
+			if (type == "Quests")
+			{
+				a = quests;
+			}
+			else if (type == "Achievements")
+			{
+				a = achievements;
+			}
+			else if (type == "Leaderboards")
+			{
+				a = leaderboards;
+			}
 			var w = Math.max(width * 0.5,250);
 			var h = Math.max(height * 0.5,100);
 			var x = (width / 2) - (w/2);
 			var y = (height / 2) - (h/2);
-			//x_indent = 10 * graphics_scaling;
-			line_counter = 1;
-		}
-		else if (type == "Achievements")
-		{
-			a = achievements;
-			var w = Math.max(width * 0.5,250);
-			var h = Math.max(height * 0.5,100);
-			var x = (width / 2) - (w/2);
-			var y = (height / 2) - (h/2);
-			//x_indent = 10 * graphics_scaling;
 			line_counter = 1;
 		}
 		else if (type == "Inventory" || type == "Sell")
@@ -474,14 +474,20 @@ var View = function()
 				this.selection = i;
 			}
 
-			if (type != "CutsceneOption")
-			{
-				var s = a[i].name;
-			}
-			else
+			if (type == "CutsceneOption")
 			{
 				var s = a[i];
 			}
+			else if (type == "Leaderboards")
+			{
+				var s = i;
+			}
+			else
+			{
+				var s = a[i].name;
+			}
+
+			console.log(this.selection);
 
 			// 	display the items name
 			context.fillText(s,
@@ -587,6 +593,14 @@ var View = function()
 					y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
 				context.fillStyle = "#000000";		
 			}
+			else if (type == "Leaderboards")
+			{
+				// leaderboards view always has the first item selected by default
+				if (this.selection == "-1")
+				{
+					this.selection = i;
+				}
+			}
 			
 			line_counter++;
 		}
@@ -640,7 +654,23 @@ var View = function()
 
 
 			}
-		}	
+		}
+		else if (type == "Leaderboards" && line_counter > 0 && this.selection != "-1")
+			{
+				var task_counter = 0;
+				for (var j in a[this.selection])
+				{
+					// display the user's name
+					context.fillText(a[this.selection][j].name,
+						x + (w / 3) + (4 * graphics_scaling),
+						y + (task_counter + 3) * (TEXTSIZE + graphics_scaling));
+					// display the user's stats
+					context.fillText(a[this.selection][j].counter,
+						x + (w * 2 / 3) + (4 * graphics_scaling),
+						y + (task_counter + 3) * (TEXTSIZE + graphics_scaling));
+					task_counter++;
+				}
+			}	
 
 		// 	draw the headers
 		context.font = "bold " + TEXTSIZE * 2 + "px sans-serif";
@@ -673,6 +703,30 @@ var View = function()
 			context.fillText(title + " Rewards",
 				x + (w/3) + (4 * graphics_scaling),
 				y + (h/2) - (2 * graphics_scaling));
+
+			// draw an extra box to hold the objective's details
+			context.beginPath();
+			context.moveTo(x + w / 3, y);
+			context.lineTo(x + w / 3, y + h);
+			context.stroke();
+		}
+		else if (type == "Leaderboards")
+		{
+				context.fillText("Leaderboards",
+					x + (4 * graphics_scaling),
+					y + TEXTSIZE * 2);
+
+			if (this.selection != "-1")
+			{
+				// if a stat has been selected, show the headers
+				context.fillText("Username",
+				x + (w/3) + (4 * graphics_scaling),
+				y + TEXTSIZE * 2);
+
+				context.fillText(this.selection,
+				x + (w*2/3) + (4 * graphics_scaling),
+				y + TEXTSIZE * 2);
+			}
 
 			// draw an extra box to hold the objective's details
 			context.beginPath();
