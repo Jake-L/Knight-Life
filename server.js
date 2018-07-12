@@ -163,7 +163,7 @@ function initializeMap()
 	mapEntities[1][e.entity.id] = e;
 
 	// spawn boss in Map 2
-	mapEntities[2]["iceboss"] = new CPU(0, 0, "iceboss", "iceboss", 1, 2);
+	mapEntities[2]["iceboss"] = new CPU(0, 0, "iceboss", "iceboss", 50, 2);
 	mapEntities[2]["iceboss"].entity.faction = "iceman";
 	//mapEntities[2]["iceboss"].entity.targetType = "Aggressive";
 
@@ -1084,7 +1084,7 @@ function checkDamage()
 					if (damageList[mapId][i].source != connected[mapId][j].id && connected[mapId][j].targetType != "Passive" && damageList[mapId][i].collisionCheck(connected[mapId][j]))
 					{
 						// tell the client that they took damage
-						io.to(connected[mapId][j].id).emit('damageIn', damageList[mapId][i].x, damageList[mapId][i].y, damageList[mapId][i].damage);
+						io.to(connected[mapId][j].id).emit('damageIn', damageList[mapId][i].x, damageList[mapId][i].y, Math.ceil(damageList[mapId][i].damage * Math.sqrt(damageList[mapId][i].damage / connected[mapId][j].defence)));
 
 						// track most recent attackers
 						addKillParticipation(connected[mapId][j].id, damageList[mapId][i].source, mapId);
@@ -1099,7 +1099,7 @@ function checkDamage()
 					if (damageList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].entity.targetType != "Passive"  && damageList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
 					{
 						// damage the entity
-						mapEntities[mapId][j].entity.takeDamage(damageList[mapId][i].x, damageList[mapId][i].y, damageList[mapId][i].damage);
+						mapEntities[mapId][j].entity.takeDamage(damageList[mapId][i].x, damageList[mapId][i].y, Math.ceil(damageList[mapId][i].damage * Math.sqrt(damageList[mapId][i].damage / mapEntities[mapId][j].entity.defence)));
 
 						// tell the CPU to target that entity
 						mapEntities[mapId][j].setTarget(damageList[mapId][i].source);
@@ -1146,7 +1146,7 @@ function checkDamage()
 						if (projectileList[mapId][i].source != connected[mapId][j].id && connected[mapId][j].targetType != "Passive" && projectileList[mapId][i].collisionCheck(connected[mapId][j]))
 						{
 							// tell the client that they took damage
-							io.to(connected[mapId][j].id).emit('damageIn', projectileList[mapId][i].x, projectileList[mapId][i].y, projectileList[mapId][i].damage);
+							io.to(connected[mapId][j].id).emit('damageIn', projectileList[mapId][i].x, projectileList[mapId][i].y, Math.ceil(projectileList[mapId][i].damage * Math.sqrt(projectileList[mapId][i].damage / connected[mapId][j].defence)));
 
 							// track most recent attackers
 							addKillParticipation(connected[mapId][j].id, projectileList[mapId][i].source, mapId);
@@ -1162,7 +1162,7 @@ function checkDamage()
 						if (projectileList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].entity.targetType != "Passive" && projectileList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
 						{
 							// damage the entity
-							mapEntities[mapId][j].entity.takeDamage(projectileList[mapId][i].x, projectileList[mapId][i].y, projectileList[mapId][i].damage);
+							mapEntities[mapId][j].entity.takeDamage(projectileList[mapId][i].x, projectileList[mapId][i].y, Math.ceil(projectileList[mapId][i].damage * Math.sqrt(projectileList[mapId][i].damage / mapEntities[mapId][j].entity.defence)));
 
 							// tell the CPU to target that entity
 							mapEntities[mapId][j].setTarget(projectileList[mapId][i].source);

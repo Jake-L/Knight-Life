@@ -55,12 +55,12 @@ exports.Entity = function(x,y,spriteName,mapId)
 		while (old_lvl < this.lvl)
 		{
 			old_lvl++;
-			this.updateStats();
 			if(typeof(module) === 'undefined')
 			{
 				notificationList.push(new Notification("Level Up!","You reached level " + old_lvl)); 
 			}
 		}
+		this.updateStats();
 		flyTextList.push(new flyText(this.x, this.y - (this.height * 1.5), "+" + xp + " XP", "#0080FF"));
 	};
 
@@ -68,20 +68,15 @@ exports.Entity = function(x,y,spriteName,mapId)
 	{
 		this.xp = Math.ceil(Math.pow(lvl-1, 10/4) * 5);
 		this.lvl = Math.floor(Math.pow(this.xp / 5, 4/10)) + 1;
-		var i = 1;
-		while (i < lvl)
-		{
-			this.updateStats();
-			i++;
-		}
+		this.updateStats();
 	}
 
 	this.updateStats = function()
 	{
-		this.defence++;
-		this.attack_damage++;
-		this.attack_speed += 0.01 / this.attack_speed;
-		this.max_health += 5;
+		this.defence = 10 + this.lvl;
+		this.attack_damage = 10 + this.lvl;
+		this.attack_speed = 2 - Math.pow(0.99,this.lvl);
+		this.max_health = 100 + 5 * this.lvl;
 		this.current_health = this.max_health;
 	};
 
@@ -89,13 +84,13 @@ exports.Entity = function(x,y,spriteName,mapId)
 	{
 		if (spriteName == "iceman" || spriteName == "iceboss")
 		{
-			this.attacks.push(new Attack("Punch", [], this));
-			this.attacks.push(new Attack("Snowball", [{name:"Snowball",damage:5}], this));
+			this.attacks.push(new Attack("Punch", [], this.attack_speed));
+			this.attacks.push(new Attack("Snowball", [{name:"Snowball",damage:0}], this.attack_speed));
 		}
 		else
 		{
-			this.attacks.push(new Attack("Sword", [{name:"Sword",damage:10}], this));
-			this.attacks.push(new Attack("Arrow", [{name:"Arrow",damage:5}], this));
+			this.attacks.push(new Attack("Sword", [{name:"Sword",damage:1}], this.attack_speed));
+			this.attacks.push(new Attack("Arrow", [{name:"Arrow",damage:0}], this.attack_speed));
 		}
 	};
 
@@ -770,6 +765,7 @@ exports.Entity.prototype.createFootPrint = function()
 
 exports.Entity.prototype.takeDamage = function(x, y, damage)
 {
+	console.log(this.display_name + this.id + " took " + damage + " damage")
 	if (this.spawn_time + 100 < new Date().getTime()) // don't take damage in the first 0.1 seconds you're alive
 	{
 		var damage_reduction = Math.max((-1 * Math.pow(0.5,(0.05 * (this.defence - 123))) + 67), 0);
@@ -830,12 +826,12 @@ exports.Entity.prototype.createAttack = function(attack)
 		{
 			if (this.mapId >= 0)
 			{
-				socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), attack.damage + this.attack_damage, this.mapId);
+				socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, this.mapId);
 			}
 		}
 		else
 		{
-			damageList[this.mapId].push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), attack.damage + this.attack_damage, this.mapId));
+			damageList[this.mapId].push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, this.mapId));
 		}
 	}
 
@@ -879,13 +875,13 @@ exports.Entity.prototype.createAttack = function(attack)
 			if (this.mapId >= 0)
 			{
 				socket.emit('createProjectile', x + (this.x_speed * 2), y + (this.y_speed * 2), 4, x_speed, y_speed, 0,
-					 new Date().getTime() + (2000/60), Math.ceil(attack.damage + this.attack_damage / 2), attack.weapons[0].name, this.mapId);
+					 new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.weapons[0].name, this.mapId);
 			}
 		}
 		else
 		{
 			projectileList[this.mapId].push(new Projectile(x + (this.x_speed * 2), y + (this.y_speed * 2), 4, x_speed, y_speed, 0,
-				this.id, new Date().getTime() + (2000/60), Math.ceil(attack.damage + this.attack_damage / 2), attack.weapons[0].name, this.mapId));
+				this.id, new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.weapons[0].name, this.mapId));
 		}
 	}
 	else

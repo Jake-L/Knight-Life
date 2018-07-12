@@ -16,13 +16,13 @@ damage_frame["Arrow"] = 27;
 var damage_factor = {};
 damage_factor["Punch"] = 0.8;
 damage_factor["Sword"] = 1;
-damage_factor["Snowball"] = 0.2;
-damage_factor["Arrow"] = 0.2;
+damage_factor["Snowball"] = 0.4;
+damage_factor["Arrow"] = 0.4;
 
 
 // create the attack object to track information relating to the attack, such as the number of frames in its animation or the amount of damage it does
 // NOTE: for a projectile attack, weapons[0].name must be the name of the projectile's sprite
-exports.Attack = function(name, weapons, entity)
+exports.Attack = function(name, weapons, attack_speed)
 {
 	this.name = name;
 	this.weapons = weapons;
@@ -36,29 +36,16 @@ exports.Attack = function(name, weapons, entity)
 		this.attack_type = 1;
 	}
 
-	this.frame_length;
-	this.damage_frame;
-	this.damage_factor;
-	this.damage = 0;
+	this.bonus_damage = 0;
 
-	this.loadStats = function(entity)
+	this.frame_length = Math.ceil(frame_length[this.name] / attack_speed);
+	this.damage_frame =  Math.ceil(damage_frame[this.name] / attack_speed);
+	this.damage_factor = damage_factor[this.name];
+
+	for (var i in this.weapons)
 	{
-		this.frame_length = frame_length[this.name];
-		this.damage_frame = damage_frame[this.name];
-		this.damage_factor = damage_factor[this.name];
-
-		this.frame_length = Math.ceil(this.frame_length / entity.attack_speed);
-		this.damage_frame = Math.ceil(this.damage_frame / entity.attack_speed);
-
-		for (var i in this.weapons)
-		{
-			this.damage += this.weapons[i].damage;
-		}
-
-		this.damage += entity.attack_damage * this.damage_factor; 
+		this.bonus_damage += this.weapons[i].damage;
 	}
-
-	this.loadStats(entity);
 };
 
 // returns true if the the counter is at the damage frame and the damage / projectile object should be created
