@@ -1,4 +1,4 @@
-var itemList = ["money", "apple", "carrot", "leek", "crystal", "icebosscrystal"];
+var itemList = ["money", "apple", "carrot", "leek", "pear", "crystal", "icebosscrystal", "sword", "bow"];
 var itemDetail = {};
 for (var i in itemList)
 {
@@ -11,11 +11,12 @@ for (var i in itemList)
 	itemDetail[item.name] = item;
 }
 itemDetail["money"].price = 1;
-itemDetail["apple"].price = 10;
 itemDetail["leek"].price = 20;
 itemDetail["carrot"].price = 20;
 itemDetail["crystal"].price = 50;
 itemDetail["icebosscrystal"].price = 1000;
+itemDetail["sword"].price = 1000;
+itemDetail["bow"].price = 1000;
 
 // holds items, and provides an interface to use them
 function Inventory()

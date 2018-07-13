@@ -769,6 +769,8 @@ function Player(mapId)
 	this.conversationCounter = 0;
 	this.entity.display_name = username;
 	this.inventory = new Inventory();
+	this.entity.attacks = [];
+	this.entity.attacks.push(new Attack("Punch", [], this.entity.attack_speed));
 }
 
 //display the player
@@ -897,7 +899,7 @@ Player.prototype.update = function()
 			}
 			else if (value == attack2_key)
 			{
-				if (this.entity.attack_counter <= 1)
+				if (this.entity.attack_counter <= 1 && typeof(this.entity.attacks[1]) !== 'undefined')
 				{this.entity.setAttack(1);}
 			}
 			else if(value == left_key)
@@ -1300,11 +1302,21 @@ function useItem(itemName)
 {
 	if (player.inventory.getItem(itemName).quantity > 0)
 	{
-		if (itemName == "apple" || itemName == "carrot" || itemName == "leek")
+		if (itemName == "apple" || itemName == "carrot" || itemName == "leek" || itemName == "pear")
 		{
 			player.entity.current_health = Math.min(player.entity.max_health, player.entity.current_health + 10);
 			player.inventory.removeItem({name: itemName, quantity: 1});
 			flyTextList.push(new flyText(player.entity.x, player.entity.y - (player.entity.height * 1.5), "+10 health", "#00FF00"));
+		}
+		else if (itemName == "sword")
+		{
+			player.inventory.removeItem({name: itemName, quantity: 1});
+			player.entity.attacks[0] = new Attack("Sword", [{name:"Sword",damage:1}], player.entity.attack_speed);
+		}
+		else if (itemName == "bow")
+		{
+			player.inventory.removeItem({name: itemName, quantity: 1});
+			player.entity.attacks[1] = new Attack("Arrow", [{name:"Arrow",damage:0}], player.entity.attack_speed);
 		}
 		else 
 		{
@@ -1552,6 +1564,10 @@ function loadPlayer(savedata)
 		player.entity.setLevel(data.lvl);
 		player.entity.xp = data.xp;
 		player.entity.current_health = data.current_health;
+		for (var i in data.attacks)
+		{
+			player.entity.attacks[i] = new Attack(data.attacks[i].name, data.attacks[i].weapons, player.entity.attack_speed);
+		}
 		quests = loadObjective(data.quests);
 		completedQuests = data.completedQuests;
 		for (var i in data.achievements)
@@ -1576,7 +1592,8 @@ function loadPlayer(savedata)
 				"\"quests\": " + JSON.stringify(quests) + "," + 
 				"\"completedQuests\": " + JSON.stringify(completedQuests) + "," + 
 				"\"achievements\": " + JSON.stringify(achievements) + "," + 
-				"\"completedAchievements\": " + JSON.stringify(completedAchievements) +  
+				"\"completedAchievements\": " + JSON.stringify(completedAchievements) + "," +
+				"\"attacks\": " + JSON.stringify(player.entity.attacks) + 
 				"}");
 		}, 5000);
 	}

@@ -89,7 +89,8 @@ exports.Entity = function(x,y,spriteName,mapId)
 		}
 		else
 		{
-			this.attacks.push(new Attack("Sword", [{name:"Sword",damage:1}], this.attack_speed));
+			this.attacks.push(new Attack("Punch", [], this.attack_speed));
+			//this.attacks.push(new Attack("Sword", [{name:"Sword",damage:1}], this.attack_speed));
 			this.attacks.push(new Attack("Arrow", [{name:"Arrow",damage:0}], this.attack_speed));
 		}
 	};
@@ -786,10 +787,14 @@ exports.Entity.prototype.takeDamage = function(x, y, damage)
 
 exports.Entity.prototype.setAttack = function(attack)
 {
-	if (attack >= 0)
+	if (attack >= 0 && typeof(this.attacks[attack]) !== 'undefined')
 	{
 		this.current_attack = attack;
 		this.attack_counter = this.attacks[this.current_attack].frame_length;
+	}
+	else
+	{
+		console.log("error creating attack");
 	}
 }
 
