@@ -1279,6 +1279,17 @@ io.on('connection', function(socket)
 		}
 	});
 
+	// when a CPU is in a conversation, they should stop wandering the map and continue facing the player
+	socket.on('freezeEntity', function(id, mapId, x, y, direction)
+	{
+		mapEntities[mapId][id].entity.x = x;
+		mapEntities[mapId][id].entity.y = y;
+		mapEntities[mapId][id].entity.direction = direction;
+		mapEntities[mapId][id].directionCounter = 30;
+		mapEntities[mapId][id].x_direction = 0;
+		mapEntities[mapId][id].y_direction = 0;
+	});
+
 	socket.on('save', function(username, savedata)
 	{
 		if (username != "Player") // user progress not saved if they don't login

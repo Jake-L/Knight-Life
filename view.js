@@ -528,16 +528,36 @@ var View = function()
 						}
 						else if (type == "Sell")
 						{
-
-							console.log("user clicked sell" + s + clickCounter);
+							if (updateCounter % 3 == 0)
+							{
+								cutscene.text = "Thanks for selling me this " + s + ".";
+							}
+							else if (updateCounter % 3 == 1)
+							{
+								cutscene.text = "I was just thinking I needed another " + s + ".";
+							}
+							else
+							{
+								cutscene.text = "I'm always in the market for another " + s + ".";
+							}
 							sellItem(s);
 							this.clickX = null;
 							this.clickY = null;
 						}
 						else if (type == "Buy")
 						{
-
-							console.log("user clicked buy" + s + clickCounter);
+							if (updateCounter % 3 == 0)
+							{
+								cutscene.text = "An " + s + "! Excellent choice!";
+							}
+							else if (updateCounter % 3 == 1)
+							{
+								cutscene.text = "That was my finest " + s + ", take good care of it!";
+							}
+							else
+							{
+								cutscene.text = "I bet that " + s + " will come in handy!";
+							}
 							buyItem(s);
 							this.clickX = null;
 							this.clickY = null;

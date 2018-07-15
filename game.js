@@ -782,15 +782,10 @@ Player.prototype.render = function()
 //display graphics
 var render = function()
 {
-	view.renderBackground();
-
 	// render mapObjects: rocks, snowmen, etc
 	// render items
 	// render projectiles
 	view.render();
-
-	//display weather if there is any
-	view.renderWeather();
 
 	if (cutscene != null)
 	{
@@ -1470,6 +1465,7 @@ socket.on('players', function(players)
 			{
 				playerList[players[i].id].x_speed = 0;
 				playerList[players[i].id].y_speed = 0;
+				socket.emit('freezeEntity', players[i].id, players[i].mapId, playerList[players[i].id].x, playerList[players[i].id].y, playerList[players[i].id].direction);
 			}
 		}
 		if (needUpdate == true)
