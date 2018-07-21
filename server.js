@@ -111,7 +111,7 @@ function initializeMap()
 	e.entity.display_name = "Brian"; 
 	mapEntities[0][e.entity.id] = e;
 
-	var e  = new CPU(0, 0, "player", "0p2", 1, 0);
+	var e  = new CPU(0, 0, "salesman", "0p2", 1, 0);
 	e.entity.targetType = "Passive"; 
 	e.entity.cutsceneId = 4; 
 	e.entity.display_name = "Patch"; 
@@ -156,10 +156,10 @@ function initializeMap()
 	e.entity.current_health = 1; 
 	mapEntities[1][e.entity.id] = e;
 
-	var e  = new CPU(0, 0, "player", "1p2", 1, 1);
+	var e  = new CPU(0, 0, "salesman", "1p2", 1, 1);
 	e.entity.targetType = "Passive"; 
 	e.entity.cutsceneId = 4; 
-	e.entity.display_name = "Pete"; 
+	e.entity.display_name = "Pete";
 	mapEntities[1][e.entity.id] = e;
 
 	// spawn boss in Map 2

@@ -81,6 +81,7 @@ var effects = [];
 
 var playerSprite = [];
 var playerAttackSprite = [];
+var clothingSprite = {};
 var weaponSprite = {};
 var username = "";
 var playerXP = 0;
@@ -169,6 +170,7 @@ window.onload = function()
 	loadSprite("iceman",["Punch","Snowball"]);
 	loadSprite("iceboss",["Punch","Snowball"]);
 	loadWeapons();
+	loadClothing();
 
 	if (username == "Player") // load a user who hasn't logged in
 	{
@@ -402,6 +404,36 @@ function loadWeapons()
 	weaponSprite["Sword"][2][3].y_offset = 7; // right attack last frame
 	weaponSprite["Sword"][3][2].y_offset = 10; // down attack second last frame
 	weaponSprite["Sword"][3][3].y_offset = 11; // down attack last frame
+}
+
+// load clothing sprites
+function loadClothing()
+{
+	clothingSprite["salesman"] = {};
+	clothingSprite["defaulthair"] = {};
+
+	for (var i in clothingSprite)
+	{
+		clothingSprite[i]["attack"] = [];
+		clothingSprite[i]["movement"] = [];
+
+		for (var j = 0; j < 4; j++)
+		{
+			clothingSprite[i]["attack"][j] = [];
+			clothingSprite[i]["movement"][j] = [];
+
+			// if type == hat, only 2 movement frames are needed
+			for (var k = 0; k < 2; k++)
+			{
+				clothingSprite[i]["attack"][j][k] = new Image();
+				clothingSprite[i]["attack"][j][k].src = "img//" + i + getDirName(j) + "0.png";
+				clothingSprite[i]["movement"][j][k] = new Image();
+				clothingSprite[i]["movement"][j][k].src = "img//" + i + getDirName(j) + (k % 2) + ".png";
+
+				console.log(clothingSprite[i]["movement"][j][k]);
+			}
+		}
+	}
 }
 
 var ucounter = 0;
@@ -754,6 +786,7 @@ function copyEntity(old)
 	p.id = old.id;
 	p.cutsceneId = old.cutsceneId;
 	p.faction = old.faction;
+	p.clothing = old.clothing;
 	return p;
 }
 
@@ -1595,6 +1628,8 @@ function loadPlayer(savedata)
 	}
 
 	loadMap(player.entity.mapId);
+
+	player.entity.addClothing("defaulthair");
 	
 	//audio.play(); //must come after loadMap
 	frameTime = new Date().getTime();

@@ -20,6 +20,22 @@ exports.Entity = function(x,y,spriteName,mapId)
 	this.direction = "Down";
 	this.sprite;
 	this.spriteName = spriteName;
+	this.healthBarHeight = 0;
+
+		//hold all the clothing or armor the player is currently wearing
+	// format: {name: "hat", sprite: new Image()};
+	this.clothing = []; 
+
+	if (spriteName == "player")
+	{
+		this.addClothing("defaulthair");
+	}
+	else if (spriteName == "salesman")
+	{
+		this.spriteName = "player";
+		this.addClothing("salesman");
+	}
+
 	this.weaponSprite;
 	this.id = Math.ceil(new Date().getTime() * (Math.random() + 0.01));
 
@@ -43,6 +59,8 @@ exports.Entity = function(x,y,spriteName,mapId)
 	this.cutsceneId;
 	this.faction;
 	this.targetType = "Neutral";
+
+
 
 	this.nearbyObjects = [];
 	//this.checkOverlap = false;
@@ -207,9 +225,11 @@ exports.Entity.prototype.render = function()
 		this.sprite.src = "img//" + this.spriteName + "Down0.png";
 	}
 
+	this.updateSprite();
+
 	if (this.sprite.complete && this.sprite.naturalHeight !== 0)
 	{
-		this.updateSprite();
+		
 		context.save();
 		context.shadowColor = "rgba(80, 80, 80, .4)";
 		context.shadowBlur = 15 + this.z;
@@ -239,6 +259,17 @@ exports.Entity.prototype.render = function()
 			this.renderWeapon(this.attacks[this.current_attack].name, this.attacks[this.current_attack].weapons[i].name);
 		}
 	}
+
+	for (var i in this.clothing)
+	{
+		console.log(this.clothing[i]);
+		context.drawImage(
+			this.clothing[i].sprite,
+			(this.x - (this.clothing[i].sprite.width/2) - x_offset) * graphics_scaling,
+			(this.y - this.clothing[i].sprite.height - this.z - y_offset) * graphics_scaling,
+			this.clothing[i].sprite.width * graphics_scaling,
+			this.clothing[i].sprite.height * graphics_scaling);
+		}
 };
 
 // display the entities current weapon
@@ -303,11 +334,22 @@ exports.Entity.prototype.setColour = function()
 // display the nameplate and health bar
 exports.Entity.prototype.renderHealthBar = function()
 {
+	if (this.healthBarHeight == 0)
+	{
+		// setting the height once prevents the health bar from jumping around if the height changes during animations
+		this.healthBarHeight = this.sprite.height;
+
+		for (var i in this.clothing)
+		{
+			this.healthBarHeight = Math.max(this.healthBarHeight, this.clothing[i].sprite.height);
+		}
+	}
+
 	// draw the grey health box
 	context.drawImage(
 			healthBarSprite,
 			(this.x - x_offset - (healthBarSprite.width / 2)) * graphics_scaling,
-			(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 1.5)) * graphics_scaling,
+			(this.y - this.healthBarHeight - this.z - y_offset - (healthBarSprite.height * 1.5)) * graphics_scaling,
 			healthBarSprite.width * graphics_scaling,
 			healthBarSprite.height * graphics_scaling);
 
@@ -315,7 +357,7 @@ exports.Entity.prototype.renderHealthBar = function()
 	context.drawImage(
 			healthBarGreenSprite,
 			(this.x - x_offset - (healthBarSprite.width / 2) + 1) * graphics_scaling,
-			(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 1.5) + 1) * graphics_scaling,
+			(this.y - this.healthBarHeight - this.z - y_offset - (healthBarSprite.height * 1.5) + 1) * graphics_scaling,
 			Math.ceil((this.current_health / this.max_health) * (healthBarSprite.width - 2) * graphics_scaling),
 			(healthBarSprite.height - 2) * graphics_scaling);
 
@@ -330,20 +372,20 @@ exports.Entity.prototype.renderHealthBar = function()
 		context.lineWidth = 2;
 		context.strokeText(this.display_name,
 			((this.x - x_offset) * graphics_scaling) - (context.measureText(this.display_name).width/2),
-			(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 1.75)) * graphics_scaling);
+			(this.y - this.healthBarHeight - this.z - y_offset - (healthBarSprite.height * 1.75)) * graphics_scaling);
 
 		// display the coloured text of their name
 		this.setColour();
 		context.fillText(this.display_name,
 			((this.x - x_offset) * graphics_scaling) - (context.measureText(this.display_name).width/2),
-			(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 1.75)) * graphics_scaling);
+			(this.y - this.healthBarHeight - this.z - y_offset - (healthBarSprite.height * 1.75)) * graphics_scaling);
 
 		// display their level
 		context.font = "bold " + 3 * graphics_scaling + "px sans-serif";
 		context.fillStyle = "#000000";
 		context.fillText("LV" + this.lvl,
 			(this.x - x_offset + (healthBarSprite.width / 2) + 1) * graphics_scaling,
-			(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 0.75)) * graphics_scaling);
+			(this.y - this.healthBarHeight - this.z - y_offset - (healthBarSprite.height * 0.75)) * graphics_scaling);
 	}
 	// show only black text on tiny screens
 	else
@@ -352,27 +394,54 @@ exports.Entity.prototype.renderHealthBar = function()
 		context.fillStyle = "#000000";
 		context.fillText(this.display_name + " LVL" + this.lvl,
 		((this.x - x_offset) * graphics_scaling) - (context.measureText(this.display_name).width/2),
-		(this.y - this.sprite.height - this.z - y_offset - (healthBarSprite.height * 2)) * graphics_scaling);
+		(this.y - this.healthBarHeight - this.z - y_offset - (healthBarSprite.height * 2)) * graphics_scaling);
 	}
 };
 
 // animate the entities sprite and change it based on their action
 exports.Entity.prototype.updateSprite = function()
 {
+	var frame = 0;
+
 	//this.sprite = new Image();
 	if (this.attack_counter > 0 && this.current_attack >= 0)
 	{
-		this.sprite = playerAttackSprite[this.spriteName][this.attacks[this.current_attack].name][getDirNum(this.direction)][Math.floor((this.attacks[this.current_attack].frame_length - this.attack_counter) / (this.attacks[this.current_attack].frame_length / playerAttackSprite[this.spriteName][this.attacks[this.current_attack].name][getDirNum(this.direction)].length))];
+		frame = Math.floor((this.attacks[this.current_attack].frame_length - this.attack_counter) / (this.attacks[this.current_attack].frame_length / playerAttackSprite[this.spriteName][this.attacks[this.current_attack].name][getDirNum(this.direction)].length));
+		
+		this.sprite = playerAttackSprite[this.spriteName][this.attacks[this.current_attack].name][getDirNum(this.direction)][frame];
 	}
 	else if ((this.x_speed == 0 && this.y_speed == 0) || this.z_speed != 0)
 	{
-		this.sprite = playerSprite[this.spriteName][getDirNum(this.direction)][0];
+		frame = 0;
+
+		this.sprite = playerSprite[this.spriteName][getDirNum(this.direction)][frame];
 	}
 	else
 	{
-		this.sprite = playerSprite[this.spriteName][getDirNum(this.direction)][Math.floor(new Date().getMilliseconds() / 250) % playerSprite[this.spriteName][getDirNum(this.direction)].length];
+		frame = Math.floor(new Date().getMilliseconds() / 250) % playerSprite[this.spriteName][getDirNum(this.direction)].length;
+
+		this.sprite = playerSprite[this.spriteName][getDirNum(this.direction)][frame];
+	}
+
+	for (var i in this.clothing)
+	{
+		if (this.attack_counter > 0 && this.current_attack >= 0)
+		{
+			this.clothing[i].sprite = clothingSprite[this.clothing[i].name]["attack"][getDirNum(this.direction)][0];
+		}
+		else
+		{
+			this.clothing[i].sprite = clothingSprite[this.clothing[i].name]["movement"][getDirNum(this.direction)][frame % 2];
+		}
+		
 	}
 };
+
+exports.Entity.prototype.addClothing = function(name)
+{
+	var c = {name: name, sprite: null};
+	this.clothing.push(c);
+}
 
 // check if the unit has collided with anything
 // in the future, maintain a list of entities within 100 units of the entity for faster checking

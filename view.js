@@ -405,7 +405,6 @@ var View = function()
 			a = {};
 			for (var i in player.inventory.items)
 			{
-				console.log(i);
 				if (player.inventory.items[i].quantity > 0 && (type == "Inventory" || player.inventory.items[i].name != "money"))
 				{
 					a[i] = player.inventory.items[i];
@@ -486,8 +485,6 @@ var View = function()
 			{
 				var s = a[i].name;
 			}
-
-			console.log(this.selection);
 
 			// 	display the items name
 			context.fillText(s,
