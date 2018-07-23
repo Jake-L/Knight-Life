@@ -109,7 +109,7 @@ exports.Entity = function(x,y,spriteName,mapId)
 		{
 			this.attacks.push(new Attack("Punch", [], this.attack_speed));
 			//this.attacks.push(new Attack("Sword", [{name:"Sword",damage:1}], this.attack_speed));
-			this.attacks.push(new Attack("Arrow", [{name:"Arrow",damage:0}], this.attack_speed));
+			this.attacks.push(new Attack("Arrow", [{name:"Bow",damage:0},{name:"Arrow",damage:0}], this.attack_speed));
 		}
 	};
 
@@ -252,24 +252,50 @@ exports.Entity.prototype.render = function()
 		context.restore();
 	}
 
-	if (this.current_attack >= 0)
+
+	// if they are facing up render their weapons first, otherwise render their clothing first
+	if (this.direction == "Up")
 	{
-		for (var i in this.attacks[this.current_attack].weapons)
+		if (this.current_attack >= 0)
 		{
-			this.renderWeapon(this.attacks[this.current_attack].name, this.attacks[this.current_attack].weapons[i].name);
+			for (var i in this.attacks[this.current_attack].weapons)
+			{
+				this.renderWeapon(this.attacks[this.current_attack].name, this.attacks[this.current_attack].weapons[i].name);
+			}
+		}
+
+		for (var i in this.clothing)
+		{
+			context.drawImage(
+				this.clothing[i].sprite,
+				(this.x - (this.clothing[i].sprite.width/2) - x_offset) * graphics_scaling,
+				(this.y - this.clothing[i].sprite.height - this.z - y_offset) * graphics_scaling,
+				this.clothing[i].sprite.width * graphics_scaling,
+				this.clothing[i].sprite.height * graphics_scaling);
+		}
+	}
+	else
+	{
+		for (var i in this.clothing)
+		{
+			context.drawImage(
+				this.clothing[i].sprite,
+				(this.x - (this.clothing[i].sprite.width/2) - x_offset) * graphics_scaling,
+				(this.y - this.clothing[i].sprite.height - this.z - y_offset) * graphics_scaling,
+				this.clothing[i].sprite.width * graphics_scaling,
+				this.clothing[i].sprite.height * graphics_scaling);
+		}
+
+		if (this.current_attack >= 0)
+		{
+			for (var i in this.attacks[this.current_attack].weapons)
+			{
+				this.renderWeapon(this.attacks[this.current_attack].name, this.attacks[this.current_attack].weapons[i].name);
+			}
 		}
 	}
 
-	for (var i in this.clothing)
-	{
-		console.log(this.clothing[i]);
-		context.drawImage(
-			this.clothing[i].sprite,
-			(this.x - (this.clothing[i].sprite.width/2) - x_offset) * graphics_scaling,
-			(this.y - this.clothing[i].sprite.height - this.z - y_offset) * graphics_scaling,
-			this.clothing[i].sprite.width * graphics_scaling,
-			this.clothing[i].sprite.height * graphics_scaling);
-		}
+
 };
 
 // display the entities current weapon
@@ -282,10 +308,10 @@ exports.Entity.prototype.renderWeapon = function(attack_name, weapon_name)
 	{
 		var n = Math.floor((this.attacks[this.current_attack].frame_length - this.attack_counter) / (this.attacks[this.current_attack].frame_length / playerAttackSprite[this.spriteName][attack_name][0].length)) % playerAttackSprite[this.spriteName][attack_name][0].length;
 
-		if (n < weaponSprite[attack_name][getDirNum(this.direction)].length)
+		if (n < weaponSprite[weapon_name][getDirNum(this.direction)].length)
 		{
-			var img = weaponSprite[attack_name][getDirNum(this.direction)][n];
-
+			var img = weaponSprite[weapon_name][getDirNum(this.direction)][n];
+			
 			if (typeof(img.y_offset) !== "undefined" && img.y_offset != null)
 			{
 				context.drawImage(
@@ -427,7 +453,7 @@ exports.Entity.prototype.updateSprite = function()
 	{
 		if (this.attack_counter > 0 && this.current_attack >= 0)
 		{
-			this.clothing[i].sprite = clothingSprite[this.clothing[i].name]["attack"][getDirNum(this.direction)][0];
+			this.clothing[i].sprite = clothingSprite[this.clothing[i].name]["attack"][this.attacks[this.current_attack].name][getDirNum(this.direction)][0];
 		}
 		else
 		{
@@ -949,13 +975,13 @@ exports.Entity.prototype.createAttack = function(attack)
 			if (this.mapId >= 0)
 			{
 				socket.emit('createProjectile', x + (this.x_speed * 2), y + (this.y_speed * 2), 4, x_speed, y_speed, 0,
-					 new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.weapons[0].name, this.mapId);
+					 new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.name, this.mapId);
 			}
 		}
 		else
 		{
 			projectileList[this.mapId].push(new Projectile(x + (this.x_speed * 2), y + (this.y_speed * 2), 4, x_speed, y_speed, 0,
-				this.id, new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.weapons[0].name, this.mapId));
+				this.id, new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.name, this.mapId));
 		}
 	}
 	else

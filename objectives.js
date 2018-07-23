@@ -84,7 +84,6 @@ function Objective(id)
 			this.totalRequired += this.tracker[i][j].required;
 		}
 	}
-	console.log(this.totalRequired);
 }
 
 

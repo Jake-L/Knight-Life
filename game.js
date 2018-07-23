@@ -195,6 +195,7 @@ function respawn()
 	player.entity.setLevel(oldPlayer.entity.lvl);
 	player.entity.xp = oldPlayer.entity.xp;
 	player.inventory = oldPlayer.inventory;
+	player.entity.attacks = oldPlayer.entity.attacks;
 	get_offset();
 }
 
@@ -366,6 +367,7 @@ function loadWeapons()
 {
 	weaponSprite["Snowball"] = [];
 	weaponSprite["Arrow"] = [];
+	weaponSprite["Bow"] = [];
 	weaponSprite["Sword"] = [];
 
 	// loop through all 4 directions
@@ -388,6 +390,13 @@ function loadWeapons()
 		weaponSprite["Arrow"][j][0].src = "img//attackArrow" + getDirName(j) + "0.png";
 		weaponSprite["Arrow"][j][1] = new Image();
 		weaponSprite["Arrow"][j][1].src = "img//attackArrow" + getDirName(j) + "1.png";
+
+		for (var k = 0; k < 3; k++)
+		{
+			// load bow sprites
+			weaponSprite["Bow"][j][k] = new Image();
+			weaponSprite["Bow"][j][k].src = "img//attackBow" + getDirName(j) + k + ".png";
+		}
 
 		// load sword sprites
 		for (var k = 0; k < 4; k++)
@@ -414,26 +423,42 @@ function loadClothing()
 
 	for (var i in clothingSprite)
 	{
-		clothingSprite[i]["attack"] = [];
+		clothingSprite[i]["attack"] = {};
+		clothingSprite[i]["attack"]["Punch"] = [];
+		clothingSprite[i]["attack"]["Arrow"] = [];
+		clothingSprite[i]["attack"]["Sword"] = [];
 		clothingSprite[i]["movement"] = [];
 
 		for (var j = 0; j < 4; j++)
 		{
-			clothingSprite[i]["attack"][j] = [];
 			clothingSprite[i]["movement"][j] = [];
 
 			// if type == hat, only 2 movement frames are needed
 			for (var k = 0; k < 2; k++)
 			{
-				clothingSprite[i]["attack"][j][k] = new Image();
-				clothingSprite[i]["attack"][j][k].src = "img//" + i + getDirName(j) + "0.png";
 				clothingSprite[i]["movement"][j][k] = new Image();
 				clothingSprite[i]["movement"][j][k].src = "img//" + i + getDirName(j) + (k % 2) + ".png";
+			}
+		}
 
-				console.log(clothingSprite[i]["movement"][j][k]);
+		for (var attack in clothingSprite[i]["attack"])
+		{
+			for (var j = 0; j < 4; j++)
+			{
+				clothingSprite[i]["attack"][attack][j] = [];
+
+				// if type == hat, only 2 movement frames are needed
+				for (var k = 0; k < 2; k++)
+				{
+					clothingSprite[i]["attack"][attack][j][k] = new Image();
+					clothingSprite[i]["attack"][attack][j][k].src = "img//" + i + getDirName(j) + (k % 2) + ".png";
+				}
 			}
 		}
 	}
+
+	clothingSprite["defaulthair"]["attack"]["Arrow"][3][0].src = "img//defaulthairAttackDown0.png";
+	clothingSprite["defaulthair"]["attack"]["Arrow"][3][1].src = "img//defaulthairAttackDown0.png";
 }
 
 var ucounter = 0;
@@ -497,6 +522,7 @@ function step()
 	context.fillText("FPS: " + ufps,10,20);
 	context.fillText("Ping: " + ping,10,30);
 	context.fillText("Position: " + player.entity.x + "," + player.entity.y,10,40);
+	context.fillText("XP: " + player.entity.xp + " / " + Math.ceil(Math.pow(player.entity.lvl, 10/4) * 5),10,50);
 	setTimeout(step, 4);
 }
 
@@ -1308,7 +1334,6 @@ function renderMinimap()
 
 // check if the user clicks the mouse
 function mouseClickDown(event) {
-	console.log(clickCounter);
 	if (clickCounter > 15)
 	{
 	  view.clickPosition(event.clientX, event.clientY);
@@ -1318,7 +1343,6 @@ function mouseClickDown(event) {
 function mouseClickUp(event)
 {
 	clickCounter = 0;
-	console.log(clickCounter);
 }
 
 window.addEventListener("mousedown", mouseClickDown);
@@ -1344,7 +1368,7 @@ function useItem(itemName)
 		else if (itemName == "bow")
 		{
 			player.inventory.removeItem({name: itemName, quantity: 1});
-			player.entity.attacks[1] = new Attack("Arrow", [{name:"Arrow",damage:0}], player.entity.attack_speed);
+			player.entity.attacks[1] = new Attack("Arrow", [{name:"Bow",damage:0},{name:"Arrow",damage:0}], player.entity.attack_speed);
 		}
 		else 
 		{
@@ -1629,7 +1653,7 @@ function loadPlayer(savedata)
 
 	loadMap(player.entity.mapId);
 
-	player.entity.addClothing("defaulthair");
+	//player.entity.addClothing("defaulthair");
 	
 	//audio.play(); //must come after loadMap
 	frameTime = new Date().getTime();
@@ -1662,6 +1686,5 @@ var leaderboards;
 socket.on('leaderboards', function(l)
 {
 	leaderboards = l;
-	console.log(leaderboards);
 });
 
