@@ -106,6 +106,7 @@ initializeCutscene[4] = function(cutscene)
 		cutscene.optionsArray["leek"] = {name:"leek"};
 		cutscene.optionsArray["sword"] = {name:"sword"};
 		cutscene.optionsArray["bow"] = {name:"bow"};
+		cutscene.optionsArray["knighthelmet"] = {name:"knighthelmet"};
 		cutscene.displayWindow = "Buy";
 		cutscene.text = "What would you like to buy?";
 		cutscene.textCounter = 30;

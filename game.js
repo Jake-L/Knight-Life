@@ -135,6 +135,7 @@ function getDirNum(s)
 }
 
 //functions from external files
+var itemDetail = shareItems.itemDetail;
 var mapObject = share.mapObject;
 var Attack = shareAttack.Attack;
 var Entity = shareEntity.Entity;
@@ -277,6 +278,7 @@ function loadMap(mapId)
 		playerList[e.id].allyState = "Ally";
 		playerList[e.id].cutsceneId = 0; 
 		playerList[e.id].display_name = "Bob";
+		playerList[e.id].addClothing("defaulthair");
 	}
 
 	else if (mapId == -2)
@@ -292,6 +294,7 @@ function loadMap(mapId)
 		playerList[e.id].allyState = "Ally";
 		playerList[e.id].cutsceneId = 2; 
 		playerList[e.id].display_name = "Kraven";
+		playerList[e.id].addClothing("defaulthair");
 	}
 
 
@@ -420,6 +423,7 @@ function loadClothing()
 {
 	clothingSprite["salesman"] = {};
 	clothingSprite["defaulthair"] = {};
+	clothingSprite["knighthelmet"] = {};
 
 	for (var i in clothingSprite)
 	{
@@ -1370,6 +1374,12 @@ function useItem(itemName)
 			player.inventory.removeItem({name: itemName, quantity: 1});
 			player.entity.attacks[1] = new Attack("Arrow", [{name:"Bow",damage:0},{name:"Arrow",damage:0}], player.entity.attack_speed);
 		}
+		else if (itemName == "knighthelmet")
+		{
+			player.inventory.removeItem({name: itemName, quantity: 1});
+			player.entity.removeClothing("defaulthair");
+			player.entity.addClothing(itemName);
+		}
 		else 
 		{
 			console.log("cannot use item " + itemName)
@@ -1516,6 +1526,8 @@ socket.on('players', function(players)
 		{
 			if (cutscene == null || players[i].cutsceneId != cutscene.cutsceneId)
 			{
+				//players[i].__proto__ = Entity.prototype;
+				//console.log(players[i]);
 				playerList[players[i].id] = copyEntity(players[i]);
 			}
 			else
@@ -1601,6 +1613,7 @@ function loadPlayer(savedata)
 	{
 		console.log("no load data received");
 		player = new Player(defaultmapId);
+		player.entity.addClothing("defaulthair");
 	}
 	else
 	{
@@ -1621,6 +1634,10 @@ function loadPlayer(savedata)
 		{
 			player.entity.attacks[i] = new Attack(data.attacks[i].name, data.attacks[i].weapons, player.entity.attack_speed);
 		}
+		for (var i in data.clothing)
+		{	
+			player.entity.addClothing(data.clothing[i].name);
+		}
 		quests = loadObjective(data.quests);
 		completedQuests = data.completedQuests;
 		for (var i in data.achievements)
@@ -1635,7 +1652,7 @@ function loadPlayer(savedata)
 				// save your data every 5 seconds
 		setInterval(function()
 		{
-			socket.emit('save',player.entity.display_name,
+			var s = 
 				"{" + 
 				"\"mapId\": \"" + player.entity.mapId + "\", " + 
 				"\"items\": " + JSON.stringify(player.inventory.items) + "," + 
@@ -1646,14 +1663,14 @@ function loadPlayer(savedata)
 				"\"completedQuests\": " + JSON.stringify(completedQuests) + "," + 
 				"\"achievements\": " + JSON.stringify(achievements) + "," + 
 				"\"completedAchievements\": " + JSON.stringify(completedAchievements) + "," +
-				"\"attacks\": " + JSON.stringify(player.entity.attacks) + 
-				"}");
+				"\"attacks\": " + JSON.stringify(player.entity.attacks) + "," +
+				"\"clothing\": " + JSON.stringify(player.entity.clothing) + 
+				"}";
+			socket.emit('save',player.entity.display_name,s);
 		}, 5000);
 	}
 
 	loadMap(player.entity.mapId);
-
-	//player.entity.addClothing("defaulthair");
 	
 	//audio.play(); //must come after loadMap
 	frameTime = new Date().getTime();

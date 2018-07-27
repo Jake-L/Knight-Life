@@ -1,5 +1,6 @@
 (function(exports)
 {
+
 //initialize an entity
 exports.Entity = function(x,y,spriteName,mapId)
 {
@@ -26,16 +27,6 @@ exports.Entity = function(x,y,spriteName,mapId)
 	// format: {name: "hat", sprite: new Image()};
 	this.clothing = []; 
 
-	if (spriteName == "player")
-	{
-		this.addClothing("defaulthair");
-	}
-	else if (spriteName == "salesman")
-	{
-		this.spriteName = "player";
-		this.addClothing("salesman");
-	}
-
 	this.weaponSprite;
 	this.id = Math.ceil(new Date().getTime() * (Math.random() + 0.01));
 
@@ -59,8 +50,6 @@ exports.Entity = function(x,y,spriteName,mapId)
 	this.cutsceneId;
 	this.faction;
 	this.targetType = "Neutral";
-
-
 
 	this.nearbyObjects = [];
 	//this.checkOverlap = false;
@@ -89,15 +78,6 @@ exports.Entity = function(x,y,spriteName,mapId)
 		this.updateStats();
 	}
 
-	this.updateStats = function()
-	{
-		this.defence = 10 + this.lvl;
-		this.attack_damage = 10 + this.lvl;
-		this.attack_speed = 2 - Math.pow(0.99,this.lvl);
-		this.max_health = 100 + 5 * this.lvl;
-		this.current_health = this.max_health;
-	};
-
 	this.loadAttacks = function()
 	{
 		if (spriteName == "iceman" || spriteName == "iceboss")
@@ -115,6 +95,25 @@ exports.Entity = function(x,y,spriteName,mapId)
 
 	this.loadAttacks();
 };
+
+exports.Entity.prototype.updateStats = function()
+{
+	this.defence = 10 + this.lvl;
+	this.attack_damage = 10 + this.lvl;
+	this.attack_speed = 2 - Math.pow(0.99,this.lvl);
+	this.max_health = 100 + 5 * this.lvl;
+	this.current_health = this.max_health;
+
+	for (var i in this.clothing)
+	{
+		//console.log(itemDetail[this.clothing[i].name]);
+		if (typeof(itemDetail[this.clothing[i].name]) !== 'undefined')
+		{
+			this.defence += itemDetail[this.clothing[i].name].defence;
+			this.attack += itemDetail[this.clothing[i].name].attack;
+		}
+	}
+}
 
 exports.Entity.prototype.initialize = function()
 {
@@ -467,6 +466,20 @@ exports.Entity.prototype.addClothing = function(name)
 {
 	var c = {name: name, sprite: null};
 	this.clothing.push(c);
+	this.updateStats();
+}
+
+exports.Entity.prototype.removeClothing = function(name)
+{
+	for (var i in this.clothing)
+	{
+		if (this.clothing[i].name == name)
+		{
+			this.clothing.splice(i,1);
+		}
+	}
+
+	this.updateStats();
 }
 
 // check if the unit has collided with anything

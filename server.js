@@ -58,6 +58,7 @@ global.damageList = []; // keep track of all upcoming attacks
 
 var mapObject = require('./mapobject.js').mapObject;
 global.Attack = require('./attack.js').Attack; 
+global.itemDetail = require('./items.js').itemDetail;
 var Entity = require('./entity.js').Entity;
 var sizeOf = require('image-size');
 var fs = require('fs');
@@ -351,6 +352,17 @@ var CPU = function(x, y, spriteName, id, lvl, mapId)
 	this.directionCounter = 0;
 	this.x_direction = 0;
 	this.y_direction = 0;
+
+
+	if (spriteName == "player")
+	{
+		this.entity.addClothing("defaulthair");
+	}
+	else if (spriteName == "salesman")
+	{
+		this.entity.spriteName = "player";
+		this.entity.addClothing("salesman");
+	}
 
 	this.getTarget = function(targetList)
 	{

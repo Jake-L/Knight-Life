@@ -1,22 +1,3 @@
-var itemList = ["money", "apple", "carrot", "leek", "pear", "crystal", "icebosscrystal", "sword", "bow"];
-var itemDetail = {};
-for (var i in itemList)
-{
-	var item = {
-		name: itemList[i]
-	};
-	item.sprite = new Image();
-	item.sprite.src = "img//" + itemList[i] + ".png";
-	item.price = 10;
-	itemDetail[item.name] = item;
-}
-itemDetail["money"].price = 1;
-itemDetail["leek"].price = 20;
-itemDetail["carrot"].price = 20;
-itemDetail["crystal"].price = 50;
-itemDetail["icebosscrystal"].price = 1000;
-itemDetail["sword"].price = 1000;
-itemDetail["bow"].price = 1000;
 
 // holds items, and provides an interface to use them
 function Inventory()
