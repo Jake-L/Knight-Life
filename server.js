@@ -163,6 +163,10 @@ function initializeMap()
 	e.entity.display_name = "Pete";
 	mapEntities[1][e.entity.id] = e;
 
+	// load Map 2 (iceboss cave)
+	mapObjects[2].push(new mapObject(10,10,"bones"));
+	mapObjects[2].push(new mapObject(110,60,"bones"));
+
 	// spawn boss in Map 2
 	mapEntities[2]["iceboss"] = new CPU(0, 0, "iceboss", "iceboss", 50, 2);
 	mapEntities[2]["iceboss"].entity.faction = "iceman";
@@ -872,6 +876,7 @@ function entityDeath(entity)
 		else
 		{
 			io.to(connected[entity.mapId][i].id).emit('createEffect', "blood", entity.x, entity.y, 180, entity.mapId);
+			io.to(connected[entity.mapId][i].id).emit('createEffect', "bones", entity.x, entity.y, 180, entity.mapId);
 		}
 	}
 
