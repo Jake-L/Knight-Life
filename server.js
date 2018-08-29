@@ -170,6 +170,7 @@ function initializeMap()
 	// spawn boss in Map 2
 	mapEntities[2]["iceboss"] = new CPU(0, 0, "iceboss", "iceboss", 50, 2);
 	mapEntities[2]["iceboss"].entity.faction = "iceman";
+	mapEntities[2]["iceboss"].entity.display_name = "Frostbite";
 	//mapEntities[2]["iceboss"].entity.targetType = "Aggressive";
 
 	// ALL MAPS
@@ -876,7 +877,6 @@ function entityDeath(entity)
 		else
 		{
 			io.to(connected[entity.mapId][i].id).emit('createEffect', "blood", entity.x, entity.y, 180, entity.mapId);
-			io.to(connected[entity.mapId][i].id).emit('createEffect', "bones", entity.x, entity.y, 180, entity.mapId);
 		}
 	}
 
@@ -1495,19 +1495,18 @@ setInterval(function()
 		// send all entities on the map to the client
 		for(var i in connected[mapId])
 		{
-			var players = [];
+			var players = {};
 
 			// send the other connected players
 			for(var j in connected[mapId])
 			{
 				if (j != i)
 				{
-					players.push(connected[mapId][j]);
+					players[j] = connected[mapId][j];
 				}
 			}
 
 			// send the CPUs
-			
 			for (var j in mapEntities[mapId])
 			{
 			    if (mapEntities[mapId][j].target == i)
@@ -1523,7 +1522,7 @@ setInterval(function()
 			      	mapEntities[mapId][j].entity.allyState = "Neutral";
 			    }
 
-				players.push(mapEntities[mapId][j].entity);
+				players[j] = mapEntities[mapId][j].entity;
 			}
 
 			io.to(i).emit('players', players);

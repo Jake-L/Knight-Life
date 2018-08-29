@@ -59,15 +59,21 @@ exports.Entity = function(x,y,spriteName,mapId)
 		var old_lvl = this.lvl;
 		this.xp += xp;
 		this.lvl = Math.floor(Math.pow(this.xp / 5, 4/10)) + 1;
+
+		if (old_lvl < this.lvl)
+		{
+			this.updateStats();
+			this.current_health = this.max_health;
+		}
+
 		while (old_lvl < this.lvl)
 		{
 			old_lvl++;
-			if(typeof(module) === 'undefined')
-			{
+			//if(typeof(module) === 'undefined')
+			//{
 				notificationList.push(new Notification("Level Up!","You reached level " + old_lvl)); 
-			}
+			//}
 		}
-		this.updateStats();
 		flyTextList.push(new flyText(this.x, this.y - (this.height * 1.5), "+" + xp + " XP", "#0080FF"));
 	};
 

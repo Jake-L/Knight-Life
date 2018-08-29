@@ -34,9 +34,9 @@ initializeObjective[4] = function(Objective){
 }
 
 initializeObjective[5] = function(Objective){
-	Objective.tracker[0] = [{objectiveType: "enemy", counter: 0, required: 1, description: "Defeat the Ice Boss", id: "iceboss"}];
+	Objective.tracker[0] = [{objectiveType: "enemy", counter: 0, required: 1, description: "Defeat Frostbite", id: "iceboss"}];
 	Objective.reward = {xp: 100};
-	Objective.name = "Ice Boss Slayer";
+	Objective.name = "Frostbite Slayer";
 }
 
 initializeObjective[1000] = function(Objective){

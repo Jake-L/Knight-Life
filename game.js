@@ -197,6 +197,7 @@ function respawn()
 	player.entity.xp = oldPlayer.entity.xp;
 	player.inventory = oldPlayer.inventory;
 	player.entity.attacks = oldPlayer.entity.attacks;
+	player.entity.clothing = oldPlayer.entity.clothing;
 	get_offset();
 }
 
@@ -1512,7 +1513,7 @@ socket.on('createEffect', function(spriteName, x, y, counter, mapId)
 
 // update position of other players from the server
 socket.on('players', function(players)
-{
+{	
 	if (players[0].mapId == player.entity.mapId) // make sure the data is relevant, for example not something the server sent as the player changed maps
 	{
 		var needUpdate = false;
@@ -1521,6 +1522,15 @@ socket.on('players', function(players)
 			needUpdate = true;
 		}
 		//playerList = {};
+
+		for (var i in playerList)
+		{
+			if (typeof(players[i]) === 'undefined')
+			{
+				console.log("remove " + i);
+				delete playerList[i];
+			}
+		}
 
 		for (var i in players)
 		{
