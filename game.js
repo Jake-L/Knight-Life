@@ -1514,43 +1514,55 @@ socket.on('createEffect', function(spriteName, x, y, counter, mapId)
 // update position of other players from the server
 socket.on('players', function(players)
 {	
-	if (players[0].mapId == player.entity.mapId) // make sure the data is relevant, for example not something the server sent as the player changed maps
+	var needUpdate = false;
+	//playerList = {};
+
+	// the index's in playerList is the ID of the player
+	for (var i in playerList)
 	{
-		var needUpdate = false;
-		if (playerList.length == 0)
+		if (typeof(players[i]) === 'undefined')
 		{
-			needUpdate = true;
+			console.log("remove " + i);
+			delete playerList[i];
 		}
-		//playerList = {};
+	}
 
-		for (var i in playerList)
+	// the index's in players is the ID of the player
+	for (var i in players)
+	{
+		// make sure the player is on the correct map
+		if (players[i].mapId != player.entity.mapId)
 		{
-			if (typeof(players[i]) === 'undefined')
-			{
-				console.log("remove " + i);
-				delete playerList[i];
-			}
+			console.log("Error: player on wrong map " + players[i].display_name + " with ID " + i)
+			continue;
 		}
+		else if (cutscene == null || players[i].cutsceneId != cutscene.cutsceneId)
+		{
+			// when adding a new player, the list of nearby objects must be updated
+			if (typeof(playerList[i]) === 'undefined')
+			{
+				needUpdate = true;
+			}
 
-		for (var i in players)
-		{
-			if (cutscene == null || players[i].cutsceneId != cutscene.cutsceneId)
-			{
-				//players[i].__proto__ = Entity.prototype;
-				//console.log(players[i]);
-				playerList[players[i].id] = copyEntity(players[i]);
-			}
-			else
-			{
-				playerList[players[i].id].x_speed = 0;
-				playerList[players[i].id].y_speed = 0;
-				socket.emit('freezeEntity', players[i].id, players[i].mapId, playerList[players[i].id].x, playerList[players[i].id].y, playerList[players[i].id].direction);
-			}
+			// keep all the attributes of the player 
+			// and add the Entity functions, like render()
+			players[i].__proto__ = Entity.prototype;
+			playerList[i] = players[i];
+			//playerList[players[i].id] = copyEntity(players[i]);
 		}
-		if (needUpdate == true)
+		else
 		{
-			updateNearbyObjects();
+			// the CPU is in a cutscene and should stop moving and face the player
+			playerList[i].x_speed = 0;
+			playerList[i].y_speed = 0;
+			socket.emit('freezeEntity', players[i].id, players[i].mapId, playerList[i].x, playerList[i].y, playerList[i].direction);
 		}
+	}
+	// update the list of nearby objects when a new player appears on the map
+	// since they could already be very close
+	if (needUpdate == true)
+	{
+		updateNearbyObjects();
 	}
 });
 

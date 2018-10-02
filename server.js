@@ -1496,6 +1496,7 @@ setInterval(function()
 		for(var i in connected[mapId])
 		{
 			var players = {};
+			var count = 0;
 
 			// send the other connected players
 			for(var j in connected[mapId])
@@ -1503,12 +1504,15 @@ setInterval(function()
 				if (j != i)
 				{
 					players[j] = connected[mapId][j];
+					count++;
 				}
 			}
 
 			// send the CPUs
 			for (var j in mapEntities[mapId])
 			{
+				count++;
+
 			    if (mapEntities[mapId][j].target == i)
 			    {
 			      	mapEntities[mapId][j].entity.allyState = "Enemy";
@@ -1525,7 +1529,11 @@ setInterval(function()
 				players[j] = mapEntities[mapId][j].entity;
 			}
 
-			io.to(i).emit('players', players);
+			// only send players if there are any
+			if (count > 0)
+			{
+				io.to(i).emit('players', players);
+			}
 			io.to(i).emit('viewOnly', p, items[mapId]);
 		}
 	}
