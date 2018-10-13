@@ -87,7 +87,8 @@ function initializeMap()
 
 	// load Map 0
 	// load map objects (rocks, etc.)
-	mapObjects[0].push(new mapObject(100,200,"rock1"));
+	mapObjects[0].push(new mapObject(136,160,"castle"));
+	mapObjects[0].push(new mapObject(200,200,"rock1"));
 	mapObjects[0].push(new mapObject(700,350,"bigrock"));
 	mapObjects[0].push(new mapObject(400,400,"rock1"));
 	mapObjects[0].push(new mapObject(100,300,"treestump"));
@@ -710,6 +711,20 @@ function clearAgro(id, mapId)
 	killParticipation[mapId][id] = [];
 }
 
+// remove players from a map if they disconnect, change maps, etc
+function removePlayer(id, mapId)
+{
+	clearAgro(id, mapId);
+	delete killParticipation[mapId][id];
+	delete connected[mapId][id];
+	delete connection[id];
+
+	// notify other players on the same map that the player has disconnected
+	for (var i in connected[mapId])
+	{
+		io.to(i).emit('removePlayer', id);
+	}
+}
 
 // move computer controlled NPCs
 setInterval(function()
@@ -792,9 +807,7 @@ setInterval(function()
 		if (connection[id].last_update + 3000 < new Date().getTime())
 		{
 			console.log(id + " was kicked for inactivity");
-			delete connected[connection[id].mapId][id];
-			clearAgro(id, connection[id].mapId);
-			delete connection[id];
+			removePlayer(id, connection[id].mapId)
 		}
 	}
 	updateCounter++;
@@ -880,7 +893,6 @@ function entityDeath(entity)
 		}
 	}
 
-	killParticipation[entity.mapId][entity.id] = [];
 	clearAgro(entity.id, entity.mapId);
 }
 
@@ -1222,40 +1234,33 @@ io.on('connection', function(socket)
 {
 	console.log(socket.id + " connected");
 
-	socket.on('new player', function(mapId)
-		{
-			console.log("new player on map " + mapId);
-			connection[socket.id] = {mapId: mapId, last_update: new Date().getTime()};
-			io.to(socket.id).emit('mapObjects', mapObjects[mapId]);
-			io.to(socket.id).emit('leaderboards',leaderboards);
-			killParticipation[mapId][socket.id] = [];
-		}
-  	);
-
   	socket.on('movement', function(player)
 	{
-		if (player != null)// && player.entity.x != null)
+		if (player != null)
 		{
 			if (player.mapId >= 0)
 			{
+				// set the player's ID to be it's socket ID
 				player.id = socket.id;
 				connected[player.mapId][socket.id] = player;
+
+				// if the player was already connected
 				if (connection[socket.id] != null)
 				{
-					connection[socket.id].last_update = new Date().getTime();
-
 					// update the player lists and kill participation lists if a player changes maps
 					if (connection[socket.id].mapId != player.mapId)
 					{
 						console.log("player changed maps from " + connection[socket.id].mapId + " to " + player.mapId);
-						clearAgro(socket.id, connection[socket.id].mapId);
-						delete killParticipation[connection[socket.id].mapId][socket.id];
-						delete connected[connection[socket.id].mapId][socket.id];
-						killParticipation[player.mapId][socket.id] = [];					
+						// remove the player from the old map
+						removePlayer(socket.id, connection[socket.id].mapId);	
 						connection[socket.id] = {mapId: player.mapId, last_update: new Date().getTime()};
 						io.to(socket.id).emit('mapObjects', mapObjects[player.mapId]);
 					}
+
+					// set the last update time of the player
+					connection[socket.id].last_update = new Date().getTime();
 				}
+				// if this is the players first connection
 				else
 				{
 					connection[socket.id] = {mapId: player.mapId, last_update: new Date().getTime()};
@@ -1264,15 +1269,13 @@ io.on('connection', function(socket)
 					killParticipation[connection[socket.id].mapId][socket.id] = [];
 				}
 			}
+			// if the players are on a private map, the server doesn't need to store anything
 			else
 			{
-				if (connection[socket.id] != null && connection[socket.id].mapId != player.mapId)
+				if (connection[socket.id] != null)
 				{
-					clearAgro(socket.id, connection[socket.id].mapId);
-					delete killParticipation[connection[socket.id].mapId][socket.id];
-					delete connected[connection[socket.id].mapId][socket.id];
+					removePlayer(socket.id, connection[socket.id].mapId);
 				}
-				delete connection[socket.id];
 			}
 		}
   	});
@@ -1292,7 +1295,6 @@ io.on('connection', function(socket)
 		if (typeof(connection[socket.id]) !== "undefined")
 		{
 			entityDeath(connected[connection[socket.id].mapId][socket.id]);
-			connection[socket.id].last_update = new Date().getTime();
 		}
 	});
 
@@ -1368,15 +1370,8 @@ io.on('connection', function(socket)
 
 		if (typeof(connection[socket.id]) !== "undefined")
 		{
-			console.log("Connection entry: " + connection[socket.id]);
-			console.log("Connected entry: " + connected[connection[socket.id].mapId][socket.id]);
-			clearAgro(socket.id, connection[socket.id].mapId);
-			delete killParticipation[connection[socket.id].mapId][socket.id];
-			delete connected[connection[socket.id].mapId][socket.id];
-			delete connection[socket.id];
+			removePlayer(socket.id, connection[socket.id].mapId);
 		}
-
-		displayPlayerCount();
 	});
 
 	socket.on('login', function(username, password)

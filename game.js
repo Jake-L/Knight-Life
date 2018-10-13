@@ -57,18 +57,21 @@ maxX[1] = 1000;
 maxX[2] = 127;
 maxX[-1] = 127;
 maxX[-2] = 127;
+maxX[-3] = 127;
 var minY = {};
 minY[0] = 30;
 minY[1] = 30;
 minY[2] = 0;
 minY[-1] = 0;
 minY[-2] = 0;
+minY[-3] = 0;
 var maxY = {};
 maxY[0] = 500;
 maxY[1] = 800;
 maxY[2] = 127;
 maxY[-1] = 127;
 maxY[-2] = 127;
+maxY[-3] = 127;
 
 var playerList = {};
 var mapObjects = {};
@@ -140,7 +143,7 @@ var mapObject = share.mapObject;
 var Attack = shareAttack.Attack;
 var Entity = shareEntity.Entity;
 
-var defaultmapId = 0;
+var defaultmapId = -3;
 var player;
 var quests = {};
 var completedQuests = {};
@@ -214,6 +217,7 @@ function loadMap(mapId)
 	mapObjects = {};
 	playerList = {};
 	projectileList = [];
+	portalList = []
 
 	/* mapID >= 0 means public maps with other users */
 	if (mapId == 0)
@@ -226,10 +230,13 @@ function loadMap(mapId)
 		p.initialize();
 		mapObjects[p.id] = p;
 		view.insertStatic(p);
-
+		// create doors to enter log cabins
 		portalList[1] = new Portal(254, 360, 20, 20, -1, 64, 127, "Up");
 		portalList[2] = new Portal(454, 260, 20, 20, -2, 64, 127, "Up");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
+		// create door to enter castle
+		portalList[3] = new Portal(136, 164, 20, 20, -3, 64, 127, "Up");
+
 		weatherSprite = [];
 		for (var i = 0; i < 10; i++)
 		{
@@ -298,6 +305,23 @@ function loadMap(mapId)
 		playerList[e.id].addClothing("defaulthair");
 	}
 
+	else if (mapId == -3)
+	{
+		console.log("generating map-3")
+		audio = new Audio("audio//track2.mp3");
+		// create portal to grass world
+		portalList[0] = new Portal(64, 127, 20, 20, 0, 136, 164, "Down");
+		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
+		weatherSprite = [];
+		var e = new Entity(64, 32, "player", -3);
+		e.id = "-3king";
+		playerList[e.id] = e; 
+		playerList[e.id].targetType = "Passive"; 
+		playerList[e.id].allyState = "Ally";
+		//playerList[e.id].cutsceneId = 4;  
+		playerList[e.id].display_name = "King";
+		playerList[e.id].addClothing("defaulthair");
+	}
 
 	frameTime = new Date().getTime(); // reset update frame timer
 }
@@ -663,6 +687,7 @@ var update = function()
 					player.entity.nearbyObjects = [];
 					loadMap(portalList[i].destination_mapId);
 					player.portalCounter = 30;
+					get_offset();
 					if (player.entity.mapId < 0)
 					{
 						socket.emit('movement', player.entity); //send new location to server
@@ -794,32 +819,6 @@ var update = function()
 
 };
 
-//initialize an entity from a pre-existing entity
-function copyEntity(old)
-{
-	var p = new Entity(old.x, old.y, old.spriteName, old.mapId);//create a new entity object
-	p.z = old.z; // Z is the sprite's height off the ground (in-game measurement units)
-	p.width = old.width;
-	p.depth = old.depth;
-	p.height = old.height;
-	p.knockback = old.knockback;
-	p.x_speed = old.x_speed;
-	p.y_speed = old.y_speed;
-	p.direction = old.direction;
-	p.display_name = old.display_name;
-	p.max_health = old.max_health;
-	p.current_health = old.current_health;
-	p.attack_counter = old.attack_counter;
-	p.current_attack = old.current_attack;
-	p.attacks = old.attacks
-	p.lvl = old.lvl;
-	p.allyState = old.allyState;
-	p.id = old.id;
-	p.cutsceneId = old.cutsceneId;
-	p.faction = old.faction;
-	p.clothing = old.clothing;
-	return p;
-}
 
 //initialize the player
 function Player(mapId)
@@ -1515,17 +1514,6 @@ socket.on('createEffect', function(spriteName, x, y, counter, mapId)
 socket.on('players', function(players)
 {	
 	var needUpdate = false;
-	//playerList = {};
-
-	// the index's in playerList is the ID of the player
-	for (var i in playerList)
-	{
-		if (typeof(players[i]) === 'undefined')
-		{
-			console.log("remove " + i);
-			delete playerList[i];
-		}
-	}
 
 	// the index's in players is the ID of the player
 	for (var i in players)
@@ -1534,7 +1522,7 @@ socket.on('players', function(players)
 		if (players[i].mapId != player.entity.mapId)
 		{
 			console.log("Error: player on wrong map " + players[i].display_name + " with ID " + i)
-			continue;
+			break;
 		}
 		else if (cutscene == null || players[i].cutsceneId != cutscene.cutsceneId)
 		{
@@ -1548,7 +1536,6 @@ socket.on('players', function(players)
 			// and add the Entity functions, like render()
 			players[i].__proto__ = Entity.prototype;
 			playerList[i] = players[i];
-			//playerList[players[i].id] = copyEntity(players[i]);
 		}
 		else
 		{
@@ -1564,6 +1551,12 @@ socket.on('players', function(players)
 	{
 		updateNearbyObjects();
 	}
+});
+
+// remove a player from the map
+socket.on('removePlayer', function(id)
+{
+	delete playerList[id];
 });
 
 // server notifies that the player has taken damage

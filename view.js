@@ -236,10 +236,15 @@ var View = function()
 			backgroundSprite.src = "img//snow1.png";
 			backgroundSpriteTop.src = "img//snow1.png";
 		}
-		else if (mapId < 0)
+		else if ([-1, -2].includes(mapId))
 		{
 			backgroundSprite.src = "img//loghouseinside.png";
 			backgroundSpriteTop.src = "img//loghouseinside.png";
+		}
+		else if (mapId == -3)
+		{
+			backgroundSprite.src = "img//cobblestonefloor.png";
+			backgroundSpriteTop.src = "img//cobblestonefloor.png";
 		}
 	}
 
