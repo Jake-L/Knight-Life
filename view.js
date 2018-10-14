@@ -410,7 +410,7 @@ var View = function()
 			a = {};
 			for (var i in player.inventory.items)
 			{
-				if (player.inventory.items[i].quantity > 0 && (type == "Inventory" || player.inventory.items[i].name != "money"))
+				if (player.inventory.items[i].quantity > 0 && (type == "Inventory" || !["money", "ring"].includes(player.inventory.items[i].name)))
 				{
 					a[i] = player.inventory.items[i];
 				}

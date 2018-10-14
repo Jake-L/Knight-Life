@@ -318,7 +318,7 @@ function loadMap(mapId)
 		playerList[e.id] = e; 
 		playerList[e.id].targetType = "Passive"; 
 		playerList[e.id].allyState = "Ally";
-		//playerList[e.id].cutsceneId = 4;  
+		playerList[e.id].cutsceneId = 5;  
 		playerList[e.id].display_name = "King";
 		playerList[e.id].addClothing("defaulthair");
 	}

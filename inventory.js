@@ -36,6 +36,11 @@ Inventory.prototype.jsonString = function()
 // Adds an item into your inventory
 Inventory.prototype.addItem = function(item)
 {
+	if (typeof(item.name) === 'undefined')
+	{
+		console.log("ERROR: item incorrect format");
+		return;
+	}
 	if (typeof(item.quantity) === 'undefined' || item.quantity == null)
 	{
 		item.quantity = 1;

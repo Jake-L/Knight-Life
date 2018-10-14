@@ -118,6 +118,29 @@ initializeCutscene[4] = function(cutscene)
 		cutscene.text = "What would you like to sell?";
 		cutscene.textCounter = 30;
 	};
+};
+
+initializeCutscene[5] = function(cutscene)
+{
+	if (typeof(completedQuests[1004]) !== 'undefined')
+	{
+		cutscene.text = "I will let you know when I have further tasks for you";
+	}
+	else if (typeof(quests[1004]) === 'undefined')
+	{
+		cutscene.text = "Those blasted icemen have stolen may favourite ring! You must take it back!";
+		cutscene.addQuest = 1004;
+	}
+	else if (player.inventory.getItem("ring").quantity > 0)
+	{
+		cutscene.text = "You have managed to return my ring! I made a good choice sending you on this mission.";
+		player.inventory.removeItem({name: "ring", quantity: 1});
+		quests[1004].conversationCompleted(cutscene.cutsceneId);
+	}
+	else
+	{
+		cutscene.text = "What are you waiting for? Go find my ring at once!";
+	}
 }
 
 // holds items, and provides an interface to use them

@@ -65,6 +65,13 @@ initializeObjective[1003] = function(Objective){
 	Objective.name = "Cleaning the Streets II";
 }
 
+initializeObjective[1004] = function(Objective){
+	Objective.tracker[0] = [{objectiveType: "enemyItem", counter: 0, required: 1, description: "Kill icemen to recover the King's ring", faction: "iceman", probability: 0.2, item: "ring"}];
+	Objective.tracker[1] = [{objectiveType: "cutscene", counter: 0, required: 1, description: "Return the King's ring", id: 5}];
+	Objective.reward = {xp: 100, items: [{name: "money", quantity: 100}]};
+	Objective.name = "Recover the Ring";
+}
+
 // create the objectives class
 function Objective(id)
 {
@@ -116,6 +123,41 @@ Objective.prototype.enemyDefeated = function(entity)
 			}
 			else
 			{
+				this.tracker[0][i].counter++;
+			}
+		}
+		// if the mission requires the player to get special items from killing enemies
+		// that aren't normally available
+		else if (this.tracker[0][i].objectiveType == "enemyItem")
+		{
+			var drop = false;
+
+			if (typeof(this.tracker[0][i].faction) !== "undefined")
+			{
+				if (this.tracker[0][i].faction == entity.faction)
+				{
+					drop = true;
+				}
+			}
+			else if (typeof(this.tracker[0][i].id) !== "undefined")
+			{
+				if (this.tracker[0][i].id == entity.id)
+				{
+					drop = true;
+				}
+			}
+			else
+			{
+				drop = true;
+			}
+
+			console.log(Math.random(), this.tracker[0][i].probability);
+
+			// check to see if the item dropped, based on it's drop rate / proability
+			if (Math.random() <= this.tracker[0][i].probability)
+			{
+				console.log("adding mission item");
+				player.inventory.addItem({name:this.tracker[0][i].item, quantity:1});
 				this.tracker[0][i].counter++;
 			}
 		}

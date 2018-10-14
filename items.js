@@ -1,7 +1,7 @@
 (function(exports)
 {
 
-var itemList = ["money", "apple", "carrot", "leek", "pear", "crystal", "icebosscrystal", "sword", "bow", "knighthelmet"];
+var itemList = ["money", "apple", "carrot", "leek", "pear", "crystal", "icebosscrystal", "sword", "bow", "knighthelmet", "ring"];
 itemDetail = {};
 for (var i in itemList)
 {
