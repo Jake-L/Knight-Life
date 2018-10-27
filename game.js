@@ -5,9 +5,9 @@ var audio;
 var soundEffect = [];
 
 // create the graphics canvas
-var canvas = document.createElement('canvas');
-var width = window.innerWidth - 20;
-var height = window.innerHeight - 20;
+var canvas = document.getElementById('canvas');
+var width = window.innerWidth;
+var height = window.innerHeight;
 canvas.width = width;
 canvas.height = height;
 var context = canvas.getContext('2d');
@@ -1419,9 +1419,8 @@ function buyItem(itemName)
 
 function setScreenSize(event)
 {
-	//canvas = document.createElement('canvas');
-	width = window.innerWidth - 20;
-	height = window.innerHeight - 20;
+	width = window.innerWidth;
+	height = window.innerHeight;
 	canvas.width = width;
 	canvas.height = height;
 	context = canvas.getContext('2d');
