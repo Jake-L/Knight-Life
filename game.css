@@ -2,6 +2,12 @@
 	position:absolute;
 }
 
+.imgbtn{
+  position: absolute;
+  top: 0px;
+  z-index: 2;
+}
+
 body {
 	margin: 0;
 	overflow: hidden;

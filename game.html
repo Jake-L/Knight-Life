@@ -6,6 +6,11 @@
     </head>
     <body>
 		<canvas id="canvas"></canvas>
+		<img class="imgbtn" title="Inventory" onclick="openDisplayWindow('Inventory')" src="img/apple.png" style="left:90%;"/>
+		<img class="imgbtn" title="Quests" onclick="openDisplayWindow('Quests')" src="img/sword.png" style="left:92%"/>
+		<img class="imgbtn" title="Achievements" onclick="openDisplayWindow('Achievements')" src="img/crystal.png" style="left:94%"/>
+		<img class="imgbtn" title="Leaderboards" onclick="openDisplayWindow('Leaderboards')" src="img/ring.png" style="left:96%"/>
+		<img class="imgbtn" title="Close window" onclick="openDisplayWindow(null)" src="img/x.png" style="left:98%"/>
 		<script src="/socket.io/socket.io.js"></script>
 		<script src="items.js"></script>
 		<script src="portal.js"></script>

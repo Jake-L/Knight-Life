@@ -923,6 +923,11 @@ window.addEventListener("keyup", function(event)
 }
 );
 
+function openDisplayWindow(windowName)
+{
+	displayWindow = windowName;
+};
+
 Player.prototype.update = function()
 {
 	// slowly regenerate health over time
@@ -944,8 +949,6 @@ Player.prototype.update = function()
 	// loops through every key currently pressed and performs an action
 	if (!this.entity.knockback || (Maths.abs(y_speed) <= 3 && Math.abs(x_speed) <= 3))
 	{
-		displayWindow = null;
-
 		for(var key in keysDown)
 		{
 			var value = Number(key);
@@ -990,22 +993,6 @@ Player.prototype.update = function()
 					initiateConversation();
 				}
 
-			}
-			else if (value == 81 && displayWindow == null)
-			{
-				displayWindow = "Quests";
-			}
-			else if (value == 73 && displayWindow == null)
-			{
-				displayWindow = "Inventory";
-			}
-			else if (value == 65 && displayWindow == null)
-			{
-				displayWindow = "Achievements";
-			}
-			else if (value == 76 && displayWindow == null)
-			{
-				displayWindow = "Leaderboards";
 			}
 		}
 	}
