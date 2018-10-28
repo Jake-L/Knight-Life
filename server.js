@@ -166,7 +166,7 @@ function initializeMap()
 
 	// load Map 2 (iceboss cave)
 	mapObjects[2].push(new mapObject(10,10,"bones"));
-	mapObjects[2].push(new mapObject(110,60,"bones"));
+	mapObjects[2].push(new mapObject(116,60,"bones"));
 
 	// spawn boss in Map 2
 	mapEntities[2]["iceboss"] = new CPU(0, 0, "iceboss", "iceboss", 50, 2);
@@ -212,7 +212,7 @@ function getSpawn(h, w, mapId)
 	while (c.x + c.y == 0 && count < 100)
 	{
 		c.x = Math.ceil(Math.random() * maxX[mapId]);
-		c.y = Math.ceil((Math.random() * (maxY[mapId] - minY[mapId])) + minY[mapId]);
+		c.y = Math.ceil((Math.random() * (maxY[mapId] - minY[mapId] - h)) + minY[mapId] + (h/2));
 		count++;
 
 		var blocked = false;
@@ -230,6 +230,15 @@ function getSpawn(h, w, mapId)
 		{
 			if (c.y > mapEntities[mapId][i].y - mapEntities[mapId][i].depth && c.y - h < mapEntities[mapId][i].y
 				&& c.x + (w/2) > mapEntities[mapId][i].x - (mapEntities[mapId][i].width/2) && c.x - (w/2) < mapEntities[mapId][i].x + (mapEntities[mapId][i].width/2))
+			{
+				blocked = true;
+			}
+		}
+
+		for (var i in mapObjects[mapId])
+		{
+			if (c.y > mapObjects[mapId][i].y - mapObjects[mapId][i].depth && c.y - h < mapObjects[mapId][i].y
+				&& c.x + (w/2) > mapObjects[mapId][i].x - (mapObjects[mapId][i].width/2) && c.x - (w/2) < mapObjects[mapId][i].x + (mapObjects[mapId][i].width/2))
 			{
 				blocked = true;
 			}
@@ -773,10 +782,11 @@ setInterval(function()
 	// check if any players have picked up items
 	for (var mapId in items)
 	{
-			// spawn money on the map
-		if (new Date().getTime() % 2000 == 0 && items[mapId].length < 10)
+		// spawn money on the map
+		if (items[mapId].length < 10 && new Date().getTime() % 2000 == 0)
 		{
-			items[mapId].push(new Item("money", Math.ceil(Math.random() * 5) + 1, Math.ceil(Math.random() * maxX[mapId]), Math.ceil(Math.random() * (maxY[mapId] - minY[mapId])) + minY[mapId]));
+			var c = getSpawn(16,16,mapId);
+			items[mapId].push(new Item("money", Math.ceil(Math.random() * 5) + 1, c.x, c.y));
 		}
 
 		for (var j in connected[mapId])
