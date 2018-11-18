@@ -203,6 +203,8 @@ Objective.prototype.taskComplete = function()
 		this.tracker.splice(0, 1);
 		notificationList.push(new Notification("Quest Progress","You have unlocked new tasks in quest " + this.name));
 	}
+
+	updateDisplayWindow();
 }
 
 // returns true if the objective is complete

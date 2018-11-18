@@ -96,8 +96,8 @@ initializeCutscene[4] = function(cutscene)
 	cutscene.displayWindow = "CutsceneOption";
 	cutscene.text = "Would you like to buy or sell?";
 	cutscene.optionsArray = ["Buy", "Sell"];
-	cutscene.optionsAction = {};
-	cutscene.optionsAction["Buy"] = function(){
+	cutscene.optionsAction = [];
+	cutscene.optionsAction.push(function(){
 		displayWindow = null;
 		cutscene.optionsArray = {};
 		cutscene.optionsArray["apple"] = {name:"apple"};
@@ -110,14 +110,14 @@ initializeCutscene[4] = function(cutscene)
 		cutscene.displayWindow = "Buy";
 		cutscene.text = "What would you like to buy?";
 		cutscene.textCounter = 30;
-	};
-	cutscene.optionsAction["Sell"] = function(){
+	});
+	cutscene.optionsAction.push(function(){
 		displayWindow = null;
 		cutscene.optionsArray = null;
 		cutscene.displayWindow = "Sell";
 		cutscene.text = "What would you like to sell?";
 		cutscene.textCounter = 30;
-	};
+	});
 };
 
 initializeCutscene[5] = function(cutscene)
@@ -158,14 +158,14 @@ function Cutscene(cutsceneId)
 	this.optionsArray;
 	this.optionsAction;
 	initializeCutscene[cutsceneId](this);
-}
-
-Cutscene.prototype.update = function()
-{
 	if (this.displayWindow != null)
 	{
 		view.renderOptions(this.displayWindow, this.optionsArray);
 	}
+}
+
+Cutscene.prototype.update = function()
+{
 	if (this.textCounter > 0)
 	{
 		this.textCounter--;
@@ -199,7 +199,19 @@ Cutscene.prototype.optionsResult = function(r)
 {
 	if (typeof(this.optionsAction[r]) !== "undefined")
 	{
+		// take the action resulting from the player's selection
 		this.optionsAction[r]();
+
+		// open a new display window if needed
+		if (this.displayWindow == null)
+		{
+			// close the current display window
+			openDisplayWindow(null);
+		}
+		else
+		{
+			view.renderOptions(this.displayWindow, this.optionsArray);
+		}
 	}
 }
 

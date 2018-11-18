@@ -11,6 +11,18 @@
 		<img class="imgbtn" title="Achievements" onclick="openDisplayWindow('Achievements')" src="img/crystal.png" style="left:94%"/>
 		<img class="imgbtn" title="Leaderboards" onclick="openDisplayWindow('Leaderboards')" src="img/ring.png" style="left:96%"/>
 		<img class="imgbtn" title="Close window" onclick="openDisplayWindow(null)" src="img/x.png" style="left:98%"/>
+		<div class="window">
+			<div id="formwindow">
+				<div class="formpart" id="formlist">
+					<table id=listtable>
+					</table>
+				</div>
+				<div class="formpart" id="formdetail">
+					<table id=detailtable>
+					</table>
+				</div>
+			</div>
+		</div>
 		<script src="/socket.io/socket.io.js"></script>
 		<script src="items.js"></script>
 		<script src="portal.js"></script>

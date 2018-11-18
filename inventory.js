@@ -64,6 +64,8 @@ Inventory.prototype.addItem = function(item)
 	{
 		this.items[item.name] = item;
 	}
+
+	updateDisplayWindow();
 };
 
 // get an item, such as for the displaying the amount of money a player has
@@ -88,17 +90,19 @@ Inventory.prototype.removeItem = function(item)
 
 	if (typeof(item.name) !== 'undefined' && typeof(this.items[item.name]) !== 'undefined')
 	{
-		// if the quantity was specified and is less than the quantity in your possession
+		// if the quantity is not specified, assume 1
+		if (typeof(item.quantity) === 'undefined')
+		{
+			item.quantity = 1;
+		}
+
+		// if the quantity is greater than the quantity in your possession, it can be removed
 		if (typeof(item.quantity) !== 'undefined' && item.quantity <= this.items[item.name].quantity)
 		{
 			this.items[item.name].quantity -= item.quantity;
+			updateDisplayWindow();
 			return true;
 		} 
-		else if (typeof(item.quantity) === 'undefined')
-		{
-			this.items[item.name].quantity -= 1;
-			return true;
-		}
 		else
 		{
 			return false;

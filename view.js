@@ -10,10 +10,19 @@ var View = function()
 	this.clickX;
 	this.clickY;
 	this.selection = -1;
-	this.oldDisplayWindow = null;
 
 	this.render = function()
 	{
+		// make the screen a little transparent when the player is moving
+		if (player.entity.x_speed != 0 || player.entity.y_speed != 0)
+		{
+			document.getElementById("formwindow").style.opacity = 0.7;
+		}
+		else
+		{
+			document.getElementById("formwindow").style.opacity = 1;
+		}
+
 		this.renderBackground();
 
 		for (var i in effects)
@@ -92,25 +101,6 @@ var View = function()
 
 		player.entity.renderHealthBar();
 
-		if (cutscene != null && cutscene.displayWindow != null)
-		{
-			this.renderOptions(cutscene.displayWindow, cutscene.optionsArray);
-		}
-		else if (displayWindow != null)
-		{
-			if (displayWindow != this.oldDisplayWindow)
-			{
-				this.selection = "-1"; //reset selection when changing the displayed window
-			}
-
-			this.renderOptions(displayWindow);
-		}
-		else
-		{
-			this.selection = "-1";
-		}
-
-		this.oldDisplayWindow = displayWindow;
 		this.clickX = null;
 		this.clickY = null;
 	}
@@ -379,31 +369,152 @@ var View = function()
 		}
 	}
 
+	this.selectOption = function(type, id)
+	{
+		// remove any data already in the table
+		var table = document.getElementById("detailtable");
+		while (table.firstChild) 
+		{
+			table.removeChild(table.firstChild);
+		}
+
+		if (type == "Quests")
+		{
+			var selection = quests[id];
+		}
+		else if (type == "Achievements")
+		{
+			var selection = achievements[id];
+		}
+		else if (type == "Leaderboards")
+		{
+			var selection = leaderboards[id];
+		}
+		else
+		{
+			console.log("view.selectOption, type=" + type + " id=" + id);
+		}
+		if (typeof(selection) === "undefined")
+		{
+			console.log("view.selectOption undefined, type=" + type + " id=" + id);
+			return;
+		}
+
+		var row = document.createElement("tr");
+		var title = document.createElement("th");
+		var subtitle = document.createElement("th");
+		row.appendChild(title);
+		row.appendChild(subtitle);
+		table.appendChild(row);		
+
+		if (type == "Achievements" || type == "Quests")
+		{
+			title.textContent = selection.name + " Tasks";
+
+			// display the various tasks required for the mission
+			for (var j in selection.tracker[0])
+			{
+				var row = document.createElement("tr");
+				table.appendChild(row);
+				var cell = document.createElement("td");
+				row.appendChild(cell);
+
+
+				if (selection.tracker[0][j].counter >= selection.tracker[0][j].required)
+				{
+					// colour the text gold if they completed the task
+					row.className = row.className + " emphasizetext";
+				}
+
+				cell.textContent = selection.tracker[0][j].description.replace("{counter}",selection.tracker[0][j].required);
+				
+				var cell = document.createElement("td");
+				row.appendChild(cell);
+				cell.textContent = selection.tracker[0][j].counter + " / " + selection.tracker[0][j].required;
+			}
+
+			var row = document.createElement("tr");
+			var title = document.createElement("th");
+			title.textContent = "Rewards";
+			row.appendChild(title);
+			table.appendChild(row);
+
+			// display the XP reward for completing the mission
+			var row = document.createElement("tr");
+			var cell = document.createElement("td");
+			cell.textContent = selection.reward.xp + " XP";
+			row.appendChild(cell);
+			table.appendChild(row);
+
+			// display the item rewards for completing the mission
+			for (var j in selection.reward.items)
+			{
+				var row = document.createElement("tr");
+				var cell = document.createElement("td");
+				var item = selection.reward.items[j];
+				cell.appendChild(item.sprite);
+				var textNode = document.createTextNode(item.name + " x" + item.quantity);
+				cell.appendChild(textNode);
+				row.appendChild(cell);
+			}
+		}
+		else if (type == "Leaderboards")
+		{
+			title.textContent = "Username";
+			subtitle.textContent = id;
+
+			for (var j in selection)
+			{
+				var row = document.createElement("tr");
+
+				// display the user's name
+				var cell = document.createElement("td");
+				row.appendChild(cell);
+				cell.textContent = selection[j].name;
+
+				// display the user's stats
+				var cell = document.createElement("td");
+				row.appendChild(cell);
+				cell.textContent = selection[j].counter;
+
+				table.appendChild(row);
+			}
+		}
+	}
+
 	this.renderOptions = function(type, a)
 	{
-		var TEXTSIZE = Math.max(8, 4 * graphics_scaling);
-		var x_indent = 0;
-		var line_counter = 0;
+		// display the table
+		document.getElementById("formwindow").style.display = "flex";
 
-		if (type == "Quests" || type == "Achievements" || type == "Leaderboards")
+		// remove any list items already in the table
+		var table = document.getElementById("listtable");		
+		while (table.firstChild) 
 		{
-			if (type == "Quests")
-			{
-				a = quests;
-			}
-			else if (type == "Achievements")
-			{
-				a = achievements;
-			}
-			else if (type == "Leaderboards")
-			{
-				a = leaderboards;
-			}
-			var w = Math.max(width * 0.5,250);
-			var h = Math.max(height * 0.5,100);
-			var x = (width / 2) - (w/2);
-			var y = (height / 2) - (h/2);
-			line_counter = 1;
+			table.removeChild(table.firstChild);
+		}
+
+		var row = document.createElement("tr");
+		var title = document.createElement("th");
+		var subtitle = document.createElement("th");
+		row.appendChild(title);
+		row.appendChild(subtitle);
+		table.appendChild(row);
+
+		if (type == "Quests")
+		{
+			a = quests;
+			title.textContent = "Quests";
+		}
+		else if (type == "Achievements")
+		{
+			a = achievements;
+			title.textContent = "Achievements";
+		}
+		else if (type == "Leaderboards")
+		{
+			a = leaderboards;
+			title.textContent = "Leaderboards";
 		}
 		else if (type == "Inventory" || type == "Sell")
 		{
@@ -415,68 +526,28 @@ var View = function()
 					a[i] = player.inventory.items[i];
 				}
 			}
-			var w = Math.max(width * 0.2,250);
-			var h = Math.max(height * 0.5,100);
-			var x = (width / 2) - (w/2);
-			var y = (height / 2) - (h/2);
-			x_indent = Math.min(16, 10 * graphics_scaling);
-			line_counter = 1;
 
+			title.textContent = "Item Name";
+			subtitle.textContent = "Quantity";
 		}
 		else if (type == "Buy")
 		{
 			// the array is already provided, so no need to set a 
-			var w = Math.max(width * 0.2,250);
-			var h = Math.max(height * 0.5,100);
-			var x = (width / 2) - (w/2);
-			var y = (height / 2) - (h/2);
-			x_indent = Math.min(16, 10 * graphics_scaling);
-			//line_counter = 1;
+			title.textContent = "Item Name";
+			subtitle.textContent = "Quantity";
 		}
 		else //display plaintext
-		{	
-			TEXTSIZE = 8 * graphics_scaling;
-			context.font = "bold " + TEXTSIZE + "px sans-serif";
-			var line_length = 0;
-			for (var i in a)
-			{
-				line_counter++;
-				line_length = Math.max(line_length, context.measureText(a[i]).width);
-			}
+		{
 
-			var w = Math.min(Math.max(width * 0.2,250), line_length + (6 * graphics_scaling));
-			var h = Math.min(Math.max(height * 0.5,100), TEXTSIZE * (line_counter + 2));
-			var x = (width * 2 / 3) - (w/2);
-			var y = (height / 2) - (h/2);
-			line_counter = 0;
 		} 
 
-		if (player.entity.x_speed != 0 || player.entity.y_speed != 0)
-		{
-			context.globalAlpha = 0.7;
-		}
+		var index = null;
 
-		// draw the textbox
-		context.fillStyle = "#FFFFFF";
-		context.fillRect(x, y, w, h);
-		context.lineWidth = graphics_scaling * 2;
-		context.strokeStyle = "#000000";
-		context.beginPath();		
-		context.moveTo(x, y);
-		context.lineTo(x + w, y);
-		context.lineTo(x + w, y + h);
-		context.lineTo(x, y + h);
-		context.lineTo(x, y);
-		context.stroke();
-		context.fillStyle = "#000000";
-		context.font = "bold " + TEXTSIZE + "px sans-serif";
-
+		// add the new list items
 		for (var i in a)
 		{
-			if (this.clickX > x && this.clickX < x + Math.max((w/2), 50) && this.clickY > y + (line_counter + 0.5) * (TEXTSIZE * 1.5) + graphics_scaling && this.clickY < y + (line_counter + 1.5) * (TEXTSIZE * 1.5) + graphics_scaling)
-			{
-				this.selection = i;
-			}
+			row = document.createElement("tr");
+			table.appendChild(row);
 
 			if (type == "CutsceneOption")
 			{
@@ -491,109 +562,61 @@ var View = function()
 				var s = a[i].name;
 			}
 
-			// 	display the items name
-			context.fillText(s,
-				x + (graphics_scaling * 3) + x_indent,
-				y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
+			if (index == null)
+			{
+				index = i;
+			}
+
+			// create the text element
+			var cell = document.createElement("td");
+			row.appendChild(cell);
+			var textNode = document.createTextNode(s);
 			
+			// for showing inventory, add an icon of the item
 			if (type == "Inventory" || type == "Sell" || type == "Buy")
 			{
-				// display the item's sprite
-				if (typeof(itemDetail[s].sprite) !== "undefined" && itemDetail[s].sprite.complete)
+				var img = document.createElement("img");
+				img.src = itemDetail[s].sprite.src;
+				cell.appendChild(img);
+			}
+
+			// add the text after the inventory image icon is added
+			cell.appendChild(textNode);
+
+			// add text to the second column of the first part, for example the quantity of an item or the % complete of a quest
+			var cell = document.createElement("td");
+			row.appendChild(cell);
+
+			// 	display the items quantity
+			if (type == "Inventory" || type == "Sell")
+			{				
+				cell.textContent = a[i].quantity;
+
+				//set onclick event
+				if (type == "Inventory")
 				{
-					context.drawImage(itemDetail[s].sprite,
-						x + (graphics_scaling * 3),
-						y + (line_counter + 1) * (TEXTSIZE * 1.5) - (itemDetail[s].sprite.height * 0.875) + graphics_scaling,
-						itemDetail[s].sprite.width,
-						itemDetail[s].sprite.height);
+					row.setAttribute("onclick", "useItem('" + s + "')");
 				}
-
-				// 	display the items quantity
-				if (type != "Buy")
-				{				
-					context.fillText("x" + a[i].quantity,
-						x + (w/2) + 16,
-						y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
-				}
-
-				if (this.selection == i)
+				else if (type == "Sell")
 				{
-					line_counter++;
-
-					// 	display the option to use the item
-					if (this.clickX > x && this.clickX < x + (w/2) && this.clickY > y + (line_counter + 0.5) * (TEXTSIZE * 1.5) + graphics_scaling && this.clickY < y + (line_counter + 1.5) * (TEXTSIZE * 1.5) + graphics_scaling)
+					row.setAttribute("onclick", "sellItem('" + s + "')");
+					if (updateCounter % 3 == 0)
 					{
-						if (type == "Inventory")
-						{
-							console.log("user clicked use" + s);
-							useItem(s);
-						}
-						else if (type == "Sell")
-						{
-							if (updateCounter % 3 == 0)
-							{
-								cutscene.text = "Thanks for selling me this " + s + ".";
-							}
-							else if (updateCounter % 3 == 1)
-							{
-								cutscene.text = "I was just thinking I needed another " + s + ".";
-							}
-							else
-							{
-								cutscene.text = "I'm always in the market for another " + s + ".";
-							}
-							sellItem(s);
-							this.clickX = null;
-							this.clickY = null;
-						}
-						else if (type == "Buy")
-						{
-							if (updateCounter % 3 == 0)
-							{
-								cutscene.text = "An " + s + "! Excellent choice!";
-							}
-							else if (updateCounter % 3 == 1)
-							{
-								cutscene.text = "That was my finest " + s + ", take good care of it!";
-							}
-							else
-							{
-								cutscene.text = "I bet that " + s + " will come in handy!";
-							}
-							buyItem(s);
-							this.clickX = null;
-							this.clickY = null;
-						}
+						cutscene.text = "Thanks for selling me this " + s + ".";
 					}
-
-					if (type == "Inventory")
+					else if (updateCounter % 3 == 1)
 					{
-						context.fillText("use item",
-							x + (graphics_scaling * 3) + x_indent,
-							y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
+						cutscene.text = "I was just thinking I needed another " + s + ".";
 					}
-					else if (type == "Sell")
+					else
 					{
-						context.fillText("sell item",
-							x + (graphics_scaling * 3) + x_indent,
-							y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
-					}
-					else if (type == "Buy")
-					{
-						context.fillText("buy item",
-							x + (graphics_scaling * 3) + x_indent,
-							y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
+						cutscene.text = "I'm always in the market for another " + s + ".";
 					}
 				}
 			}
-			else if (type == "Achievements" || type == "Quests")
+			// display the completion rate of a quest or achievement
+			else if (type == "Quests" || type == "Achievements")
 			{
-				// achievement or quest view always has the first item selected by default
-				if (this.selection == "-1")
-				{
-					this.selection = i;
-				}
-
 				var counter = 0;
 				for (var j in a[i].tracker)
 				{
@@ -606,183 +629,36 @@ var View = function()
 				if (counter == a[i].totalRequired)
 				{
 					// colour the text gold if they completed the achievement
-					context.fillStyle = "#F39C12";	
+					row.className = row.className + " emphasizetext";
 				}
 
 				// show the % complete for the objective
-				context.fillText(Math.floor(counter * 100.00 / a[i].totalRequired) + "%",
-					x + w / 3 - context.measureText(Math.floor(counter * 100.00 / a[i].totalRequired) + "%").width - (graphics_scaling * 2),
-					y + (line_counter + 1) * (TEXTSIZE * 1.5) + graphics_scaling);
-				context.fillStyle = "#000000";		
+				cell.textContent = Math.floor(counter * 100.00 / a[i].totalRequired) + "%";
+
+				//set onclick event
+				row.setAttribute("onclick", "view.selectOption('" + type + "','" + i + "')");
 			}
 			else if (type == "Leaderboards")
 			{
-				// leaderboards view always has the first item selected by default
-				if (this.selection == "-1")
-				{
-					this.selection = i;
-				}
+				//set onclick event
+				row.setAttribute("onclick", "view.selectOption('" + type + "','" + i + "')");
 			}
-			
-			line_counter++;
+			else if (type == "CutsceneOption")
+			{
+				//set onclick event
+				row.setAttribute("onclick", "cutscene.optionsResult(" + i + ")");
+			}
+
 		}
 
-		if (line_counter > 0 && (type == "Achievements" || type == "Quests") && this.selection != "-1")
+		if (["Quests", "Achievements", "Leaderboards"].includes(type) && index != null)
 		{
-			var task_counter = 0;
-
-			// display the various tasks required for the mission
-			for (var j in a[this.selection].tracker[0])
-			{
-				if (a[this.selection].tracker[0][j].counter >= a[this.selection].tracker[0][j].required)
-				{
-					// colour the text gold if they completed the achievement
-					context.fillStyle = "#F39C12";	
-				}
-
-				// display the task description
-				context.fillText(a[this.selection].tracker[0][j].description.replace("{counter}",a[this.selection].tracker[0][j].required),
-					x + (w/3) + (4 * graphics_scaling),
-					y + (task_counter + 3) * (TEXTSIZE + graphics_scaling));
-
-				// display the user's progress
-				context.fillText(a[this.selection].tracker[0][j].counter + " / " + a[this.selection].tracker[0][j].required,
-					x + w - (30 * graphics_scaling),
-					y + (task_counter + 3) * (TEXTSIZE + graphics_scaling));
-
-				task_counter++;
-				context.fillStyle = "#000000";	
-			}
-
-			// display the XP reward for completing the mission
-			context.fillText(a[this.selection].reward.xp + " XP",
-					x + (w/3) + (4 * graphics_scaling),
-					y + (h/2) + (TEXTSIZE + graphics_scaling));
-
-			// display the item rewards for completing the mission
-			for (var j in a[this.selection].reward.items)
-			{
-				var item = a[this.selection].reward.items[j];
-
-				context.drawImage(itemDetail[item.name].sprite,
-					x + (w/3) + (4 * graphics_scaling),
-					y + (h/2) + (j + 2) * (TEXTSIZE + graphics_scaling) - itemDetail[item.name].sprite.height + graphics_scaling,
-					itemDetail[item.name].sprite.width,
-					itemDetail[item.name].sprite.height);
-
-				context.fillText(item.name + " x" + item.quantity,
-					x + (w/3) + (4 * graphics_scaling) + itemDetail[item.name].sprite.width,
-					y + (h/2) + (j + 2) * (TEXTSIZE + graphics_scaling));
-
-
-			}
+			document.getElementById("formdetail").style.display = "flex";
+			this.selectOption(type, index);
 		}
-		else if (type == "Leaderboards" && line_counter > 0 && this.selection != "-1")
-			{
-				var task_counter = 0;
-				for (var j in a[this.selection])
-				{
-					// display the user's name
-					context.fillText(a[this.selection][j].name,
-						x + (w / 3) + (4 * graphics_scaling),
-						y + (task_counter + 3) * (TEXTSIZE + graphics_scaling));
-					// display the user's stats
-					context.fillText(a[this.selection][j].counter,
-						x + (w * 2 / 3) + (4 * graphics_scaling),
-						y + (task_counter + 3) * (TEXTSIZE + graphics_scaling));
-					task_counter++;
-				}
-			}	
-
-		// 	draw the headers
-		context.font = "bold " + TEXTSIZE * 2 + "px sans-serif";
-		if (type == "Achievements" || type == "Quests")
+		else
 		{
-			if (type == "Achievements")
-			{
-				var title = "Achievement";
-				context.fillText("Achievements",
-					x + (4 * graphics_scaling),
-					y + TEXTSIZE * 2);
-			}
-			else if (type == "Quests")
-			{
-				var title = "Quest";
-				context.fillText("Quests",
-					x + (4 * graphics_scaling),
-					y + TEXTSIZE * 2);
-			}
-			if (this.selection != "-1")
-			{
-				// if a quest or achievemnt has been selected, use it's name for the headers
-				var title = a[this.selection].name;
-			}
-
-			context.fillText(title + " Tasks",
-				x + (w/3) + (4 * graphics_scaling),
-				y + TEXTSIZE * 2);
-
-			context.fillText(title + " Rewards",
-				x + (w/3) + (4 * graphics_scaling),
-				y + (h/2) - (2 * graphics_scaling));
-
-			// draw an extra box to hold the objective's details
-			context.beginPath();
-			context.moveTo(x + w / 3, y);
-			context.lineTo(x + w / 3, y + h);
-			context.stroke();
-		}
-		else if (type == "Leaderboards")
-		{
-				context.fillText("Leaderboards",
-					x + (4 * graphics_scaling),
-					y + TEXTSIZE * 2);
-
-			if (this.selection != "-1")
-			{
-				// if a stat has been selected, show the headers
-				context.fillText("Username",
-				x + (w/3) + (4 * graphics_scaling),
-				y + TEXTSIZE * 2);
-
-				context.fillText(this.selection,
-				x + (w*2/3) + (4 * graphics_scaling),
-				y + TEXTSIZE * 2);
-			}
-
-			// draw an extra box to hold the objective's details
-			context.beginPath();
-			context.moveTo(x + w / 3, y);
-			context.lineTo(x + w / 3, y + h);
-			context.stroke();
-		}
-		else if (type == "Inventory" || type == "Sell")
-		{
-			context.fillText("Items",
-				x + (4 * graphics_scaling),
-				y + TEXTSIZE * 2);
-
-			context.fillText("Quantity",
-				x + (w/2) + (4 * graphics_scaling),
-				y + TEXTSIZE * 2);
-		}	
-
-		context.globalAlpha = 1;
-
-		if (type == "CutsceneOption" && this.selection != "-1")
-		{
-			console.log("send to cutscene.js: " + a[this.selection]);
-			cutscene.optionsAction[a[this.selection]]();
+			document.getElementById("formdetail").style.display = "none";
 		}
 	}
-
-	this.clickPosition = function(x, y)
-	{
-		this.clickX = x;
-		this.clickY = y;
-	}
-
-
 }
-
-

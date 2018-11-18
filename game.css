@@ -1,11 +1,90 @@
 #canvas{
-	position:absolute;
+	position: fixed;
+	top: 0px;
 }
 
 .imgbtn{
-  position: absolute;
-  top: 0px;
-  z-index: 2;
+	position: fixed;
+	top: 0px;
+	z-index: 3;
+}
+
+#formwindow{
+	min-height: 100px;
+ 	z-index: 2;
+ 	border: 10px solid saddlebrown;
+	max-height: 50%;
+	max-width: 75%; 
+    background-color: burlywood;
+    display: none;
+	border-radius: 25px;
+	align-items: stretch;
+	min-width: -webkit-min-content;
+	overflow:hidden;
+}
+
+.formpart{
+	min-height: 100%;
+	width: 300px;
+	box-sizing: border-box;
+}
+
+table{
+	border-collapse: collapse;
+	text-align: left;
+	width: 100%;
+}
+
+#formlist tr:not(:first-child):hover{
+	background-color: rgb(180, 126, 77);
+}
+
+tr:first-child {
+	border-bottom: 5px solid saddlebrown;
+}
+
+td:nth-child(2),th:nth-child(2){
+	text-align: right;
+}
+
+.numberCell {
+	text-align: right;
+}
+
+#formdetail{
+	border-left: 5px solid saddlebrown;
+}
+
+.title{
+	font-weight: bold;
+	font-size: 2em;
+}
+
+td{
+	min-width: 80px;
+}
+
+td, th{
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+.emphasizetext{
+	color: #1E8449;
+}
+
+.ignoretext{
+	color: #CCCCCC;
+}
+
+.window{
+	display: flex;
+	justify-content: center;
+	border: 10px solid purple;
+	z-index: 2;
+	height: 100vh;
+	width: 100%;
+	align-items: center;
 }
 
 body {

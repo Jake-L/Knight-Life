@@ -880,7 +880,6 @@ exports.Entity.prototype.createFootPrint = function()
 
 exports.Entity.prototype.takeDamage = function(x, y, damage)
 {
-	console.log(this.display_name + this.id + " took " + damage + " damage")
 	if (this.spawn_time + 100 < new Date().getTime()) // don't take damage in the first 0.1 seconds you're alive
 	{
 		var damage_reduction = Math.max((-1 * Math.pow(0.5,(0.05 * (this.defence - 123))) + 67), 0);

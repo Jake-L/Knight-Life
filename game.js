@@ -925,7 +925,28 @@ window.addEventListener("keyup", function(event)
 
 function openDisplayWindow(windowName)
 {
-	displayWindow = windowName;
+	// usr tries to close window
+	if (windowName == null)
+	{
+		// cannot exit a conversation
+		if (displayWindow != "CutsceneOption")
+		{
+			// exit the buy / sell cutscene
+			if (displayWindow == "Buy" || displayWindow == "Sell")
+			{
+				cutscene = null;
+			}
+
+			// clone the window
+			document.getElementById("formwindow").style.display = "none";
+			displayWindow = null;
+		}
+	}
+	else
+	{
+		displayWindow = windowName;
+		view.renderOptions(windowName);
+	}
 };
 
 Player.prototype.update = function()
@@ -1323,21 +1344,6 @@ function renderMinimap()
 	context.drawImage(itemSprite["moneyIcon"], x, y - ((3 + Math.ceil(itemSprite["moneyIcon"].height / 2 )) * graphics_scaling), Math.ceil(itemSprite["moneyIcon"].width * graphics_scaling / 2), Math.ceil(itemSprite["moneyIcon"].height * graphics_scaling / 2))
 }
 
-// check if the user clicks the mouse
-function mouseClickDown(event) {
-	if (clickCounter > 15)
-	{
-	  view.clickPosition(event.clientX, event.clientY);
-	}
-}
-
-function mouseClickUp(event)
-{
-	clickCounter = 0;
-}
-
-window.addEventListener("mousedown", mouseClickDown);
-window.addEventListener("mouseup", mouseClickUp);
 window.addEventListener("resize", setScreenSize);
 //document.addEventListener("fullscreenchange", setScreenSize);
 
@@ -1401,6 +1407,16 @@ function buyItem(itemName)
 	else
 	{
 		console.log("failed to buy item " + item.name);
+	}
+}
+
+// refresh the window whenever an action is taken that may change the displayed information
+function updateDisplayWindow()
+{
+	if (displayWindow != null)
+	{
+		console.log("refresh");
+		view.renderOptions(displayWindow);
 	}
 }
 
