@@ -47,11 +47,6 @@ server.listen(5000, function() {
 	});
 });
 
-// Constants
-global.maxX = [1000,1000,127];
-global.minY = [30,30,0];
-global.maxY = [500,800,127];
-
 // other shared variables
 global.projectileList = []; // keep track of all active projectiles
 global.damageList = []; // keep track of all upcoming attacks
@@ -60,6 +55,8 @@ var mapObject = require('./mapobject.js').mapObject;
 global.Attack = require('./attack.js').Attack; 
 global.itemDetail = require('./items.js').itemDetail;
 var Entity = require('./entity.js').Entity;
+global.maps = require('./maps.js').maps;
+global.gridSize = require('./maps.js').gridSize;
 var sizeOf = require('image-size');
 var fs = require('fs');
 
@@ -74,7 +71,7 @@ var updateTime = new Date().getTime();
 
 function initializeMap()
 {
-	for (var mapId in maxX)
+	for (var mapId in maps)
 	{
 		projectileList[mapId] = [];
 		damageList[mapId] = [];
@@ -211,8 +208,8 @@ function getSpawn(h, w, mapId)
 
 	while (c.x + c.y == 0 && count < 100)
 	{
-		c.x = Math.ceil(Math.random() * maxX[mapId]);
-		c.y = Math.ceil((Math.random() * (maxY[mapId] - minY[mapId] - h)) + minY[mapId] + (h/2));
+		c.x = Math.ceil(Math.random() * maps[mapId][0].length * gridSize);
+		c.y = Math.ceil((Math.random() * (maps[mapId].length * gridSize - (gridSize * 2) - h)) + (gridSize * 2) + (h/2));
 		count++;
 
 		var blocked = false;
@@ -754,7 +751,7 @@ setInterval(function()
 		if (playerOnMap > 0)
 		{
 			// spawn falling rocks on the map
-			projectileList[2].push(new Projectile(Math.ceil(Math.random() * maxX[2]) + 100, Math.ceil(Math.random() * (maxY[2] - minY[2])) + minY[2], 100, -1, 0, -1, "iceboss", new Date().getTime(), 10, "meteor", 1));
+			projectileList[2].push(new Projectile(Math.ceil(Math.random() * maps[2][0].length * gridSize) + 100, Math.ceil(Math.random() * maps[2].length * gridSize), 100, -1, 0, -1, "iceboss", new Date().getTime(), 10, "meteor", 1));
 		}
 	}
 
@@ -1040,7 +1037,7 @@ global.Projectile = function(x, y, z, x_speed, y_speed, z_speed, source, update_
 
 	this.offscreen = function()
 	{
-		if (this.x - this.width > maxX[this.mapId] || this.x + this.width < 0 || this.y < 0 || this.y - this.height > maxY[this.mapId] || this.z < 0)
+		if (this.x - this.width > maps[this.mapId][0].length * gridSize || this.x + this.width < 0 || this.y < 0 || this.y - this.height > maps[this.mapId].length * gridSize || this.z < 0)
 		{
 			return true;
 		}
@@ -1591,7 +1588,16 @@ function readLeaderboardData(username)
 		else
 		{
 			// get the relevent attributes from the users save file
-		    var userdata = JSON.parse(data.toString());
+			try
+			{
+				var userdata = JSON.parse(data.toString());
+			}
+			// sometimes if client crashes the JSON data will be corrupt
+			catch (err)
+			{
+				console.log(err);
+				return;
+			}
 		    
 		    // insert the player's level into the leaderboards in sorted order
 		    var sort_counter = 0;

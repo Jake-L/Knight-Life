@@ -51,28 +51,6 @@ var attack2_key = 51;
 var frameTime = 0;
 var startTime = 0;
 
-var maxX = {};
-maxX[0] = 1000;
-maxX[1] = 1000;
-maxX[2] = 127;
-maxX[-1] = 127;
-maxX[-2] = 127;
-maxX[-3] = 127;
-var minY = {};
-minY[0] = 30;
-minY[1] = 30;
-minY[2] = 0;
-minY[-1] = 0;
-minY[-2] = 0;
-minY[-3] = 0;
-var maxY = {};
-maxY[0] = 500;
-maxY[1] = 800;
-maxY[2] = 127;
-maxY[-1] = 127;
-maxY[-2] = 127;
-maxY[-3] = 127;
-
 var playerList = {};
 var mapObjects = {};
 var projectileList = [];
@@ -138,12 +116,14 @@ function getDirNum(s)
 }
 
 //functions from external files
-var itemDetail = shareItems.itemDetail;
+const itemDetail = shareItems.itemDetail;
 var mapObject = share.mapObject;
 var Attack = shareAttack.Attack;
 var Entity = shareEntity.Entity;
+const maps = shareMap.maps;
+const gridSize = shareMap.gridSize;
 
-var defaultmapId = -3;
+const defaultmapId = -3;
 var player;
 var quests = {};
 var completedQuests = {};
@@ -201,7 +181,6 @@ function respawn()
 	player.inventory = oldPlayer.inventory;
 	player.entity.attacks = oldPlayer.entity.attacks;
 	player.entity.clothing = oldPlayer.entity.clothing;
-	get_offset();
 }
 
 var updateCounter = 0;
@@ -235,17 +214,16 @@ function loadMap(mapId)
 		portalList[2] = new Portal(454, 260, 20, 20, -2, 64, 127, "Up");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
 		// create door to enter castle
-		portalList[3] = new Portal(136, 164, 20, 20, -3, 64, 127, "Up");
+		portalList[3] = new Portal(136, 164, 20, 20, -3, 127, 127, "Up");
 
-		weatherSprite = [];
 		for (var i = 0; i < 10; i++)
 		{
-			p = new mapObject(Math.floor(Math.random() * maxX[mapId]), Math.floor(Math.random() * (maxY[mapId] - minY[mapId]) + minY[mapId]), "bush1");
+			p = new mapObject(Math.floor(Math.random() * maps[0][0].length * gridSize), Math.floor(Math.random() * (maps[0][0].length * gridSize - (gridSize * 2)) + (gridSize * 2)), "bush1");
 			p.initialize();
 			mapObjects[p.id] = p;
 			view.insertStatic(p);
 
-			p = new mapObject(Math.floor(Math.random() * maxX[mapId]), Math.floor(Math.random() * (maxY[mapId] - minY[mapId]) + minY[mapId]), "flower" + (i % 2));
+			p = new mapObject(Math.floor(Math.random() * maps[0][0].length * gridSize), Math.floor(Math.random() * (maps[0][0].length * gridSize - (gridSize * 2)) + (gridSize * 2)), "flower" + (i % 2));
 			p.initialize();
 			mapObjects[p.id] = p;
 			view.insertStatic(p);
@@ -278,7 +256,6 @@ function loadMap(mapId)
 		audio = new Audio("audio//track2.mp3");
 		portalList[0] = new Portal(64, 127, 20, 20, 0, 254, 360, "Down");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
-		weatherSprite = [];
 		var e = new Entity(64, 32, "player", -1);
 		e.id = "-1p1";
 		playerList[e.id] = e; 
@@ -294,7 +271,6 @@ function loadMap(mapId)
 		audio = new Audio("audio//track2.mp3");
 		portalList[0] = new Portal(64, 127, 20, 20, 0, 454, 260, "Down");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
-		weatherSprite = [];
 		var e = new Entity(64, 32, "player", -2);
 		e.id = "-2p1";
 		playerList[e.id] = e; 
@@ -310,9 +286,8 @@ function loadMap(mapId)
 		console.log("generating map-3")
 		audio = new Audio("audio//track2.mp3");
 		// create portal to grass world
-		portalList[0] = new Portal(64, 127, 20, 20, 0, 136, 164, "Down");
+		portalList[0] = new Portal(127, 127, 20, 20, 0, 136, 164, "Down");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
-		weatherSprite = [];
 		var e = new Entity(64, 32, "player", -3);
 		e.id = "-3king";
 		playerList[e.id] = e; 
@@ -687,7 +662,6 @@ var update = function()
 					player.entity.nearbyObjects = [];
 					loadMap(portalList[i].destination_mapId);
 					player.portalCounter = 30;
-					get_offset();
 					if (player.entity.mapId < 0)
 					{
 						socket.emit('movement', player.entity); //send new location to server
@@ -1024,56 +998,7 @@ Player.prototype.update = function()
 	}
 
 	this.entity.update();
-
-	get_offset();
 };
-
-// check the offset used for screen scrolling
-function get_offset()
-{
-	var left_offset = player.entity.x - (pixelWidth / 2);
-	var right_offset = player.entity.x + (pixelWidth / 2);
-
-	// if the map doesn't fill the whole screen, center it
-	if (maxX[player.entity.mapId] <= pixelWidth)
-	{
-		x_offset = -(pixelWidth / 2) + (maxX[player.entity.mapId] / 2);
-	} 
-	// check if the player is moving in the middle of the map and the screen needs to be moved
-	else if (left_offset > 0 && right_offset < maxX[player.entity.mapId])
-	{
-		x_offset = left_offset;
-	}
-	else if (left_offset > 0 && right_offset >= maxX[player.entity.mapId])
-	{
-		x_offset = maxX[player.entity.mapId] - pixelWidth;
-	}
-	else
-	{
-		x_offset = 0;
-	}
-
-	var top_offset = player.entity.y - (pixelHeight / 2);
-	var bot_offset = player.entity.y + (pixelHeight / 2);
-
-	// if the map doesn't fill the whole screen, center it
-	if (maxY[player.entity.mapId] <= pixelHeight)
-	{
-		y_offset = -(pixelHeight / 2) + (maxY[player.entity.mapId] / 2);
-	}
-	else if (top_offset > 0 && bot_offset < maxY[player.entity.mapId])
-	{
-		y_offset = top_offset;
-	}
-	else if (top_offset > 0 && bot_offset >= maxY[player.entity.mapId])
-	{
-		y_offset = maxY[player.entity.mapId] - pixelHeight;
-	}
-	else
-	{
-		y_offset = 0;
-	}
-}
 
 // holds information about projectiles on-screen
 function InitializeProjectile(p)
@@ -1273,13 +1198,13 @@ function renderMinimap()
 	var m_y_offset = 0;
 
 	// get x-offset
-	if (player.entity.x / minimapScale < 25 || maxX / minimapScale <= 50)
+	if (player.entity.x / minimapScale < 25 || maps[player.entity.mapId][0].length * gridSize / minimapScale <= 50)
 	{
 		m_x_offset = 0;
 	}
-	else if ((maxX[player.entity.mapId] - player.entity.x) / minimapScale < 25)
+	else if ((maps[player.entity.mapId][0].length * gridSize - player.entity.x) / minimapScale < 25)
 	{
-		m_x_offset = (maxX[player.entity.mapId] / minimapScale) -50;
+		m_x_offset = (maps[player.entity.mapId][0].length * gridSize / minimapScale) -50;
 	}
 	else
 	{
@@ -1287,13 +1212,13 @@ function renderMinimap()
 	}
 
 	// get y-offset
-	if (player.entity.y / minimapScale <= 25 || maxY / minimapScale <= 50)
+	if (player.entity.y / minimapScale <= 25 || maps[player.entity.mapId].length * gridSize / minimapScale <= 50)
 	{
 		m_y_offset = 0;
 	}
-	else if ((maxY[player.entity.mapId] - player.entity.y) / minimapScale <= 25)
+	else if ((maps[player.entity.mapId].length * gridSize - player.entity.y) / minimapScale <= 25)
 	{
-		m_y_offset = (maxY[player.entity.mapId] / minimapScale) - 50;
+		m_y_offset = (maps[player.entity.mapId].length * gridSize / minimapScale) - 50;
 	}
 	else
 	{

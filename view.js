@@ -1,7 +1,3 @@
-var weatherSprite = [];
-var backgroundSprite = new Image();
-var backgroundSpriteTop = new Image();
-
 var View = function()
 {
 	this.renderList = [];
@@ -11,8 +7,27 @@ var View = function()
 	this.clickY;
 	this.selection = -1;
 
+	var weatherSprite = [];
+	var backgroundSprite = [];	
+
+	this.loadBackgroundSprite = function()
+	{
+		const backgroundNames = ["grass1", "grass2", "grass1top", "snow1", "snow1top", "loghouseinside", "cobblestonefloor"];
+
+		for (let i in backgroundNames)
+		{	
+			spriteName = backgroundNames[i];
+			backgroundSprite[spriteName] = new Image();
+			backgroundSprite[spriteName].src = `img//${spriteName}.png`;
+		}
+	}
+
+	this.loadBackgroundSprite();
+
 	this.render = function()
 	{
+		this.get_offset();
+
 		// make the screen a little transparent when the player is moving
 		if (player.entity.x_speed != 0 || player.entity.y_speed != 0)
 		{
@@ -201,40 +216,17 @@ var View = function()
 
 	this.loadMap = function(mapId)
 	{
-		backgroundSprite = new Image();
-		backgroundSpriteTop = new Image();
+		this.get_offset();
+
 		weatherSprite = [];
 
-		if (mapId == 0)
+		if (mapId == 1)
 		{
-			backgroundSprite.src = "img//grass1.png";
-			backgroundSpriteTop.src = "img//grass1top.png";
-		}
-		else if (mapId == 1)
-		{
-			backgroundSprite.src = "img//snow1.png";
-			backgroundSpriteTop.src = "img//snow1top.png";
-
 			for (var i = 0; i < 4; i++)
 			{
 				weatherSprite[i] = new Image();
 				weatherSprite[i].src = "img//snowfall" + i + ".png";
 			}
-		}
-		else if (mapId == 2)
-		{
-			backgroundSprite.src = "img//snow1.png";
-			backgroundSpriteTop.src = "img//snow1.png";
-		}
-		else if ([-1, -2].includes(mapId))
-		{
-			backgroundSprite.src = "img//loghouseinside.png";
-			backgroundSpriteTop.src = "img//loghouseinside.png";
-		}
-		else if (mapId == -3)
-		{
-			backgroundSprite.src = "img//cobblestonefloor.png";
-			backgroundSpriteTop.src = "img//cobblestonefloor.png";
 		}
 	}
 
@@ -243,47 +235,78 @@ var View = function()
 	{
 		context.fillRect(0, 0, width, height);
 
-		if (backgroundSprite.complete && backgroundSprite.naturalHeight !== 0)
+		const x_counter = Math.ceil(Math.min(((width / graphics_scaling) / gridSize) + 1, maps[player.entity.mapId][0].length));
+		const y_counter = Math.ceil(Math.min(((height / graphics_scaling) / gridSize) + 1, maps[player.entity.mapId].length));
+
+		const grid_x_offset = Math.max(Math.floor(x_offset / gridSize), 0);
+		const grid_y_offset = Math.max(Math.floor(y_offset / gridSize), 0);
+
+		const background_x_offset = x_offset - (grid_x_offset * gridSize);
+		const background_y_offset = y_offset - (grid_y_offset * gridSize);
+
+		for (i = 0; i < x_counter; i++)
 		{
-			var x_counter = Math.ceil(Math.min(((width / graphics_scaling) / backgroundSprite.width) + 1,maxX[player.entity.mapId] / backgroundSprite.width));
-			var y_counter = Math.ceil(Math.min(((height / graphics_scaling) / backgroundSprite.height) + 1,maxY[player.entity.mapId] / backgroundSprite.width));
-
-			var background_x_offset = x_offset;
-			var background_y_offset = y_offset;
-
-			if (maxX[player.entity.mapId] > pixelWidth)
+			for (j = 0; j < y_counter; j++)
 			{
-				background_x_offset = x_offset % backgroundSprite.width;
-			}
-			if (maxY[player.entity.mapId] > pixelHeight)
-			{
-				background_y_offset = y_offset % backgroundSprite.height;
-			}
-
-			for (i = 0; i < x_counter; i++)
-			{
-				for (j = 0; j < y_counter; j++)
+				// draw the usual background rectangle
+				if (typeof(maps[player.entity.mapId][j + grid_y_offset][i + grid_x_offset]) !== 'undefined')
 				{
-					// draw a different background rectangle at the very top of the screen
-					if (j == 0 && y_offset < backgroundSpriteTop.height)
-					{
-						context.drawImage(backgroundSpriteTop,
-						((backgroundSpriteTop.width * i) - background_x_offset) * graphics_scaling, //x position
-						((backgroundSpriteTop.height * j) - background_y_offset) * graphics_scaling, //y position
-						backgroundSpriteTop.width * graphics_scaling, //width
-						backgroundSpriteTop.height * graphics_scaling); //height
-					}
-					// draw the usual background rectangle
-					else
-					{
-						context.drawImage(backgroundSprite,
-						((backgroundSprite.width * i) - background_x_offset) * graphics_scaling, //x position
-						((backgroundSprite.height * j) - background_y_offset) * graphics_scaling, //y position
-						backgroundSprite.width * graphics_scaling, //width
-						backgroundSprite.height * graphics_scaling); //height
-					}
+					context.drawImage(
+						backgroundSprite[maps[player.entity.mapId][j + grid_y_offset][i + grid_x_offset]],
+						((gridSize * i) - background_x_offset) * graphics_scaling, //x position
+						((gridSize * j) - background_y_offset) * graphics_scaling, //y position
+						gridSize * graphics_scaling, //width
+						gridSize * graphics_scaling //height
+					);
 				}
 			}
+		}
+	}
+
+	// check the offset used for screen scrolling
+	this.get_offset = function()
+	{
+		var left_offset = player.entity.x - (pixelWidth / 2);
+		var right_offset = player.entity.x + (pixelWidth / 2);
+
+		// if the map doesn't fill the whole screen, center it
+		if (maps[player.entity.mapId][0].length * gridSize <= pixelWidth)
+		{
+			x_offset = ((maps[player.entity.mapId][0].length * gridSize) - (width / graphics_scaling)) / 2;
+		}
+		// check if the player is moving in the middle of the map and the screen needs to be moved
+		else if (left_offset > 0 && right_offset < maps[player.entity.mapId][0].length * gridSize)
+		{
+			x_offset = left_offset;
+		}
+		else if (left_offset > 0 && right_offset >= maps[player.entity.mapId][0].length * gridSize)
+		{
+			x_offset = maps[player.entity.mapId][0].length * gridSize - pixelWidth;
+		}
+		else
+		{
+			x_offset = 0;
+		}
+
+		var top_offset = player.entity.y - (pixelHeight / 2);
+		var bot_offset = player.entity.y + (pixelHeight / 2);
+
+		// if the map doesn't fill the whole screen, center it
+		if (maps[player.entity.mapId].length * gridSize <= pixelHeight)
+		{
+			y_offset = ((maps[player.entity.mapId].length * gridSize) - (height / graphics_scaling)) / 2;
+		}
+		else if (top_offset > 0 && bot_offset < maps[player.entity.mapId].length * gridSize)
+		{
+			y_offset = top_offset;
+		}
+		else if (top_offset > 0 && bot_offset >= maps[player.entity.mapId].length * gridSize)
+		{
+			y_offset = maps[player.entity.mapId].length * gridSize - pixelHeight;
+		}
+		else
+		{
+			y_offset = 0;
 		}
 	}
 

@@ -173,26 +173,28 @@ exports.Entity.prototype.move = function(x_direction, y_direction)
 		console.log(this.x_speed. this.y_speed);*/
 
 		// check if the character moves along the x-axis
-		if(this.x + this.x_speed - (this.width/2) <= 0) // at the left edge
+		if(typeof(maps[this.mapId][Math.floor((this.y - (this.height)) / gridSize)]) === 'undefined'
+			|| typeof(maps[this.mapId][Math.floor((this.y - (this.height)) / gridSize)][Math.floor((this.x + this.x_speed + (Math.sign(this.x_speed) * this.width / 2)) / gridSize)]) === 'undefined'
+			|| typeof(maps[this.mapId][Math.floor(this.y / gridSize)][Math.floor((this.x + this.x_speed + (Math.sign(this.x_speed) * this.width / 2)) / gridSize)]) === 'undefined')
 		{
-			this.x = (this.width/2);
-			this.x_speed = 0;
-		}
-		else if ((this.x + this.x_speed + (this.width/2)) >= maxX[this.mapId]) // at the right edge
-		{
-			this.x = maxX[this.mapId] - (this.width/2);
+			//this.x = Math.ceil((this.x + this.x_speed - (this.width / 2))
 			this.x_speed = 0;
 		}
 
 		//check if the character moves along the y-axis
-		if (this.y + this.y_speed - this.height <= minY[this.mapId]) // at the top edge
+		if (this.y_speed > 0)
 		{
-			this.y = minY[this.mapId] + this.height;
-			this.y_speed = 0;
+			var y_check = Math.floor((this.y + this.y_speed) / gridSize);
 		}
-		else if (this.y + this.y_speed >= maxY[this.mapId]) // at the bottom edge
+		else if (this.y_speed < 0)
 		{
-			this.y = maxY[this.mapId];
+			var y_check = Math.floor((this.y + this.y_speed - this.height) / gridSize)
+		}
+		
+		if (typeof(maps[this.mapId][y_check]) === 'undefined'
+			|| typeof(maps[this.mapId][y_check][Math.floor((this.x + (this.width / 2)) / gridSize)]) === 'undefined'
+			|| typeof(maps[this.mapId][y_check][Math.floor((this.x - (this.width / 2)) / gridSize)]) === 'undefined')
+		{
 			this.y_speed = 0;
 		}
 	}
