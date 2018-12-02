@@ -15,7 +15,7 @@
 		this.depth = 20;
 		this.priority = 0;
 
-		if (spriteName == "snowportal" || spriteName == "grassportal")
+		if (["snowportal", "grassportal", "doorlight"].includes(spriteName))
 		{
 			this.priority = -1;
 		}

@@ -207,7 +207,6 @@ function loadMap(mapId)
 		portalList[0] = new Portal(992, 300, 20, 20, 1, 10, 300, "Right");
 		var p = new mapObject(portalList[0].x, portalList[0].y + 4, "snowportal");
 		p.initialize();
-		mapObjects[p.id] = p;
 		view.insertStatic(p);
 		// create doors to enter log cabins
 		portalList[1] = new Portal(254, 360, 20, 20, -1, 64, 127, "Up");
@@ -220,12 +219,10 @@ function loadMap(mapId)
 		{
 			p = new mapObject(Math.floor(Math.random() * maps[0][0].length * gridSize), Math.floor(Math.random() * (maps[0][0].length * gridSize - (gridSize * 2)) + (gridSize * 2)), "bush1");
 			p.initialize();
-			mapObjects[p.id] = p;
 			view.insertStatic(p);
 
 			p = new mapObject(Math.floor(Math.random() * maps[0][0].length * gridSize), Math.floor(Math.random() * (maps[0][0].length * gridSize - (gridSize * 2)) + (gridSize * 2)), "flower" + (i % 2));
 			p.initialize();
-			mapObjects[p.id] = p;
 			view.insertStatic(p);
 		}
 	}
@@ -239,7 +236,6 @@ function loadMap(mapId)
 		portalList[1] = new Portal(404, 510, 20, 20, 2, 64, 127, "Up");
 		var p = new mapObject(portalList[0].x, portalList[0].y + 8, "grassportal");
 		p.initialize();
-		mapObjects[p.id] = p;
 		view.insertStatic(p);
 	}
 	else if (mapId == 2)
@@ -248,6 +244,11 @@ function loadMap(mapId)
 
 		// create portal to the ice world
 		portalList[1] = new Portal(64, 127, 20, 20, 1, 404, 510, "Down");
+
+		// show a light at the entrance
+		p = new mapObject(63, 128, "doorlight");
+		p.initialize();
+		view.insertStatic(p);
 	}
 
 	/* mapId <= 0 means private maps with no other users */
@@ -264,6 +265,11 @@ function loadMap(mapId)
 		playerList[e.id].cutsceneId = 0; 
 		playerList[e.id].display_name = "Bob";
 		playerList[e.id].addClothing("defaulthair");
+
+		// show a light at the entrance
+		p = new mapObject(63, 128, "doorlight");
+		p.initialize();
+		view.insertStatic(p);
 	}
 
 	else if (mapId == -2)
@@ -279,6 +285,11 @@ function loadMap(mapId)
 		playerList[e.id].cutsceneId = 2; 
 		playerList[e.id].display_name = "Kraven";
 		playerList[e.id].addClothing("defaulthair");
+
+		// show a light at the entrance
+		p = new mapObject(63, 128, "doorlight");
+		p.initialize();
+		view.insertStatic(p);
 	}
 	// first floor of castle
 	else if (mapId == -3)
@@ -298,6 +309,11 @@ function loadMap(mapId)
 		playerList[e.id].cutsceneId = 5;  
 		playerList[e.id].display_name = "King";
 		playerList[e.id].addClothing("defaulthair");
+
+		// show a light at the entrance
+		p = new mapObject(127, 192, "doorlight");
+		p.initialize();
+		view.insertStatic(p);
 	}
 	// second floor of castle
 	else if (mapId == -4)
