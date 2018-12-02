@@ -175,6 +175,7 @@ exports.Entity.prototype.move = function(x_direction, y_direction)
 		// check if the character moves along the x-axis
 		if(typeof(maps[this.mapId][Math.floor((this.y - (this.height)) / gridSize)]) === 'undefined'
 			|| typeof(maps[this.mapId][Math.floor((this.y - (this.height)) / gridSize)][Math.floor((this.x + this.x_speed + (Math.sign(this.x_speed) * this.width / 2)) / gridSize)]) === 'undefined'
+			|| typeof(maps[this.mapId][Math.floor(this.y / gridSize)]) === 'undefined'
 			|| typeof(maps[this.mapId][Math.floor(this.y / gridSize)][Math.floor((this.x + this.x_speed + (Math.sign(this.x_speed) * this.width / 2)) / gridSize)]) === 'undefined')
 		{
 			//this.x = Math.ceil((this.x + this.x_speed - (this.width / 2))

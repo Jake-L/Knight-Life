@@ -143,6 +143,11 @@ initializeCutscene[5] = function(cutscene)
 	}
 }
 
+initializeCutscene[6] = function(cutscene)
+{
+	cutscene.text = "So you are what passes for a soldier these days? Pathetic.";
+};
+
 // holds items, and provides an interface to use them
 function Cutscene(cutsceneId)
 {

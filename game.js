@@ -214,7 +214,7 @@ function loadMap(mapId)
 		portalList[2] = new Portal(454, 260, 20, 20, -2, 64, 127, "Up");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
 		// create door to enter castle
-		portalList[3] = new Portal(136, 164, 20, 20, -3, 127, 127, "Up");
+		portalList[3] = new Portal(136, 164, 20, 20, -3, 127, 191, "Up");
 
 		for (var i = 0; i < 10; i++)
 		{
@@ -280,15 +280,17 @@ function loadMap(mapId)
 		playerList[e.id].display_name = "Kraven";
 		playerList[e.id].addClothing("defaulthair");
 	}
-
+	// first floor of castle
 	else if (mapId == -3)
 	{
-		console.log("generating map-3")
 		audio = new Audio("audio//track2.mp3");
 		// create portal to grass world
-		portalList[0] = new Portal(127, 127, 20, 20, 0, 136, 164, "Down");
+		portalList[0] = new Portal(127, 192, 20, 20, 0, 136, 164, "Down");
+		// create portal to floor 2
+		portalList[1] = new Portal(32, 16, 16, 64, -4, 32, 176, "Up");
+		portalList[2] = new Portal(224, 16, 16, 64, -4, 224, 176, "Up");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
-		var e = new Entity(64, 32, "player", -3);
+		var e = new Entity(128, 96, "player", -3);
 		e.id = "-3king";
 		playerList[e.id] = e; 
 		playerList[e.id].targetType = "Passive"; 
@@ -296,6 +298,23 @@ function loadMap(mapId)
 		playerList[e.id].cutsceneId = 5;  
 		playerList[e.id].display_name = "King";
 		playerList[e.id].addClothing("defaulthair");
+	}
+	// second floor of castle
+	else if (mapId == -4)
+	{
+		audio = new Audio("audio//track2.mp3");
+		// create portal to floor 1
+		portalList[0] = new Portal(32, 192, 16, 64, -3, 32, 16, "Down");
+		portalList[1] = new Portal(224, 192, 16, 64, -3, 224, 16, "Down");
+		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
+		var e = new Entity(64, 32, "player", -4);
+		e.id = "-4knight1";
+		playerList[e.id] = e; 
+		playerList[e.id].targetType = "Passive"; 
+		playerList[e.id].allyState = "Ally";
+		playerList[e.id].cutsceneId = 6;  
+		playerList[e.id].display_name = "Arnold";
+		playerList[e.id].addClothing("knighthelmet");
 	}
 
 	frameTime = new Date().getTime(); // reset update frame timer

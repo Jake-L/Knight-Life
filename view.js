@@ -12,7 +12,7 @@ var View = function()
 
 	this.loadBackgroundSprite = function()
 	{
-		const backgroundNames = ["grass1", "grass2", "grass1top", "snow1", "snow1top", "loghouseinside", "cobblestonefloor"];
+		const backgroundNames = ["grass1", "grass2", "grass1top", "snow1", "snow1top", "loghouseinside", "cobblestonefloor", "stairsleft", "stairs", "stairsright", "stairsdown", "stairsdownleft", "stairsdownright"];
 
 		for (let i in backgroundNames)
 		{	
