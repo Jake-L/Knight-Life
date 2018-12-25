@@ -52,7 +52,7 @@ initializeCutscene[1] = function(cutscene)
 	else if (player.inventory.getItem("apple").quantity > 0)
 	{
 		cutscene.text = "Wow, you actually brought me an apple, thanks so much!";
-		player.inventory.removeItem({name: "apple", quantity: 1});
+		cutscene.removeItem = {name: "apple", quantity: 1};
 		quests[1001].conversationCompleted(cutscene.cutsceneId);
 	}
 	else
@@ -75,7 +75,7 @@ initializeCutscene[2] = function(cutscene)
 	else if (player.inventory.getItem("crystal").quantity >= 5)
 	{
 		cutscene.text = "Thanks for the crystals! Maybe these will win my ex-wife back...";
-		player.inventory.removeItem({name: "crystal", quantity: 5});
+		cutscene.removeItem = {name: "crystal", quantity: 5};
 		quests[1002].conversationCompleted(cutscene.cutsceneId);
 	}
 	else
@@ -134,19 +134,55 @@ initializeCutscene[5] = function(cutscene)
 	else if (player.inventory.getItem("ring").quantity > 0)
 	{
 		cutscene.text = "You have managed to return my ring! I made a good choice sending you on this mission.";
-		player.inventory.removeItem({name: "ring", quantity: 1});
+		cutscene.removeItem = {name: "ring", quantity: 1};
 		quests[1004].conversationCompleted(cutscene.cutsceneId);
 	}
 	else
 	{
 		cutscene.text = "What are you waiting for? Go find my ring at once!";
 	}
-}
+};
 
 initializeCutscene[6] = function(cutscene)
 {
 	cutscene.text = "So you are what passes for a soldier these days? Pathetic.";
 };
+
+initializeCutscene[7] = function(cutscene)
+{
+	if (typeof(completedQuests[1005]) !== 'undefined')
+	{
+		cutscene.text = "Thanks for delivering that letter, I'll let you know when I have more for you to deliver.";
+	}
+	else if (typeof(quests[1005]) === 'undefined')
+	{
+		cutscene.text = "I'm swimming in mail here, do you think you could deliver a letter for me?";
+		cutscene.addQuest = 1005;
+		cutscene.addItem = {name: "arthurletter", quantity: 1};
+	}
+	else
+	{
+		cutscene.text = "No hurry to deliver that letter, don't want raise people's expectations of their mailmen.";
+	}
+};
+
+initializeCutscene[8] = function(cutscene)
+{
+	if (typeof(completedQuests[1005]) !== 'undefined')
+	{
+		cutscene.text = "Thanks again for delivering that letter. I still haven't found the time to write back to my mom.";
+	}
+	else if (player.inventory.getItem("arthurletter").quantity > 0)
+	{
+		cutscene.text = "What's this? A letter from my mother? And she included some money! I don't need any of it, why don't you take it for your trouble?";
+		cutscene.removeItem = {name: "arthurletter", quantity: 1};
+		quests[1005].conversationCompleted(cutscene.cutsceneId);
+	}
+	else
+	{
+		cutscene.text = "Hello friend, I'd love to stay and chat but I really must be going.";
+	}
+}
 
 // holds items, and provides an interface to use them
 function Cutscene(cutsceneId)
@@ -184,11 +220,11 @@ Cutscene.prototype.update = function()
 			{
 				if (this.removeItem != null)
 				{
-					this.removeItem;
+					player.inventory.removeItem(this.removeItem);
 				}
 				if (this.addItem != null)
 				{
-					this.addItem;
+					player.inventory.addItem(this.addItem);
 				}
 				if (this.addQuest != null)
 				{

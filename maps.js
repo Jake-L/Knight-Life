@@ -8,6 +8,7 @@
     maps[-2] = new Array(8);
     maps[-3] = new Array(12);
     maps[-4] = new Array(12);
+    maps[-5] = new Array(8);
     
     row = new Array(64).fill("grass1");
     maps[0].fill(row);
@@ -75,6 +76,10 @@
     {
         maps[-3][i] = row;
     }
+
+    // create mail room of castle
+    row = new Array(8).fill("cobblestonefloor");
+    maps[-5].fill(row);
     
     // push empty rows for the sky at the top of the map
     row = new Array(64);
@@ -82,7 +87,6 @@
     maps[0][1] = row
     maps[1][0] = row;
     maps[1][1] = row;
-
 
     exports.maps = maps;
     exports.gridSize = 16;

@@ -473,12 +473,15 @@ var View = function()
 			for (var j in selection.reward.items)
 			{
 				var row = document.createElement("tr");
+				table.appendChild(row);
 				var cell = document.createElement("td");
+				row.appendChild(cell);
+				var img = document.createElement("img");
 				var item = selection.reward.items[j];
-				cell.appendChild(item.sprite);
+				img.src = itemDetail[item.name].sprite.src;
+				cell.appendChild(img);
 				var textNode = document.createTextNode(item.name + " x" + item.quantity);
 				cell.appendChild(textNode);
-				row.appendChild(cell);
 			}
 		}
 		else if (type == "Leaderboards")

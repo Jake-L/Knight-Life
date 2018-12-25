@@ -72,6 +72,12 @@ initializeObjective[1004] = function(Objective){
 	Objective.name = "Recover the Ring";
 }
 
+initializeObjective[1005] = function(Objective){
+	Objective.tracker[0] = [{objectiveType: "cutscene", counter: 0, required: 1, description: "Deliver the letter to Arthur", id: 8}];
+	Objective.reward = {xp: 100, items: [{name: "money", quantity: 100}]};
+	Objective.name = "Mail Delivery";
+}
+
 // create the objectives class
 function Objective(id)
 {

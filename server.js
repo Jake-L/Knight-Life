@@ -99,21 +99,27 @@ function initializeMap()
 		mapEntities[0][i] = new CPU(0, 0, "player", i, i+1, 0);   
 	}
 
-	var e = new CPU(0, 0, "player", "garymap0", 6, 0)
+	var e = new CPU(0, 0, "player", "0Gary", 6, 0)
 	e.entity.targetType = "Aggressive"; 
 	e.entity.display_name = "Gary"; 
 	mapEntities[0][e.entity.id] = e;
 
-	var e  = new CPU(0, 0, "player", "0p1", 1, 0);
+	var e  = new CPU(0, 0, "player", "0Brian", 1, 0);
 	e.entity.targetType = "Passive"; 
 	e.entity.cutsceneId = 1; 
 	e.entity.display_name = "Brian"; 
 	mapEntities[0][e.entity.id] = e;
 
-	var e  = new CPU(0, 0, "salesman", "0p2", 1, 0);
+	var e  = new CPU(0, 0, "salesman", "0Patch", 1, 0);
 	e.entity.targetType = "Passive"; 
 	e.entity.cutsceneId = 4; 
 	e.entity.display_name = "Patch"; 
+	mapEntities[0][e.entity.id] = e;
+
+	var e  = new CPU(0, 0, "player", "0Arthur", 3, 0);
+	e.entity.targetType = "Passive"; 
+	e.entity.cutsceneId = 8; 
+	e.entity.display_name = "Arthur"; 
 	mapEntities[0][e.entity.id] = e;
 
 	var n = mapEntities[0].length;

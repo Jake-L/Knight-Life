@@ -322,6 +322,8 @@ function loadMap(mapId)
 		// create portal to floor 1
 		portalList[0] = new Portal(32, 192, 16, 64, -3, 32, 16, "Down");
 		portalList[1] = new Portal(224, 192, 16, 64, -3, 224, 16, "Down");
+		// create portal to mail room
+		portalList[2] = new Portal(32, 16, 16, 16, -5, 63, 127, "Up");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
 		var e = new Entity(64, 32, "player", -4);
 		e.id = "-4knight1";
@@ -331,6 +333,30 @@ function loadMap(mapId)
 		playerList[e.id].cutsceneId = 6;  
 		playerList[e.id].display_name = "Arnold";
 		playerList[e.id].addClothing("knighthelmet");
+		// show a door to the mailroom
+		p = new mapObject(32, 0, "castledoor");
+		p.initialize();
+		view.insertStatic(p);
+	}
+	// mail room in castle
+	else if (mapId == -5)
+	{
+		audio = new Audio("audio//track2.mp3");
+		// create portal to floor 2
+		portalList[0] = new Portal(63, 127, 16, 16, -4, 32, 16, "Down");
+		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
+		var e = new Entity(64, 32, "player", -4);
+		e.id = "-5newton";
+		playerList[e.id] = e; 
+		playerList[e.id].targetType = "Passive"; 
+		playerList[e.id].allyState = "Ally";
+		playerList[e.id].cutsceneId = 7;  
+		playerList[e.id].display_name = "Newton";
+		playerList[e.id].addClothing("defaulthair");
+		// show a light at the entrance
+		p = new mapObject(63, 128, "doorlight");
+		p.initialize();
+		view.insertStatic(p);
 	}
 
 	frameTime = new Date().getTime(); // reset update frame timer
@@ -1217,6 +1243,7 @@ function addQuest(id)
 	{
 		quests[id] = new Objective(id);
 		notificationList.push(new Notification("Quest received!","You received the quest " + quests[id].name))
+		updateDisplayWindow();
 	}
 	else
 	{
@@ -1375,7 +1402,6 @@ function updateDisplayWindow()
 {
 	if (displayWindow != null)
 	{
-		console.log("refresh");
 		view.renderOptions(displayWindow);
 	}
 }
