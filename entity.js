@@ -173,10 +173,13 @@ exports.Entity.prototype.move = function(x_direction, y_direction)
 		console.log(this.x_speed. this.y_speed);*/
 
 		// check if the character moves along the x-axis
-		if(typeof(maps[this.mapId][Math.floor((this.y - (this.height)) / gridSize)]) === 'undefined'
-			|| typeof(maps[this.mapId][Math.floor((this.y - (this.height)) / gridSize)][Math.floor((this.x + this.x_speed + (Math.sign(this.x_speed) * this.width / 2)) / gridSize)]) === 'undefined'
-			|| typeof(maps[this.mapId][Math.floor(this.y / gridSize)]) === 'undefined'
-			|| typeof(maps[this.mapId][Math.floor(this.y / gridSize)][Math.floor((this.x + this.x_speed + (Math.sign(this.x_speed) * this.width / 2)) / gridSize)]) === 'undefined')
+		var x_check = Math.floor((this.x + this.x_speed + (Math.sign(this.x_speed) * this.width / 2)) / gridSize);
+		if(maps[this.mapId].length <= Math.floor((this.y - (this.height)) / gridSize)
+			|| typeof(maps[this.mapId][Math.floor((this.y - (this.height)) / gridSize)][x_check]) === 'undefined'
+			|| maps[this.mapId][Math.floor((this.y - (this.height)) / gridSize)][x_check].includes("Wall")
+			|| maps[this.mapId].length <= Math.floor(this.y / gridSize)
+			|| typeof(maps[this.mapId][Math.floor(this.y / gridSize)][x_check]) === 'undefined'
+			|| maps[this.mapId][Math.floor(this.y / gridSize)][x_check].includes("Wall"))
 		{
 			//this.x = Math.ceil((this.x + this.x_speed - (this.width / 2))
 			this.x_speed = 0;
@@ -189,12 +192,14 @@ exports.Entity.prototype.move = function(x_direction, y_direction)
 		}
 		else if (this.y_speed < 0)
 		{
-			var y_check = Math.floor((this.y + this.y_speed - this.height) / gridSize)
+			var y_check = Math.floor((this.y + this.y_speed - this.height) / gridSize);
 		}
-		
+
 		if (typeof(maps[this.mapId][y_check]) === 'undefined'
 			|| typeof(maps[this.mapId][y_check][Math.floor((this.x + (this.width / 2)) / gridSize)]) === 'undefined'
-			|| typeof(maps[this.mapId][y_check][Math.floor((this.x - (this.width / 2)) / gridSize)]) === 'undefined')
+			|| maps[this.mapId][y_check][Math.floor((this.x + (this.width / 2)) / gridSize)].includes("Wall")
+			|| typeof(maps[this.mapId][y_check][Math.floor((this.x - (this.width / 2)) / gridSize)]) === 'undefined'
+			|| maps[this.mapId][y_check][Math.floor((this.x - (this.width / 2)) / gridSize)].includes("Wall"))
 		{
 			this.y_speed = 0;
 		}
@@ -589,17 +594,14 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 					if (e1.x < e2.x - (e2.width / 2))
 					{
 						this.x_speed = -1;
-						console.log("shifting player");
 					}
 					else if (e1.y - (e1.depth / 2) < e2.y - e2.depth)
 					{
 						this.y_speed = -1;
-						console.log("shifting player");
 					}
 					else if (e1.y - (e1.depth / 2) > e2.y)
 					{
 						this.y_speed = 1;
-						console.log("shifting player");
 					}
 				}
 			}

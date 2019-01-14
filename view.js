@@ -6,13 +6,22 @@ var View = function()
 	this.clickX;
 	this.clickY;
 	this.selection = -1;
+	this.backgroundColour = "#ADD8E6"
 
 	var weatherSprite = [];
 	var backgroundSprite = [];	
 
+	// cache the background sprites to improve performance
 	this.loadBackgroundSprite = function()
 	{
-		const backgroundNames = ["grass1", "grass2", "grass1top", "snow1", "snow1top", "loghouseinside", "cobblestonefloor", "stairsleft", "stairs", "stairsright", "stairsdown", "stairsdownleft", "stairsdownright"];
+		const backgroundNames = [
+			"grass1", "grass2", "grass1top", "snow1", "snow1top", "loghouseinside",
+			"cobblestonefloor", "stairsleft", "stairs", "stairsright", "stairsdown", 
+			"stairsdownleft", "stairsdownright", "dirtground", "dungeonstairs",
+			"rockWallTop", "rockWallLeft", "rockWallMid", "rockWallRight", "rockWallBot",
+			"dirtPathLeft", "dirtPathMid", "dirtPathRight", "dirtPathTop", 
+			"dirtPathBot", "dirtPathTopRightInner", "dirtPathBotLeftOuter"
+		];
 
 		for (let i in backgroundNames)
 		{	
@@ -228,11 +237,21 @@ var View = function()
 				weatherSprite[i].src = "img//snowfall" + i + ".png";
 			}
 		}
+
+		if (["da0", -3, -4, -5].includes(mapId))
+		{
+			this.backgroundColour = "#999993"
+		}
+		else
+		{
+			this.backgroundColour = "#ADD8E6"
+		}
 	}
 
 	//displays the background image
 	this.renderBackground = function()
 	{
+		context.fillStyle = this.backgroundColour;
 		context.fillRect(0, 0, width, height);
 
 		const x_counter = Math.ceil(Math.min(((width / graphics_scaling) / gridSize) + 1, maps[player.entity.mapId][0].length));
@@ -249,7 +268,8 @@ var View = function()
 			for (j = 0; j < y_counter; j++)
 			{
 				// draw the usual background rectangle
-				if (typeof(maps[player.entity.mapId][j + grid_y_offset][i + grid_x_offset]) !== 'undefined')
+				if (maps[player.entity.mapId].length > j + grid_y_offset
+					&& typeof(maps[player.entity.mapId][j + grid_y_offset][i + grid_x_offset]) !== 'undefined')
 				{
 					context.drawImage(
 						backgroundSprite[maps[player.entity.mapId][j + grid_y_offset][i + grid_x_offset]],

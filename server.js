@@ -45,6 +45,25 @@ server.listen(5000, function() {
 			});
 		}
 	});
+
+	// create the saves directory if it does not exist
+	fs.exists('saves', function(exists)
+	{
+		if (exists == false)
+		{
+			fs.mkdir('saves', function(err) 
+			{
+				if (err)
+				{
+					console.log("unable to create saves folder");
+				}
+				else
+				{
+					console.log("saves folder created successfully!");
+				}
+			});
+		}
+	});
 });
 
 // other shared variables
@@ -140,6 +159,7 @@ function initializeMap()
 	mapObjects[1].push(new mapObject(200,500,"snowtreestump"));
 	mapObjects[1].push(new mapObject(600,150,"snowtreestump"));
 	mapObjects[1].push(new mapObject(400,500,"snowhouse"));
+	mapObjects[1].push(new mapObject(600,600,"snowhouse"));
 
 	// spawn icemen
 	for (var i = 0; i < 3; i++)
@@ -176,6 +196,14 @@ function initializeMap()
 	mapEntities[2]["iceboss"].entity.faction = "iceman";
 	mapEntities[2]["iceboss"].entity.display_name = "Frostbite";
 	//mapEntities[2]["iceboss"].entity.targetType = "Aggressive";
+
+	// load first dungeon
+	for (var i = 0; i < 3; i++)
+	{
+		mapEntities["da0"][i] = new CPU(0, 0, "iceman", i, 10, "da0");
+		mapEntities["da0"][i].entity.faction = "iceman";
+		mapEntities["da0"][i].entity.targetType = "Aggressive";
+	}
 
 	// ALL MAPS
 	// set dimensions of map objects for each mapId
@@ -1054,7 +1082,6 @@ global.Projectile = function(x, y, z, x_speed, y_speed, z_speed, source, update_
 	};
 };
 
-
 function Item(name, quantity, x, y)
 {
 	this.name = name;
@@ -1251,7 +1278,7 @@ io.on('connection', function(socket)
 	{
 		if (player != null)
 		{
-			if (player.mapId >= 0)
+			if (!(player.mapId < 0))
 			{
 				// set the player's ID to be it's socket ID
 				player.id = socket.id;

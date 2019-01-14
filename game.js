@@ -15,7 +15,6 @@ context.webkitImageSmoothingEnabled = false;
 context.mozImageSmoothingEnabled = false;
 context.imageSmoothingEnabled = false;
 var graphics_scaling = Math.ceil(Math.min(height,width)/250);
-console.log(graphics_scaling);
 var pixelWidth = Math.ceil(width / graphics_scaling);
 var pixelHeight = Math.ceil(height / graphics_scaling);
 var x_offset = 0;
@@ -166,8 +165,10 @@ window.onload = function()
 function respawn()
 {
 	var oldPlayer = player;
-	if (oldPlayer.entity.mapId == 2)
+	console.log((oldPlayer.entity.mapId + " ").substr(0,2));
+	if (oldPlayer.entity.mapId == 2 || (oldPlayer.entity.mapId + " ").substr(0,2) == "da")
 	{
+		view.clear();
 		loadMap(1);
 		player = new Player(1);
 	}
@@ -175,7 +176,7 @@ function respawn()
 	{
 		player = new Player(oldPlayer.entity.mapId);
 	}
-	
+
 	player.entity.setLevel(oldPlayer.entity.lvl);
 	player.entity.xp = oldPlayer.entity.xp;
 	player.inventory = oldPlayer.inventory;
@@ -192,7 +193,6 @@ function loadMap(mapId)
 	flyTextList = [];
 
 	view.loadMap(mapId);
-	// clear any entities or map objects from the previous map
 	mapObjects = {};
 	playerList = {};
 	projectileList = [];
@@ -234,6 +234,8 @@ function loadMap(mapId)
 		portalList[0] = new Portal(8, 300, 20, 20, 0, 990, 300, "Left");
 		// create portal to ice cave
 		portalList[1] = new Portal(404, 510, 20, 20, 2, 64, 127, "Up");
+		// create portal to dungeon
+		portalList[2] = new Portal(604, 610, 20, 20, "da0", 64, 127, "Up");
 		var p = new mapObject(portalList[0].x, portalList[0].y + 8, "grassportal");
 		p.initialize();
 		view.insertStatic(p);
@@ -559,7 +561,7 @@ function step()
 			updateNearbyObjectsTimer = new Date().getTime() + 500;
 		}
 		update();
-		if (player.entity.mapId >= 0)
+		if (!(player.entity.mapId < 0))
 		{
 			socket.emit('movement', player.entity); //send new location to server
 		}
@@ -567,7 +569,6 @@ function step()
 		ucounter += 1;
 		
 	}
-	context.fillStyle = "#ADD8E6";
 
   	render();
 	rcounter += 1;
@@ -716,6 +717,7 @@ var update = function()
 				if (portalList[i].collisionCheck(player.entity))
 				{
 					console.log("moving to map " + portalList[i].destination_mapId)
+					// clear any map objects from the old map
 					view.clear();
 					player.entity.x = portalList[i].destination_x;
 					player.entity.y = portalList[i].destination_y;
@@ -723,10 +725,8 @@ var update = function()
 					player.entity.nearbyObjects = [];
 					loadMap(portalList[i].destination_mapId);
 					player.portalCounter = 30;
-					if (player.entity.mapId < 0)
-					{
-						socket.emit('movement', player.entity); //send new location to server
-					}
+					//send new location to server even if traveling to private map
+					socket.emit('movement', player.entity); 
 					break;
 				}
 			}
@@ -858,7 +858,7 @@ var update = function()
 //initialize the player
 function Player(mapId)
 {
-  	this.entity = new Entity(100,100,"player",mapId);
+	this.entity = new Entity(100,100,"player",mapId);
 	this.entity.initialize();
 	this.entity.allyState = "Player";
 	this.entity.updateSprite();
@@ -1416,7 +1416,7 @@ function setScreenSize(event)
 	context.webkitImageSmoothingEnabled = false;
 	context.mozImageSmoothingEnabled = false;
 	context.imageSmoothingEnabled = false;
-  	graphics_scaling = Math.ceil(Math.min(height,width)/250);
+	graphics_scaling = Math.ceil(Math.min(height,width)/250);
 	pixelWidth = Math.ceil(width / graphics_scaling);
 	pixelHeight = Math.ceil(height / graphics_scaling);
 };
@@ -1442,7 +1442,7 @@ function playSoundEffect(path)
 
 socket.on('mapObjects', function(a)
 {
-	if (player.entity.mapId >= 0)
+	if (!(player.entity.mapId < 0))
 	{
 		mapObjects = {};
 
@@ -1578,7 +1578,7 @@ socket.on('itemreceived', function(item)
 
 socket.on('viewOnly', function(p, items)
 {
-	if (player.entity.mapId >= 0)
+	if (!(player.entity.mapId < 0))
 	{
 		var array = [];
 
@@ -1707,4 +1707,3 @@ socket.on('leaderboards', function(l)
 {
 	leaderboards = l;
 });
-
