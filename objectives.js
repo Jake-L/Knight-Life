@@ -174,8 +174,6 @@ Objective.prototype.enemyDefeated = function(entity)
 
 Objective.prototype.conversationCompleted = function(id)
 {
-	console.log("id = "  + id);
-	console.log(this.tracker);
 	for (var i in this.tracker[0])
 	{
 		if (this.tracker[0][i].objectiveType == "cutscene" && this.tracker[0][i].id == id)

@@ -1157,8 +1157,6 @@ function checkDamage()
 
 						// track most recent attackers
 						addKillParticipation(connected[mapId][j].id, damageList[mapId][i].source, mapId);
-
-						//console.log(connected[mapId][j].display_name + " took " + damageList[mapId][i].damage + " damage");
 					}
 				}
 
@@ -1175,8 +1173,6 @@ function checkDamage()
 
 						// track most recent attackers
 						addKillParticipation(mapEntities[mapId][j].entity.id, damageList[mapId][i].source, mapId);
-
-						//console.log(mapEntities[mapId][j].entity.display_name + mapEntities[mapId][j].entity.id + " took " + damageList[mapId][i].damage + " damage");
 					}
 				}
 
@@ -1220,7 +1216,6 @@ function checkDamage()
 							// track most recent attackers
 							addKillParticipation(connected[mapId][j].id, projectileList[mapId][i].source, mapId);
 
-							//console.log(connected[mapId][j].display_name + " took " + projectileList[mapId][i].damage + " damage");
 							dmg = true;
 						}
 					}
@@ -1239,7 +1234,6 @@ function checkDamage()
 							// track most recent attackers
 							addKillParticipation(mapEntities[mapId][j].entity.id, projectileList[mapId][i].source, mapId);
 
-							//console.log(mapEntities[mapId][j].entity.display_name + mapEntities[mapId][j].entity.id + " took " + projectileList[mapId][i].damage + " damage");
 							dmg = true;
 						}
 					}

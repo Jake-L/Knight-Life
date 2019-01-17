@@ -112,7 +112,6 @@ exports.Entity.prototype.updateStats = function()
 
 	for (var i in this.clothing)
 	{
-		//console.log(itemDetail[this.clothing[i].name]);
 		if (typeof(itemDetail[this.clothing[i].name]) !== 'undefined')
 		{
 			this.defence += itemDetail[this.clothing[i].name].defence;
@@ -242,7 +241,7 @@ exports.Entity.prototype.render = function()
 
 	if (this.sprite.complete && this.sprite.naturalHeight !== 0)
 	{
-		
+		// set up the image's shadow, which will be drawn automatically when the image is rendered
 		context.save();
 		context.shadowColor = "rgba(80, 80, 80, .4)";
 		context.shadowBlur = 15 + this.z;
@@ -256,6 +255,7 @@ exports.Entity.prototype.render = function()
 			this.height = this.sprite.height / 2;
 		}
 
+		// draw the sprite and it's shadow
 		context.drawImage(
 			this.sprite,
 			(this.x - (this.sprite.width/2) - x_offset) * graphics_scaling,
@@ -264,7 +264,6 @@ exports.Entity.prototype.render = function()
 			this.sprite.height * graphics_scaling);
 		context.restore();
 	}
-
 
 	// if they are facing up render their weapons first, otherwise render their clothing first
 	if (this.direction == "Up")
@@ -307,16 +306,11 @@ exports.Entity.prototype.render = function()
 			}
 		}
 	}
-
-
 };
 
 // display the entities current weapon
 exports.Entity.prototype.renderWeapon = function(attack_name, weapon_name)
 {
-	var x;
-	var y;
-
 	if (typeof(weaponSprite[weapon_name]) !== "undefined" && weaponSprite[weapon_name][getDirNum(this.direction)][0].complete)
 	{
 		var n = Math.floor((this.attacks[this.current_attack].frame_length - this.attack_counter) / (this.attacks[this.current_attack].frame_length / playerAttackSprite[this.spriteName][attack_name][0].length)) % playerAttackSprite[this.spriteName][attack_name][0].length;
@@ -351,7 +345,6 @@ exports.Entity.prototype.renderWeapon = function(attack_name, weapon_name)
 // set the colour for an entity's nameplate or map icon
 exports.Entity.prototype.setColour = function()
 {
-	// display the coloured text
 	if (this.allyState == "Player")
 	{
 		context.fillStyle = "#1E90FF";
@@ -375,7 +368,7 @@ exports.Entity.prototype.renderHealthBar = function()
 {
 	if (this.healthBarHeight == 0)
 	{
-		// setting the height once prevents the health bar from jumping around if the height changes during animations
+		// only setting the height once prevents the health bar from jumping around if the height changes during animations
 		this.healthBarHeight = this.sprite.height;
 
 		for (var i in this.clothing)
@@ -442,7 +435,6 @@ exports.Entity.prototype.updateSprite = function()
 {
 	var frame = 0;
 
-	//this.sprite = new Image();
 	if (this.attack_counter > 0 && this.current_attack >= 0)
 	{
 		frame = Math.floor((this.attacks[this.current_attack].frame_length - this.attack_counter) / (this.attacks[this.current_attack].frame_length / playerAttackSprite[this.spriteName][this.attacks[this.current_attack].name][getDirNum(this.direction)].length));
@@ -574,11 +566,6 @@ exports.Entity.prototype.collisionCheckAux = function(e1, e2)
 	{
 		var x_overlap = Math.min(Math.abs(e1.x + (e1.width/2) - (e2.x - (e2.width / 2))), Math.abs(e1.x - (e1.width/2) - (e2.x + (e2.width / 2))));
 		var y_overlap = Math.min(Math.abs(e1.y - (e2.y - e2.depth)), Math.abs(e1.y - e1.depth - e2.y));
-
-		if(typeof(module) === 'undefined')
-		{
-			console.log(x_overlap, y_overlap);
-		}
 
 		if (y_overlap >= x_overlap)
 		{

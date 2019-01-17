@@ -1,22 +1,14 @@
-'use strict';
-
 // play background music
 var audio;
 var soundEffect = [];
 
 // create the graphics canvas
 var canvas = document.getElementById('canvas');
-var width = window.innerWidth;
-var height = window.innerHeight;
-canvas.width = width;
-canvas.height = height;
-var context = canvas.getContext('2d');
-context.webkitImageSmoothingEnabled = false;
-context.mozImageSmoothingEnabled = false;
-context.imageSmoothingEnabled = false;
-var graphics_scaling = Math.ceil(Math.min(height,width)/250);
-var pixelWidth = Math.ceil(width / graphics_scaling);
-var pixelHeight = Math.ceil(height / graphics_scaling);
+var width;
+var height;
+var context;
+var graphics_scaling;
+setScreenSize();
 var x_offset = 0;
 var y_offset = 0;
 
@@ -67,8 +59,6 @@ var username = "";
 var playerXP = 0;
 var minimapScale = 16;
 var displayWindow = null;
-
-var clickCounter = 0;
 
 var view = new View();
 
@@ -165,7 +155,6 @@ window.onload = function()
 function respawn()
 {
 	var oldPlayer = player;
-	console.log((oldPlayer.entity.mapId + " ").substr(0,2));
 	if (oldPlayer.entity.mapId == 2 || (oldPlayer.entity.mapId + " ").substr(0,2) == "da")
 	{
 		view.clear();
@@ -825,6 +814,7 @@ var update = function()
 	// animated footprints in the snow
 	if (updateCounter % 15 == 1)
 	{
+		// foot prints for other players and CPUs
 		for (var i in playerList)
 		{
 			if ((player.entity.mapId == 1 || playerList[i].faction == "iceman") && (playerList[i].x_speed != 0 || playerList[i].y_speed != 0))
@@ -833,14 +823,12 @@ var update = function()
 			}
 		}
 
+		// footprints for the user's player
 		if (player.entity.mapId == 1 && (player.entity.x_speed != 0 || player.entity.y_speed != 0))
 		{
 			player.entity.createFootPrint();
 		}
 	}
-
-	// adds a delay to prevent instant double clicking
-	clickCounter++;
 
 	// update visual effects
 	for (var i in effects)
@@ -851,7 +839,6 @@ var update = function()
 			effects.splice(i,1); // delete effect if it's animation has ended
 		}
 	}
-
 };
 
 
@@ -943,18 +930,19 @@ function renderSortAux(e1, e2)
 	}
 }
 
-//event listeners for the keyboard
+// keep track of which keys are pressed
 var keysDown = {};
 
+//event listeners for the keyboard
 window.addEventListener("keydown", function(event)
 {
-  keysDown[event.keyCode] = true;
+	keysDown[event.keyCode] = true;
 }
 );
 
 window.addEventListener("keyup", function(event)
 {
-  delete keysDown[event.keyCode];
+	delete keysDown[event.keyCode];
 }
 );
 
@@ -1136,8 +1124,8 @@ function Notification(header, body)
 	this.header = header;
 	this.body = body.split(';');
 	this.counter = 300;
-	this.x = pixelWidth / 2;
-	this.y = pixelHeight;
+	this.x = Math.ceil((width / graphics_scaling) / 2);
+	this.y = Math.ceil(height / graphics_scaling);
 
 	this.update = function()
 	{
@@ -1417,8 +1405,6 @@ function setScreenSize(event)
 	context.mozImageSmoothingEnabled = false;
 	context.imageSmoothingEnabled = false;
 	graphics_scaling = Math.ceil(Math.min(height,width)/250);
-	pixelWidth = Math.ceil(width / graphics_scaling);
-	pixelHeight = Math.ceil(height / graphics_scaling);
 };
 
 function playSoundEffect(path)
@@ -1570,7 +1556,6 @@ socket.on('xpgain', function(xp, entity)
 
 socket.on('itemreceived', function(item)
 {
-	console.log(item);
 	player.inventory.addItem(item);
 });
 

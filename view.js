@@ -3,8 +3,6 @@ var View = function()
 	this.renderList = [];
 	this.staticCounter = 0;
 	this.referenceList = [];
-	this.clickX;
-	this.clickY;
 	this.selection = -1;
 	this.backgroundColour = "#ADD8E6"
 
@@ -108,7 +106,6 @@ var View = function()
 			}
 			else if (sortedIndexList[i].type == "player")
 			{
-				//player.entity.updateSprite();
 				player.entity.render();
 			}
 		}
@@ -124,9 +121,6 @@ var View = function()
 		}
 
 		player.entity.renderHealthBar();
-
-		this.clickX = null;
-		this.clickY = null;
 	}
 
 	this.renderAux = function(e)
@@ -238,6 +232,7 @@ var View = function()
 			}
 		}
 
+		// set a different background colour based on the map
 		if (["da0", -3, -4, -5].includes(mapId))
 		{
 			this.backgroundColour = "#999993"
@@ -286,11 +281,11 @@ var View = function()
 	// check the offset used for screen scrolling
 	this.get_offset = function()
 	{
-		var left_offset = player.entity.x - (pixelWidth / 2);
-		var right_offset = player.entity.x + (pixelWidth / 2);
+		var left_offset = player.entity.x - (Math.ceil(width / graphics_scaling) / 2);
+		var right_offset = player.entity.x + (Math.ceil(width / graphics_scaling) / 2);
 
 		// if the map doesn't fill the whole screen, center it
-		if (maps[player.entity.mapId][0].length * gridSize <= pixelWidth)
+		if (maps[player.entity.mapId][0].length * gridSize <= width / graphics_scaling)
 		{
 			x_offset = ((maps[player.entity.mapId][0].length * gridSize) - (width / graphics_scaling)) / 2;
 		}
@@ -301,18 +296,18 @@ var View = function()
 		}
 		else if (left_offset > 0 && right_offset >= maps[player.entity.mapId][0].length * gridSize)
 		{
-			x_offset = maps[player.entity.mapId][0].length * gridSize - pixelWidth;
+			x_offset = maps[player.entity.mapId][0].length * gridSize - Math.ceil(width / graphics_scaling);
 		}
 		else
 		{
 			x_offset = 0;
 		}
 
-		var top_offset = player.entity.y - (pixelHeight / 2);
-		var bot_offset = player.entity.y + (pixelHeight / 2);
+		var top_offset = player.entity.y - (Math.ceil(height / graphics_scaling) / 2);
+		var bot_offset = player.entity.y + (Math.ceil(height / graphics_scaling) / 2);
 
 		// if the map doesn't fill the whole screen, center it
-		if (maps[player.entity.mapId].length * gridSize <= pixelHeight)
+		if (maps[player.entity.mapId].length * gridSize <= height / graphics_scaling)
 		{
 			y_offset = ((maps[player.entity.mapId].length * gridSize) - (height / graphics_scaling)) / 2;
 		}
@@ -322,7 +317,7 @@ var View = function()
 		}
 		else if (top_offset > 0 && bot_offset >= maps[player.entity.mapId].length * gridSize)
 		{
-			y_offset = maps[player.entity.mapId].length * gridSize - pixelHeight;
+			y_offset = maps[player.entity.mapId].length * gridSize - Math.ceil(height / graphics_scaling);
 		}
 		else
 		{
@@ -346,7 +341,7 @@ var View = function()
 				{
 					for (j = 0; j <= y_counter; j++)
 					{
-						// draw the usual background rectangle
+						// draw the weather sprite
 						context.drawImage(img,
 						((img.width * i) - (x_offset % img.width)) * graphics_scaling + Math.floor(((new Date().getTime() % (graphics_scaling * 100)) / 100) / graphics_scaling), //x position
 						((img.height * j) - (y_offset % img.height)) * graphics_scaling + Math.floor(((new Date().getTime() % (graphics_scaling * 100)) / 100) / graphics_scaling), //y position
@@ -361,23 +356,15 @@ var View = function()
 	this.renderText = function(text)
 	{
 		var x = 54 * graphics_scaling;
-		var y = (pixelHeight - 53) * graphics_scaling;
-		var w = (pixelWidth - (2 * 54)) * graphics_scaling;
+		var y = height - (53 * graphics_scaling);
+		var w = width - (2 * 54 * graphics_scaling);
 		var h = 52 * graphics_scaling;
-
-		//var pos_x = Math.min(Math.max(e.x - x_offset, x),x + w);
-		//var pos_y = e.y - y_offset;
 
 		// draw the textbox
 		context.fillStyle = "#FFFFFF";
 		context.fillRect(x, y, w, h);
-		/*context.beginPath();
-		context.moveTo(Math.max(pos_x - 30,x) * graphics_scaling, y * graphics_scaling);
-		context.lineTo(pos_x  * graphics_scaling, pos_y * graphics_scaling);
-		context.lineTo(Math.min(pos_x + 30,x + w) * graphics_scaling, y * graphics_scaling);
-		context.stroke();
-		context.fill();*/
 
+		//draw the border
 		context.lineWidth = graphics_scaling * 2;
 		context.strokeStyle = "#000000";
 		context.beginPath();		
@@ -694,7 +681,6 @@ var View = function()
 				//set onclick event
 				row.setAttribute("onclick", "cutscene.optionsResult(" + i + ")");
 			}
-
 		}
 
 		if (["Quests", "Achievements", "Leaderboards"].includes(type) && index != null)
