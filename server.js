@@ -203,6 +203,14 @@ function initializeMap()
 		mapEntities["da0"][i] = new CPU(0, 0, "iceman", i, 10, "da0");
 		mapEntities["da0"][i].entity.faction = "iceman";
 		mapEntities["da0"][i].entity.targetType = "Aggressive";
+
+		mapEntities["da1"][i] = new CPU(0, 0, "iceman", i, 11, "da1");
+		mapEntities["da1"][i].entity.faction = "iceman";
+		mapEntities["da1"][i].entity.targetType = "Aggressive";
+
+		mapEntities["da2"][i] = new CPU(0, 0, "iceman", i, 12, "da2");
+		mapEntities["da2"][i].entity.faction = "iceman";
+		mapEntities["da2"][i].entity.targetType = "Aggressive";
 	}
 
 	// ALL MAPS
@@ -243,10 +251,17 @@ function getSpawn(h, w, mapId)
 	while (c.x + c.y == 0 && count < 100)
 	{
 		c.x = Math.ceil(Math.random() * maps[mapId][0].length * gridSize);
-		c.y = Math.ceil((Math.random() * (maps[mapId].length * gridSize - (gridSize * 2) - h)) + (gridSize * 2) + (h/2));
+		c.y = Math.ceil(((Math.random() * (maps[mapId].length * gridSize - (gridSize * 2) - h)) + (gridSize * 2) + (h/2)));
 		count++;
 
 		var blocked = false;
+
+		// dont spawn CPUs inside of walls
+		if (maps[mapId].length < Math.round(c.y / gridSize)
+			|| maps[mapId][Math.round(c.y / gridSize)][Math.round(c.x / gridSize)].includes("Wall"))
+		{
+			blocked = true;
+		}
 
 		for (var i in connected[mapId])
 		{

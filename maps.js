@@ -3,27 +3,27 @@
 
     function generateDungeon(mapId, options)
     {
-        for (var i = 0; i < maps["da0"].length; i++)
+        for (var i = 0; i < maps[mapId].length; i++)
         {
-            maps["da0"][0][i] = "rockWallMid";
-            maps["da0"][31][i] = "rockWallMid";
-            maps["da0"][i][0] = "rockWallMid";
-            maps["da0"][i][31] = "rockWallMid";
+            maps[mapId][0][i] = "rockWallMid";
+            maps[mapId][31][i] = "rockWallMid";
+            maps[mapId][i][0] = "rockWallMid";
+            maps[mapId][i][31] = "rockWallMid";
         }
 
         // create the rock walls
-        for (var i = 1; i < maps["da0"][0].length - 1; i++)
+        for (var i = 1; i < maps[mapId][0].length - 1; i++)
         {
             // the rock wall at the top and bottom of the screen
-            maps["da0"][1][i] = "rockWallBot";
-            maps["da0"][30][i] = "rockWallTop";
+            maps[mapId][1][i] = "rockWallBot";
+            maps[mapId][30][i] = "rockWallTop";
         }
 
-        for (var i = 2; i < maps["da0"].length - 2; i++)
+        for (var i = 2; i < maps[mapId].length - 2; i++)
         {
             // the rock wall at the left and right of the screen
-            maps["da0"][i][1] = "rockWallRight";
-            maps["da0"][i][30] = "rockWallLeft";
+            maps[mapId][i][1] = "rockWallRight";
+            maps[mapId][i][30] = "rockWallLeft";
         }
     
         if (options.includes(1))
@@ -57,7 +57,7 @@
                 maps[mapId][i][19] = "rockWallRight";
             }
 
-            // the right part where the L angles upward
+            // adjust the corner of the L
             maps[mapId][20][18] = "rockWallMid";
             maps[mapId][20][19] = "rockWallRight";
             maps[mapId][21][19] = "rockWallRight";
@@ -65,6 +65,57 @@
 
             // the highest point of the L
             maps[mapId][15][18] = "rockWallTop";
+        }
+        if (options.includes(3))
+        {
+            // create a L shaped wall from the left
+            for (var i = 1; i <= 24; i++)
+            {
+                maps[mapId][10][i] = "rockWallTop";
+                maps[mapId][11][i] = "rockWallMid";
+                maps[mapId][12][i] = "rockWallBot";
+            }
+
+            for (var i = 11; i <= 21; i++)
+            {
+                maps[mapId][i][23] = "rockWallLeft";
+                maps[mapId][i][24] = "rockWallMid";
+                maps[mapId][i][25] = "rockWallRight";
+            }
+
+            // adjust the corner of the L
+            maps[mapId][11][23] = "rockWallMid";
+            maps[mapId][10][25] = "rockWallRight";
+            maps[mapId][12][23] = "rockWallBot";
+
+            maps[mapId][21][24] = "rockWallBot";
+        }
+        if (options.includes(4))
+        {
+            // create a L shaped wall from the left
+            for (var i = 7; i <= 17; i++)
+            {
+                maps[mapId][20][i] = "rockWallTop";
+                maps[mapId][21][i] = "rockWallMid";
+                maps[mapId][22][i] = "rockWallBot";
+            }
+
+            for (var i = 21; i <= 29; i++)
+            {
+                maps[mapId][i][15] = "rockWallLeft";
+                maps[mapId][i][16] = "rockWallMid";
+                maps[mapId][i][17] = "rockWallRight";
+            }
+
+            // adjust the corner of the L
+            maps[mapId][21][15] = "rockWallMid";
+            maps[mapId][20][17] = "rockWallRight";
+            maps[mapId][22][15] = "rockWallBot";
+
+            // create the left edge of the L
+            maps[mapId][20][7] = "rockWallLeft";
+            maps[mapId][21][7] = "rockWallLeft";
+            maps[mapId][22][7] = "rockWallLeft";
         }
     }
 
@@ -78,6 +129,8 @@
     maps[-4] = new Array(12);
     maps[-5] = new Array(8);
     maps["da0"] = new Array(32);
+    maps["da1"] = new Array(32);
+    maps["da2"] = new Array(32);
     
     for (var i = 0; i < 64; i++)
     {
@@ -118,7 +171,6 @@
     row = new Array(8).fill("loghouseinside");
     maps[-1].fill(row);
     maps[-2].fill(row);
-
     
     for (var i = 0; i < 4; i++)
     {
@@ -183,10 +235,19 @@
     {
         row = new Array(32).fill("dirtground");
         maps["da0"][i] = row;
+
+        row = new Array(32).fill("dirtground");
+        maps["da1"][i] = row;
+
+        row = new Array(32).fill("dirtground");
+        maps["da2"][i] = row;
     }
 
-    generateDungeon("da0", [1,2,3]);
+    generateDungeon("da0", [1,2]);
+    generateDungeon("da1", [3,4]);
+    generateDungeon("da2", [2,3]);
     maps["da0"][26][5] = "dungeonstairs";
+    maps["da1"][26][5] = "dungeonstairs";
 
     exports.maps = maps;
     exports.gridSize = 16;

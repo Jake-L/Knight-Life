@@ -22,7 +22,11 @@ function Portal(x, y, height, width, destination_mapId, destination_x, destinati
 
 Portal.prototype.collisionCheck = function(e)
 {
-	if (e.x < this.x + (this.width / 2) && e.x > this.x - (this.width / 2) && e.y > this.y - (this.height / 2) && e.y < this.y + (this.height / 2) && e.direction == this.direction)
+	if (e.x < this.x + (this.width / 2) 
+		&& e.x > this.x - (this.width / 2) 
+		&& e.y > this.y - (this.height / 2) 
+		&& e.y < this.y + (this.height / 2) 
+		&& (this.direction == null || e.direction == this.direction))
 	{
 		return true;
 	}

@@ -349,6 +349,20 @@ function loadMap(mapId)
 		p.initialize();
 		view.insertStatic(p);
 	}
+	// first floor of dungeon A
+	else if (mapId == "da0")
+	{
+		audio = new Audio("audio//track2.mp3");
+		// create portal to floor 2
+		portalList[0] = new Portal(5 * gridSize + 8, 27 * gridSize, 16, 16, "da1", 64, 64, null);
+	}
+	// second floor of dungeon A
+	else if (mapId == "da1")
+	{
+		audio = new Audio("audio//track2.mp3");
+		// create portal to floor 2
+		portalList[0] = new Portal(5 * gridSize + 8, 27 * gridSize, 16, 16, "da2", 64, 64, null);
+	}
 
 	frameTime = new Date().getTime(); // reset update frame timer
 }
