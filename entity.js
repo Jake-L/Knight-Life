@@ -173,10 +173,10 @@ exports.Entity.prototype.move = function(x_direction, y_direction)
 
 		// check if the character moves along the x-axis
 		var x_check = Math.floor((this.x + this.x_speed + (Math.sign(this.x_speed) * this.width / 2)) / gridSize);
-		if(maps[this.mapId].length <= Math.floor((this.y - (this.height)) / gridSize)
+		if(typeof(maps[this.mapId][Math.floor((this.y - (this.height)) / gridSize)]) === 'undefined'
 			|| typeof(maps[this.mapId][Math.floor((this.y - (this.height)) / gridSize)][x_check]) === 'undefined'
 			|| maps[this.mapId][Math.floor((this.y - (this.height)) / gridSize)][x_check].includes("Wall")
-			|| maps[this.mapId].length <= Math.floor(this.y / gridSize)
+			|| typeof(maps[this.mapId][Math.floor(this.y / gridSize)]) === 'undefined'
 			|| typeof(maps[this.mapId][Math.floor(this.y / gridSize)][x_check]) === 'undefined'
 			|| maps[this.mapId][Math.floor(this.y / gridSize)][x_check].includes("Wall"))
 		{

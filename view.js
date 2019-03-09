@@ -8,6 +8,8 @@ var View = function()
 
 	var weatherSprite = [];
 	var backgroundSprite = [];	
+	var caveDarkness = new Image();
+	caveDarkness.src = 'img//caveDarkness.png'
 
 	// cache the background sprites to improve performance
 	this.loadBackgroundSprite = function()
@@ -121,6 +123,12 @@ var View = function()
 		}
 
 		player.entity.renderHealthBar();
+
+		// restrict the user's vision in a dungeon to increase difficulty
+		if ((player.entity.mapId + " ").substr(0,1) == "d")
+		{
+			this.renderCaveDarkness();
+		}
 	}
 
 	this.renderAux = function(e)
@@ -351,6 +359,25 @@ var View = function()
 				}
 			}
 		}
+	}
+
+	// restrict the player's vision, with only a circle visible around them
+	this.renderCaveDarkness = function()
+	{
+		// the image has a black square with a transparent circle in the middle
+		context.drawImage(
+			caveDarkness, 
+			(player.entity.x - x_offset - (caveDarkness.width / 2)) * graphics_scaling,
+			(player.entity.y - (caveDarkness.height / 2) - player.entity.z - y_offset) * graphics_scaling,
+			caveDarkness.width * graphics_scaling, 
+			caveDarkness.height * graphics_scaling);
+
+		// draw black rectangles surrounding the circle
+		context.fillStyle = "000000";
+		context.fillRect(0, 0, (player.entity.x - x_offset - (caveDarkness.width / 2)) * graphics_scaling, height);
+		context.fillRect((player.entity.x - x_offset + (caveDarkness.width / 2)) * graphics_scaling - 1, 0, width, height);
+		context.fillRect(0, 0, width, (player.entity.y - (caveDarkness.height / 2) - player.entity.z - y_offset) * graphics_scaling + 1);
+		context.fillRect(0, (player.entity.y + (caveDarkness.height / 2) - player.entity.z - y_offset) * graphics_scaling, width, height);
 	}
 
 	this.renderText = function(text)

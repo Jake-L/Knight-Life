@@ -257,7 +257,8 @@ function getSpawn(h, w, mapId)
 		var blocked = false;
 
 		// dont spawn CPUs inside of walls
-		if (maps[mapId].length < Math.round(c.y / gridSize)
+		if (typeof(maps[mapId][Math.round(c.y / gridSize)]) === 'undefined'
+			|| typeof(maps[mapId][Math.round(c.y / gridSize)][Math.round(c.x / gridSize)]) === 'undefined'
 			|| maps[mapId][Math.round(c.y / gridSize)][Math.round(c.x / gridSize)].includes("Wall"))
 		{
 			blocked = true;
@@ -298,22 +299,6 @@ function getSpawn(h, w, mapId)
 	}
 
 	return c;
-}
-
-//initialize an entity from a pre-existing entity
-// output is only used for collision detection, so visual attributes don't matter
-function copyEntity(old)
-{
-	var p = new Entity(old.x, old.y, old.spriteName, old.mapId);
-	p.x = old.x; // X is the center of the sprite (in-game measurement units)
-  	p.y = old.y; // Y is the bottom of the sprite (in-game measurement units)
-	p.z = old.z; // Z is the sprite's height off the ground (in-game measurement units)
-	p.width = old.width;
-	p.depth = old.depth;
-	p.height = old.height;
-	p.id = old.id;
-	p.targetType = old.targetType;
-	return p;
 }
 
 // update the NPC collision lists (nearby enemies)
