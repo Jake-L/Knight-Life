@@ -111,6 +111,7 @@ var Attack = shareAttack.Attack;
 var Entity = shareEntity.Entity;
 const maps = shareMap.maps;
 const gridSize = shareMap.gridSize;
+const mapTheme = shareMap.mapTheme;
 
 const defaultmapId = -3;
 var player;
@@ -187,11 +188,11 @@ function loadMap(mapId)
 	projectileList = [];
 	portalList = []
 
+	playMusic(mapTheme[mapId]);
+
 	/* mapID >= 0 means public maps with other users */
 	if (mapId == 0)
 	{
-		audio = new Audio("audio//track2.mp3");
-
 		// create the portal to the snow world
 		portalList[0] = new Portal(992, 300, 20, 20, 1, 10, 300, "Right");
 		var p = new mapObject(portalList[0].x, portalList[0].y + 4, "snowportal");
@@ -217,8 +218,6 @@ function loadMap(mapId)
 	}
 	else if (mapId == 1)
 	{
-		audio = new Audio("audio//track1.mp3");
-
 		// create portal to the grass world
 		portalList[0] = new Portal(8, 300, 20, 20, 0, 990, 300, "Left");
 		// create portal to ice cave
@@ -231,8 +230,6 @@ function loadMap(mapId)
 	}
 	else if (mapId == 2)
 	{
-		audio = new Audio("audio//track1.mp3");
-
 		// create portal to the ice world
 		portalList[1] = new Portal(64, 127, 20, 20, 1, 404, 510, "Down");
 
@@ -245,7 +242,6 @@ function loadMap(mapId)
 	/* mapId <= 0 means private maps with no other users */
 	else if (mapId == -1)
 	{
-		audio = new Audio("audio//track2.mp3");
 		portalList[0] = new Portal(64, 127, 20, 20, 0, 254, 360, "Down");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
 		var e = new Entity(64, 32, "player", -1);
@@ -265,7 +261,6 @@ function loadMap(mapId)
 
 	else if (mapId == -2)
 	{
-		audio = new Audio("audio//track2.mp3");
 		portalList[0] = new Portal(64, 127, 20, 20, 0, 454, 260, "Down");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
 		var e = new Entity(64, 32, "player", -2);
@@ -285,7 +280,6 @@ function loadMap(mapId)
 	// first floor of castle
 	else if (mapId == -3)
 	{
-		audio = new Audio("audio//track2.mp3");
 		// create portal to grass world
 		portalList[0] = new Portal(127, 192, 20, 20, 0, 136, 164, "Down");
 		// create portal to floor 2
@@ -309,7 +303,6 @@ function loadMap(mapId)
 	// second floor of castle
 	else if (mapId == -4)
 	{
-		audio = new Audio("audio//track2.mp3");
 		// create portal to floor 1
 		portalList[0] = new Portal(32, 192, 16, 64, -3, 32, 16, "Down");
 		portalList[1] = new Portal(224, 192, 16, 64, -3, 224, 16, "Down");
@@ -332,7 +325,6 @@ function loadMap(mapId)
 	// mail room in castle
 	else if (mapId == -5)
 	{
-		audio = new Audio("audio//track2.mp3");
 		// create portal to floor 2
 		portalList[0] = new Portal(63, 127, 16, 16, -4, 32, 16, "Down");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
@@ -352,14 +344,12 @@ function loadMap(mapId)
 	// first floor of dungeon A
 	else if (mapId == "da0")
 	{
-		audio = new Audio("audio//track2.mp3");
 		// create portal to floor 2
 		portalList[0] = new Portal(5 * gridSize + 8, 27 * gridSize, 16, 16, "da1", 64, 64, null);
 	}
 	// second floor of dungeon A
 	else if (mapId == "da1")
 	{
-		audio = new Audio("audio//track2.mp3");
 		// create portal to floor 2
 		portalList[0] = new Portal(5 * gridSize + 8, 27 * gridSize, 16, 16, "da2", 64, 64, null);
 	}
@@ -671,7 +661,7 @@ Entity.prototype.getNearbyObjects = function()
 var update = function()
 {
 	//restart background music at the end of the song
-	/*if (audio.currentTime + (8/60) > audio.duration)
+	if (audio.currentTime + (8/60) > audio.duration)
 	{
 		audio.currentTime = 0;
 
@@ -679,7 +669,7 @@ var update = function()
 		{
 			audio.play();
 		}
-	}*/
+	}
 
 
 	if (cutscene != null)
@@ -1304,8 +1294,8 @@ function renderMinimap()
 			playerList[i].setColour();
 			context.beginPath();
 			context.arc(
-				x + ((playerList[i].x / minimapScale) - m_x_offset) * graphics_scaling,
-				y + ((playerList[i].y - 1.5) * graphics_scaling / minimapScale),
+				x + (((playerList[i].x / minimapScale) - m_x_offset) * graphics_scaling),
+				y + (((playerList[i].y  / minimapScale)  - m_y_offset - 1.5) * graphics_scaling),
 				1.5 * graphics_scaling,
 				0, Math.PI * 2, false);
 			context.fill();
@@ -1317,7 +1307,7 @@ function renderMinimap()
 	context.beginPath();
 	context.arc(
 		x + (((player.entity.x / minimapScale) - m_x_offset) * graphics_scaling),
-		y + ((player.entity.y - m_y_offset - 1.5) * graphics_scaling / minimapScale),
+		y + (((player.entity.y / minimapScale) - m_y_offset - 1.5) * graphics_scaling),
 		1.5 * graphics_scaling,
 		0, Math.PI * 2, false);
 	context.fill();
@@ -1366,6 +1356,8 @@ function useItem(itemName)
 		{
 			console.log("cannot use item " + itemName)
 		}
+
+		updateDisplayWindow();
 	}
 	else
 	{
@@ -1379,6 +1371,7 @@ function sellItem(itemName)
 	{
 		player.inventory.removeItem({name: itemName, quantity: 1});
 		player.inventory.addItem({name: "money", quantity: Math.ceil(itemDetail[itemName].price / 2)});
+		updateDisplayWindow();
 	}
 	else
 	{
@@ -1392,6 +1385,7 @@ function buyItem(itemName)
 	{
 		player.inventory.addItem({name: itemName, quantity: 1});
 		player.inventory.removeItem({name: "money", quantity: itemDetail[itemName].price});
+		updateDisplayWindow();
 	}
 	else
 	{
@@ -1437,7 +1431,24 @@ function playSoundEffect(path)
 	{
 		soundEffect.push(new Audio("audio//" + path));
 	}
-	soundEffect[i].play();
+	
+	soundEffect[i].addEventListener('loadeddata', () => {
+		soundEffect[i].play();
+	});
+}
+
+// play background music
+function playMusic(path)
+{
+	// pause any music that may already be playing
+	if (typeof(audio) !== 'undefined')
+	{
+		audio.pause()
+	}
+	audio = new Audio("audio//" + path);
+	audio.addEventListener('loadeddata', () => {
+		audio.play();
+	})
 }
 
 socket.on('mapObjects', function(a)
@@ -1574,7 +1585,6 @@ socket.on('itemreceived', function(item)
 });
 
 // server sends all the projectiles currently on screen
-
 socket.on('viewOnly', function(p, items)
 {
 	if (!(player.entity.mapId < 0))
@@ -1674,7 +1684,6 @@ function loadPlayer(savedata)
 
 	loadMap(player.entity.mapId);
 	
-	//audio.play(); //must come after loadMap
 	frameTime = new Date().getTime();
 	startTime = frameTime;
 	step();

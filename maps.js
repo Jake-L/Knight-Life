@@ -119,6 +119,19 @@
         }
     }
 
+    mapTheme = {};
+    mapTheme[0] = "track2.mp3";
+    mapTheme[1] = "icetheme.mp3";
+    mapTheme[2] = "icetheme.mp3";
+    mapTheme[-1] = "track2.mp3";
+    mapTheme[-2] = "track2.mp3";
+    mapTheme[-3] = "track2.mp3";
+    mapTheme[-4] = "track2.mp3";
+    mapTheme[-5] = "track2.mp3";
+    mapTheme["da0"] = "track2.mp3";
+    mapTheme["da1"] = "track2.mp3";
+    mapTheme["da2"] = "track2.mp3";
+
     maps = {};
     maps[0] = new Array(64);
     maps[1] = new Array(64);
@@ -251,4 +264,5 @@
 
     exports.maps = maps;
     exports.gridSize = 16;
+    exports.mapTheme = mapTheme;
 }(typeof exports === 'undefined' ? this.shareMap = {} : exports));
