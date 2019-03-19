@@ -65,7 +65,7 @@ Inventory.prototype.addItem = function(item)
 		this.items[item.name] = item;
 	}
 
-	updateDisplayWindow();
+	view.updateDisplayWindow();
 };
 
 // get an item, such as for the displaying the amount of money a player has
@@ -100,7 +100,7 @@ Inventory.prototype.removeItem = function(item)
 		if (typeof(item.quantity) !== 'undefined' && item.quantity <= this.items[item.name].quantity)
 		{
 			this.items[item.name].quantity -= item.quantity;
-			updateDisplayWindow();
+			view.updateDisplayWindow();
 			return true;
 		} 
 		else

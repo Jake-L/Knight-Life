@@ -58,7 +58,6 @@ var weaponSprite = {};
 var username = "";
 var playerXP = 0;
 var minimapScale = 16;
-var displayWindow = null;
 
 var view = new View();
 
@@ -671,13 +670,18 @@ var update = function()
 		}
 	}
 
-
 	if (cutscene != null)
 	{
 		cutscene.update();
 
 		if (cutscene.isComplete())
 		{
+			// close whatever window the cutscene may have open
+			if (cutscene.displayWindow != null)
+			{
+				openDisplayWindow(null);
+			}
+
 			cutscene = null;
 			player.conversationCounter = 30;
 			player.entity.targetType = "Neutral";
@@ -952,26 +956,32 @@ window.addEventListener("keyup", function(event)
 
 function openDisplayWindow(windowName)
 {
-	// usr tries to close window
+	// user tries to close window
 	if (windowName == null)
 	{
-		// cannot exit a conversation
-		if (displayWindow != "CutsceneOption")
+		// check if the cutscene opened the window
+		if (cutscene != null)
 		{
-			// exit the buy / sell cutscene
-			if (displayWindow == "Buy" || displayWindow == "Sell")
+			// cannot exit a conversation
+			if (cutscene.displayWindow == "CutsceneOption")
 			{
-				cutscene = null;
+				console.log("cannot exit");
+				return
 			}
 
-			// clone the window
-			document.getElementById("formwindow").style.display = "none";
-			displayWindow = null;
+			// exit the buy / sell cutscene
+			if (cutscene.displayWindow == "Buy" || cutscene.displayWindow == "Sell")
+			{
+				console.log("exit the buy / sell cutscene");
+				cutscene = null;
+			}
 		}
+
+		// close the window
+		document.getElementById("formwindow").style.display = "none";
 	}
 	else
 	{
-		displayWindow = windowName;
 		view.renderOptions(windowName);
 	}
 };
@@ -1235,7 +1245,7 @@ function addQuest(id)
 	{
 		quests[id] = new Objective(id);
 		notificationList.push(new Notification("Quest received!","You received the quest " + quests[id].name))
-		updateDisplayWindow();
+		view.updateDisplayWindow();
 	}
 	else
 	{
@@ -1356,8 +1366,6 @@ function useItem(itemName)
 		{
 			console.log("cannot use item " + itemName)
 		}
-
-		updateDisplayWindow();
 	}
 	else
 	{
@@ -1367,11 +1375,12 @@ function useItem(itemName)
 
 function sellItem(itemName) 
 {
+	// check that they have the item they want to sell
 	if (itemName != "money" && player.inventory.getItem(itemName).quantity > 0)
 	{
+		// remove the item from their inventory and give them half of its dollar value
 		player.inventory.removeItem({name: itemName, quantity: 1});
 		player.inventory.addItem({name: "money", quantity: Math.ceil(itemDetail[itemName].price / 2)});
-		updateDisplayWindow();
 	}
 	else
 	{
@@ -1385,20 +1394,34 @@ function buyItem(itemName)
 	{
 		player.inventory.addItem({name: itemName, quantity: 1});
 		player.inventory.removeItem({name: "money", quantity: itemDetail[itemName].price});
-		updateDisplayWindow();
+
+		if (updateCounter % 3 == 0)
+		{
+			cutscene.text = "An " + itemName + ", excellent choice!";
+		}
+		else if (updateCounter % 3 == 1)
+		{
+			cutscene.text = "That was my finest " + itemName + ", take good care of it!";
+		}
+		else
+		{
+			cutscene.text = "I bet that " + itemName + " will come in handy!";
+		}
 	}
 	else
 	{
-		console.log("failed to buy item " + item.name);
-	}
-}
-
-// refresh the window whenever an action is taken that may change the displayed information
-function updateDisplayWindow()
-{
-	if (displayWindow != null)
-	{
-		view.renderOptions(displayWindow);
+		if (updateCounter % 3 == 0)
+		{
+			cutscene.text = "You don't have enough money to buy that " + itemName + "!";
+		}
+		else if (updateCounter % 3 == 1)
+		{
+			cutscene.text = "Maybe you should try something more in your price range.";
+		}
+		else
+		{
+			cutscene.text = "Looks like you're a little short on cash there fella.";
+		}
 	}
 }
 

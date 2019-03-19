@@ -91,14 +91,12 @@ initializeCutscene[3] = function(cutscene)
 
 initializeCutscene[4] = function(cutscene)
 {
-	displayWindow = null;
 	cutscene.textCounter = -1;
 	cutscene.displayWindow = "CutsceneOption";
 	cutscene.text = "Would you like to buy or sell?";
 	cutscene.optionsArray = ["Buy", "Sell"];
 	cutscene.optionsAction = [];
 	cutscene.optionsAction.push(function(){
-		displayWindow = null;
 		cutscene.optionsArray = {};
 		cutscene.optionsArray["apple"] = {name:"apple"};
 		cutscene.optionsArray["pear"] = {name:"pear"};
@@ -112,7 +110,6 @@ initializeCutscene[4] = function(cutscene)
 		cutscene.textCounter = 30;
 	});
 	cutscene.optionsAction.push(function(){
-		displayWindow = null;
 		cutscene.optionsArray = null;
 		cutscene.displayWindow = "Sell";
 		cutscene.text = "What would you like to sell?";
@@ -230,6 +227,7 @@ Cutscene.prototype.update = function()
 				{
 					addQuest(this.addQuest);
 				}
+				
 				this.complete = true;
 			}
 		}
@@ -243,12 +241,12 @@ Cutscene.prototype.optionsResult = function(r)
 		// take the action resulting from the player's selection
 		this.optionsAction[r]();
 
-		// open a new display window if needed
+		// close the current display window
 		if (this.displayWindow == null)
 		{
-			// close the current display window
 			openDisplayWindow(null);
 		}
+		// open a new display window if needed
 		else
 		{
 			view.renderOptions(this.displayWindow, this.optionsArray);

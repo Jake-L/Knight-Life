@@ -11,6 +11,8 @@ var View = function()
 	var caveDarkness = new Image();
 	caveDarkness.src = 'img//caveDarkness.png'
 
+	this.displayWindow = null;
+
 	// cache the background sprites to improve performance
 	this.loadBackgroundSprite = function()
 	{
@@ -544,6 +546,9 @@ var View = function()
 
 	this.renderOptions = function(type, a)
 	{
+		// store the type 
+		this.displayWindow = type;
+
 		// display the table
 		document.getElementById("formwindow").style.display = "flex";
 
@@ -594,7 +599,7 @@ var View = function()
 		{
 			// the array is already provided, so no need to set a 
 			title.textContent = "Item Name";
-			subtitle.textContent = "Quantity";
+			subtitle.textContent = "Price";
 		}
 		else //display plaintext
 		{
@@ -647,9 +652,9 @@ var View = function()
 			var cell = document.createElement("td");
 			row.appendChild(cell);
 
-			// 	display the items quantity
 			if (type == "Inventory" || type == "Sell")
-			{				
+			{		
+				// 	display the items quantity		
 				cell.textContent = a[i].quantity;
 
 				//set onclick event
@@ -673,6 +678,21 @@ var View = function()
 						cutscene.text = "I'm always in the market for another " + s + ".";
 					}
 				}
+			}
+			// 	display the items quantity
+			else if (type == "Buy")
+			{		
+				// display the item's price
+				// add the money icon
+				var img = document.createElement("img");
+				img.src = itemDetail["money"].sprite.src;
+				cell.appendChild(img);
+				// add the price text
+				textNode = document.createTextNode(itemDetail[s].price);
+				cell.appendChild(textNode);
+				
+				//set onclick event
+				row.setAttribute("onclick", "buyItem('" + s + "')");
 			}
 			// display the completion rate of a quest or achievement
 			else if (type == "Quests" || type == "Achievements")
@@ -718,6 +738,23 @@ var View = function()
 		else
 		{
 			document.getElementById("formdetail").style.display = "none";
+		}
+	}
+
+	
+	// refresh the window whenever an action is taken that may change the displayed information
+	this.updateDisplayWindow = function()
+	{
+		if (this.displayWindow != null)
+		{
+			if (["Buy"].includes(this.displayWindow))
+			{
+				console.log("Cannot update display window for type " + this.displayWindow);
+			}
+			else
+			{
+				this.renderOptions(this.displayWindow);
+			}
 		}
 	}
 }
