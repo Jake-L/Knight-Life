@@ -817,7 +817,7 @@ setInterval(function()
 		if (items[mapId].length < 10 && new Date().getTime() % 2000 == 0)
 		{
 			var c = getSpawn(16,16,mapId);
-			items[mapId].push(new Item("money", Math.ceil(Math.random() * 5) + 1, c.x, c.y));
+			items[mapId].push(new Item("money", Math.ceil(Math.random() * 5) + 1, c.x, c.y, null, true));
 		}
 
 		for (var j in connected[mapId])
@@ -825,7 +825,8 @@ setInterval(function()
 			var i = 0;
 			while (i < items[mapId].length)
 			{
-				if (items[mapId][i].collisionCheck(connected[mapId][j]))
+				if (items[mapId][i].collisionCheck(connected[mapId][j])
+					&& (items[mapId][i].playerid == null || items[mapId][i].playerid.includes(j)))
 				{
 					// tell the client that they picked up the item
 					io.to(connected[mapId][j].id).emit('itemreceived', items[mapId][i]);
@@ -939,30 +940,36 @@ function entityDeath(entity)
 
 function awardKillRewards(id, xp, entity)
 {
+	// no need to give rewards to CPU players
+	if (typeof(connection[id]) === 'undefined')
+	{	
+		return;
+	}
+	var mapId = connection[id].mapId;
 	io.to(id).emit('xpgain', xp, entity);
-	io.to(id).emit('itemreceived', {name: "money", quantity: Math.ceil((Math.random() + 1) * entity.lvl), type: "currency"});
+	items[mapId].push(new Item("money", Math.ceil((Math.random() + 1) * entity.lvl), entity.x, entity.y, [id], false));
 
 	if (entity.id == "iceboss")
 	{
-		io.to(id).emit('itemreceived', {name: "icebosscrystal", quantity: 1});
+		items[mapId].push(new Item("icebosscrystal", 1, entity.x, entity.y, [id], false));
 	}
 	else if (Math.random() > 0.5 && entity.faction == "iceman")
 	{
-		io.to(id).emit('itemreceived', {name: "crystal", quantity: 1});
+		items[mapId].push(new Item("crystal", 1, entity.x, entity.y, [id], false));
 	}
 	else if (entity.faction != "iceman")
 	{
 		if (Math.random() > 0.5) // 50% chance to get apple
 		{
-			io.to(id).emit('itemreceived', {name: "apple", quantity: 1, type: "food"});
+			items[mapId].push(new Item("apple", 1, entity.x, entity.y, [id], false));
 		}
 		if (Math.random() > 0.25) // 25% chance to get carrot
 		{
-			io.to(id).emit('itemreceived', {name: "carrot", quantity: 1, type: "food"});
+			items[mapId].push(new Item("carrot", 1, entity.x, entity.y, [id], false));
 		}
 		if (Math.random() > 0.25) // 25% chance to get leek
 		{
-			io.to(id).emit('itemreceived', {name: "leek", quantity: 1, type: "food"});
+			items[mapId].push(new Item("leek", 1, entity.x, entity.y, [id], false));
 		}
 	}
 
@@ -1082,13 +1089,20 @@ global.Projectile = function(x, y, z, x_speed, y_speed, z_speed, source, update_
 	};
 };
 
-function Item(name, quantity, x, y)
+function Item(name, quantity, x, y, playerid, exact)
 {
 	this.name = name;
 	this.quantity = quantity;
+	this.playerid = playerid;
 	this.x = x;
 	this.y = y;
-	this.z = 2;
+	this.z = 0;
+
+	if (!exact)
+	{
+		this.x = this.x + Math.round(Math.random() * 30) - 15;
+		this.y = this.y + Math.round(Math.random() * 30) - 15;
+	}
 };
 
 Item.prototype.collisionCheck = function(e)
@@ -1558,12 +1572,23 @@ setInterval(function()
 				players[j] = mapEntities[mapId][j].entity;
 			}
 
+			// some items on the map are visible to all players
+			// but some can only be seen by a few players
+			var visibleItems = [];
+			for (var j in items[mapId])
+			{
+				if (items[mapId].playerid == null || items[mapId].playerid.includes(i))
+				{
+					visibleItems.push(items[mapId][j]);
+				}
+			}
+
 			// only send players if there are any
 			if (count > 0)
 			{
 				io.to(i).emit('players', players);
 			}
-			io.to(i).emit('viewOnly', p, items[mapId]);
+			io.to(i).emit('viewOnly', p, visibleItems);
 		}
 	}
 

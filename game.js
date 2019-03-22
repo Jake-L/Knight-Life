@@ -979,6 +979,7 @@ function openDisplayWindow(windowName)
 
 		// close the window
 		document.getElementById("formwindow").style.display = "none";
+		view.displayWindow = null;
 	}
 	else
 	{
