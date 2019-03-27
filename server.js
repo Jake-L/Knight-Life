@@ -111,6 +111,14 @@ function initializeMap()
 	mapObjects[0].push(new mapObject(250,150,"treestump"));
 	mapObjects[0].push(new mapObject(250,350,"loghouse"));
 	mapObjects[0].push(new mapObject(450,250,"loghouse"));
+	mapObjects[0].push(new mapObject(50,400,"pinetree"));
+	mapObjects[0].push(new mapObject(75,425,"pinetree"));
+	mapObjects[0].push(new mapObject(100,400,"pinetree"));
+	mapObjects[0].push(new mapObject(125,425,"pinetree"));
+	mapObjects[0].push(new mapObject(62,450,"pinetree"));
+	mapObjects[0].push(new mapObject(87,475,"pinetree"));
+	mapObjects[0].push(new mapObject(112,450,"pinetree"));
+	mapObjects[0].push(new mapObject(137,475,"pinetree"));
 
 	// spawn knights
 	for (var i = 0; i < 6; i++)
