@@ -1365,6 +1365,20 @@ io.on('connection', function(socket)
 		mapEntities[mapId][id].y_direction = 0;
 	});
 
+	// recieve chat messages from the user
+	socket.on('chatSend', function(username, mapId, message)
+	{
+		io.to(socket.id).emit('chatRecieve', username, message, "chatMessageUser");
+		
+		for (var i in connected[mapId])
+		{
+			if (socket.id != i)
+			{
+				io.to(i).emit('chatRecieve', username, message, null);
+			}
+		}
+	});
+
 	socket.on('save', function(username, savedata)
 	{
 		if (username != "Player") // user progress not saved if they don't login
@@ -1458,7 +1472,7 @@ io.on('connection', function(socket)
 			    success = false;
 			    for(i in array) 
 			    {
-			    	if(username == array[i].split(",")[0] && password == array[i].split(",")[1])
+			    	if(username == array[i].split(",")[0].trim() && password == array[i].split(",")[1].trim())
 			    	{
 			    		console.log("login successful for user " + username);
 			    		io.to(socket.id).emit('loginresult', true, username);
@@ -1585,7 +1599,7 @@ setInterval(function()
 			var visibleItems = [];
 			for (var j in items[mapId])
 			{
-				if (items[mapId].playerid == null || items[mapId].playerid.includes(i))
+				if (items[mapId][j].playerid == null || items[mapId][j].playerid.includes(i))
 				{
 					visibleItems.push(items[mapId][j]);
 				}

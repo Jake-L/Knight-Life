@@ -2,8 +2,8 @@ var socket = io();
 
 function login()
 {
-	var username = document.getElementById('loginusername').value;
-	var password = document.getElementById('loginpassword').value;
+	var username = document.getElementById('loginusername').value.trim();
+	var password = document.getElementById('loginpassword').value.trim();
 
 	if (username == null || username == "")
 	{
@@ -39,8 +39,8 @@ socket.on('loginresult', function(result, username)
 
 function register()
 {
-	var username = document.getElementById('registrationusername').value;
-	var password = document.getElementById('registrationpassword').value;
+	var username = document.getElementById('registrationusername').value.trim();
+	var password = document.getElementById('registrationpassword').value.trim();
 
 	if (username == null || username == "")
 	{

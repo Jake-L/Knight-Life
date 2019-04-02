@@ -1045,9 +1045,20 @@ Player.prototype.update = function()
 					this.entity.z_speed = 3;
 				}
 			}
+			// enter key
 			else if (value == 13)
 			{
-				if (cutscene == null && player.conversationCounter <= 0)
+				// send a message in chat box if it's selected
+				if (document.activeElement.nodeName == 'TEXTAREA' || document.activeElement.nodeName == 'INPUT') {
+					var message = document.getElementById("chatInput").value.trim();
+					if (message.length > 0)
+					{
+						socket.emit('chatSend', player.entity.display_name, player.entity.mapId, message);
+					}
+					document.getElementById("chatInput").value = "";
+				}
+				// proceed in cutscene
+				else if (cutscene == null && player.conversationCounter <= 0)
 				{
 					initiateConversation();
 				}
@@ -1437,6 +1448,21 @@ function setScreenSize(event)
 	context.mozImageSmoothingEnabled = false;
 	context.imageSmoothingEnabled = false;
 	graphics_scaling = Math.ceil(Math.min(height,width)/250);
+
+	// hide the chat window if the screen is really small
+	if (graphics_scaling == 1)
+	{
+		document.getElementById('chatWindow').style.display = "none";
+	}
+	// otherwise format the chat window
+	else
+	{
+		document.getElementById('chatWindow').style.display = ""
+		document.getElementById('chatWindow').style.width = 54 * graphics_scaling + "px";
+		document.getElementById('chatWindow').style.height = 54 * graphics_scaling + "px";
+		document.getElementById('chatWindow').style.fontSize = 2 + (4 * graphics_scaling) + "px";
+		document.getElementById('chatInput').style.fontSize = 2 + (4 * graphics_scaling) + "px";
+	}
 };
 
 function playSoundEffect(path)
@@ -1632,6 +1658,24 @@ socket.on('viewOnly', function(p, items)
 	}
 });
 
+socket.on('chatRecieve', function(username, message, pClass)
+{
+	var p = document.createElement("p");
+	var b = document.createElement("b");
+	var textNode = document.createTextNode(`${username}: `);
+	b.appendChild(textNode);
+	p.appendChild(b);
+	textNode = document.createTextNode(message);
+	p.appendChild(textNode);
+
+	if (pClass != null)
+	{
+		p.className = pClass;
+	}
+
+	var chatDiv = document.getElementById("chatView");
+	chatDiv.appendChild(p);
+});
 
 socket.on('load', function(savedata)
 	{

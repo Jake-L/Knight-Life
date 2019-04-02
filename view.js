@@ -231,6 +231,13 @@ var View = function()
 	{
 		this.get_offset();
 
+		// clear the chat window
+		var chatWindow = document.getElementById("chatView");
+		while (chatWindow.firstChild) 
+		{
+			chatWindow.removeChild(chatWindow.firstChild);
+		}
+
 		weatherSprite = [];
 
 		if (mapId == 1)
