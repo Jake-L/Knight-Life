@@ -985,7 +985,7 @@ function awardKillRewards(id, xp, entity)
 }
 
 // holds information about where damage will be applied
-global.Damage = function(x, y, source, damage_time, damage, mapId)
+global.Damage = function(x, y, source, damage_time, damage, knockback, mapId)
 {
 	this.x = x;
 	this.y = y;
@@ -993,6 +993,7 @@ global.Damage = function(x, y, source, damage_time, damage, mapId)
 	this.damage_time = damage_time;
 	this.damage = damage;
 	this.mapId = mapId;
+	this.knockback = knockback;
 
 	this.collisionCheck = function(e)
 	{
@@ -1009,7 +1010,7 @@ global.Damage = function(x, y, source, damage_time, damage, mapId)
 };
 
 // holds information about projectiles on-screen
-global.Projectile = function(x, y, z, x_speed, y_speed, z_speed, source, update_time, damage, spriteName, mapId)
+global.Projectile = function(x, y, z, x_speed, y_speed, z_speed, source, update_time, damage, knockback, spriteName, mapId)
 {
 	this.x = x;
 	this.y = y;
@@ -1028,6 +1029,7 @@ global.Projectile = function(x, y, z, x_speed, y_speed, z_speed, source, update_
 	this.depth;
 	this.update_time = update_time;
 	this.mapId = mapId;
+	this.knockback = knockback;
 
 	this.setSize = function()
 	{
@@ -1174,8 +1176,10 @@ function checkDamage()
 				{
 					if (damageList[mapId][i].source != connected[mapId][j].id && connected[mapId][j].targetType != "Passive" && damageList[mapId][i].collisionCheck(connected[mapId][j]))
 					{
+						var knockback = calcKnockback(damageList[mapId][i], connected[mapId][j]);
+
 						// tell the client that they took damage
-						io.to(connected[mapId][j].id).emit('damageIn', damageList[mapId][i].x, damageList[mapId][i].y, Math.ceil(damageList[mapId][i].damage * Math.sqrt(damageList[mapId][i].damage / connected[mapId][j].defence)));
+						io.to(connected[mapId][j].id).emit('damageIn', damageList[mapId][i].x, damageList[mapId][i].y, Math.ceil(damageList[mapId][i].damage * Math.sqrt(damageList[mapId][i].damage / connected[mapId][j].defence)), knockback[0], knockback[1]);
 
 						// track most recent attackers
 						addKillParticipation(connected[mapId][j].id, damageList[mapId][i].source, mapId);
@@ -1187,8 +1191,10 @@ function checkDamage()
 				{
 					if (damageList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].entity.targetType != "Passive"  && damageList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
 					{
+						var knockback = calcKnockback(damageList[mapId][i], mapEntities[mapId][j].entity);
+
 						// damage the entity
-						mapEntities[mapId][j].entity.takeDamage(damageList[mapId][i].x, damageList[mapId][i].y, Math.ceil(damageList[mapId][i].damage * Math.sqrt(damageList[mapId][i].damage / mapEntities[mapId][j].entity.defence)));
+						mapEntities[mapId][j].entity.takeDamage(damageList[mapId][i].x, damageList[mapId][i].y, Math.ceil(damageList[mapId][i].damage * Math.sqrt(damageList[mapId][i].damage / mapEntities[mapId][j].entity.defence)), knockback[0], knockback[1]);
 
 						// tell the CPU to target that entity
 						mapEntities[mapId][j].setTarget(damageList[mapId][i].source);
@@ -1232,8 +1238,10 @@ function checkDamage()
 					{
 						if (projectileList[mapId][i].source != connected[mapId][j].id && connected[mapId][j].targetType != "Passive" && projectileList[mapId][i].collisionCheck(connected[mapId][j]))
 						{
+							var knockback = calcKnockback(projectileList[mapId][i], connected[mapId][j]);
+
 							// tell the client that they took damage
-							io.to(connected[mapId][j].id).emit('damageIn', projectileList[mapId][i].x, projectileList[mapId][i].y, Math.ceil(projectileList[mapId][i].damage * Math.sqrt(projectileList[mapId][i].damage / connected[mapId][j].defence)));
+							io.to(connected[mapId][j].id).emit('damageIn', projectileList[mapId][i].x, projectileList[mapId][i].y, Math.ceil(projectileList[mapId][i].damage * Math.sqrt(projectileList[mapId][i].damage / connected[mapId][j].defence)), knockback[0], knockback[1]);
 
 							// track most recent attackers
 							addKillParticipation(connected[mapId][j].id, projectileList[mapId][i].source, mapId);
@@ -1247,8 +1255,10 @@ function checkDamage()
 					{
 						if (projectileList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].entity.targetType != "Passive" && projectileList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
 						{
+							var knockback = calcKnockback(projectileList[mapId][i], mapEntities[mapId][j].entity);
+
 							// damage the entity
-							mapEntities[mapId][j].entity.takeDamage(projectileList[mapId][i].x, projectileList[mapId][i].y, Math.ceil(projectileList[mapId][i].damage * Math.sqrt(projectileList[mapId][i].damage / mapEntities[mapId][j].entity.defence)));
+							mapEntities[mapId][j].entity.takeDamage(projectileList[mapId][i].x, projectileList[mapId][i].y, Math.ceil(projectileList[mapId][i].damage * Math.sqrt(projectileList[mapId][i].damage / mapEntities[mapId][j].entity.defence)), knockback[0], knockback[1]);
 
 							// tell the CPU to target that entity
 							mapEntities[mapId][j].setTarget(projectileList[mapId][i].source);
@@ -1280,8 +1290,26 @@ function checkDamage()
 		}
 
 	}
+}
 
+// calculate the knockback taken from an attack
+function calcKnockback(attack, target)
+{
+	knockback = [0, 0];
 
+	// check if the target was hit in the x direction or y direction
+	if (Math.abs(attack.x - target.x) > Math.abs(attack.y - target.y))
+	{
+		// apply knockback in the x-direction
+		knockback[0] = Math.round(attack.knockback * -1 * (attack.x - target.x) / Math.abs(attack.x - target.x));
+	}
+	else
+	{
+		// apply knockback in the y-direction
+		knockback[1] = Math.round(attack.knockback * -1 * (attack.y - target.y) / Math.abs(attack.y - target.y));
+	}
+
+	return knockback;
 }
 
 
@@ -1336,14 +1364,14 @@ io.on('connection', function(socket)
 		}
   	});
 
-	socket.on('damageOut', function(x, y, damage_time, damage, mapId)
+	socket.on('damageOut', function(x, y, damage_time, damage, knockback, mapId)
 	{
-		damageList[mapId].push(new Damage(x, y, socket.id, damage_time, damage, mapId));
+		damageList[mapId].push(new Damage(x, y, socket.id, damage_time, damage, knockback, mapId));
 	});
 
-	socket.on('createProjectile', function(x, y, z, x_speed, y_speed, z_speed, update_time, damage, spriteName, mapId)
+	socket.on('createProjectile', function(x, y, z, x_speed, y_speed, z_speed, update_time, damage, knockback, spriteName, mapId)
 	{
-		projectileList[mapId].push(new Projectile(x, y, z, x_speed, y_speed, z_speed, socket.id, Math.max(update_time, new Date().getTime()), damage, spriteName, mapId));
+		projectileList[mapId].push(new Projectile(x, y, z, x_speed, y_speed, z_speed, socket.id, Math.max(update_time, new Date().getTime()), damage, knockback, spriteName, mapId));
 	});
 
 	socket.on('death', function()

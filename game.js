@@ -35,7 +35,6 @@ var left_key = 37;
 var up_key = 38;
 var right_key = 39;
 var down_key = 40;
-var jump_key = 49;
 var attack_key = 50;
 var attack2_key = 51;
 
@@ -597,7 +596,7 @@ function getUsername()
 	// otherwise give them default name
 	else
 	{
-		notificationList.push(new Notification("Default Controls","Press 1 to jump;Press 2 for basic attack;Press 3 for ranged attack"));
+		notificationList.push(new Notification("Default Controls","Press 2 for basic attack;Press 3 for ranged attack"));
 		return "Player";
 	}
 }
@@ -1006,7 +1005,7 @@ Player.prototype.update = function()
 	var y_direction = 0;
 
 	// loops through every key currently pressed and performs an action
-	if (!this.entity.knockback || (Maths.abs(y_speed) <= 3 && Math.abs(x_speed) <= 3))
+	if (!this.entity.knockback)
 	{
 		for(var key in keysDown)
 		{
@@ -1037,13 +1036,6 @@ Player.prototype.update = function()
 			else if (value == down_key)
 			{
 				y_direction += 1;
-			}
-			else if (value == jump_key)
-			{
-				if (this.entity.z == 0 && this.entity.z_speed == 0) //can only jump if standing on the ground
-				{
-					this.entity.z_speed = 3;
-				}
 			}
 			// enter key
 			else if (value == 13)
@@ -1609,9 +1601,9 @@ socket.on('removePlayer', function(id)
 });
 
 // server notifies that the player has taken damage
-socket.on('damageIn', function(x, y, damage)
+socket.on('damageIn', function(x, y, damage, x_knockback, y_knockback)
 {
-	player.entity.takeDamage(x, y, damage);
+	player.entity.takeDamage(x, y, damage, x_knockback, y_knockback);
 	player.healthRegenCounter = 0;
 });
 

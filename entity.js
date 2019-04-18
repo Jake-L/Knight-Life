@@ -131,14 +131,18 @@ exports.Entity.prototype.initialize = function()
 
 exports.Entity.prototype.move = function(x_direction, y_direction)
 {
-	var blocked_directions;
+	// if the entity is taking knockback, they have no control over their movement
+	if (this.knockback)
+	{
+		x_direction = this.x_speed;
+		y_direction = this.y_speed;
+	}
 
 	if (x_direction != 0 || y_direction != 0)// || this.checkOverlap)
 	{
-		this.knockback = false;
-
 		// change direction even if they are blocked and can't move
-		if (this.attack_counter <= 5)
+		// don't change direction during attacks and when taking knockback
+		if (this.attack_counter <= 5 && !this.knockback)
 		{
 			if (this.x_speed != x_direction)
 			{
@@ -209,9 +213,9 @@ exports.Entity.prototype.move = function(x_direction, y_direction)
 		this.y_speed = 0;
 	}
 
-	blocked_directions = this.collisionCheck();
+	var blocked_directions = this.collisionCheck();
 
-	if (this.attack_counter <= 5)
+	if (this.attack_counter <= 5 && !this.knockback)
 	{
 		if (this.y_speed == 0 && this.x_speed != 0)
 		{
@@ -779,7 +783,7 @@ exports.Entity.prototype.update = function()
 		console.log("forced collision check due to overlapping players", this.x_speed, this.y_speed);
 	}*/
 
-	// apply gravity if the player is jumping
+	// apply gravity if the player is in the air
 	if (this.z > 0 || this.z_speed > 0)
 	{
 		this.z += this.z_speed;
@@ -870,13 +874,18 @@ exports.Entity.prototype.createFootPrint = function()
 	effects.push(e);
 }
 
-exports.Entity.prototype.takeDamage = function(x, y, damage)
+exports.Entity.prototype.takeDamage = function(x, y, damage, x_knockback, y_knockback)
 {
 	if (this.spawn_time + 100 < new Date().getTime()) // don't take damage in the first 0.1 seconds you're alive
 	{
-		var damage_reduction = Math.max((-1 * Math.pow(0.5,(0.05 * (this.defence - 123))) + 67), 0);
-
 		this.current_health -= damage;
+
+		if (!(x_knockback == 0 && y_knockback == 0))
+		{
+			this.knockback = true;
+			this.x_speed = x_knockback;
+			this.y_speed = y_knockback;
+		}
 
 		if (this.current_health < 0)
 		{
@@ -934,14 +943,14 @@ exports.Entity.prototype.createAttack = function(attack)
 
 		if(typeof(module) === 'undefined')
 		{
-			if (this.mapId >= 0)
+			if (!(this.mapId < 0))
 			{
-				socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, this.mapId);
+				socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.knockback, this.mapId);
 			}
 		}
 		else
 		{
-			damageList[this.mapId].push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, this.mapId));
+			damageList[this.mapId].push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.knockback, this.mapId));
 		}
 	}
 
@@ -982,16 +991,16 @@ exports.Entity.prototype.createAttack = function(attack)
 
 		if(typeof(module) === 'undefined')
 		{
-			if (this.mapId >= 0)
+			if (!(this.mapId < 0))
 			{
 				socket.emit('createProjectile', x + (this.x_speed * 2), y + (this.y_speed * 2), 4, x_speed, y_speed, 0,
-					 new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.name, this.mapId);
+					 new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.knockback, attack.name, this.mapId);
 			}
 		}
 		else
 		{
 			projectileList[this.mapId].push(new Projectile(x + (this.x_speed * 2), y + (this.y_speed * 2), 4, x_speed, y_speed, 0,
-				this.id, new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.name, this.mapId));
+				this.id, new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.knockback, attack.name, this.mapId));
 		}
 	}
 	else

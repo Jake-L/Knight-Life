@@ -19,6 +19,12 @@ damage_factor["Sword"] = 1;
 damage_factor["Snowball"] = 0.4;
 damage_factor["Arrow"] = 0.4;
 
+var knockback = {};
+knockback["Punch"] = 5;
+knockback["Sword"] = 6;
+knockback["Snowball"] = 3;
+knockback["Arrow"] = 3;
+
 
 // create the attack object to track information relating to the attack, such as the number of frames in its animation or the amount of damage it does
 // NOTE: for a projectile attack, weapons[0].name must be the name of the projectile's sprite
@@ -37,6 +43,8 @@ exports.Attack = function(name, weapons, attack_speed)
 	}
 
 	this.bonus_damage = 0;
+
+	this.knockback = knockback[this.name];
 
 	this.frame_length = Math.ceil(frame_length[this.name] / attack_speed);
 	this.damage_frame =  Math.ceil(damage_frame[this.name] / attack_speed);
