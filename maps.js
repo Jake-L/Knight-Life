@@ -158,7 +158,7 @@
         maps[0][i][12] = "dirtPathRight";
     }
 
-    for (var i = 11; i < 23; i++)
+    for (var i = 11; i < 35; i++)
     {
         maps[0][20][i] = "dirtPathTop";
         maps[0][21][i] = "dirtPathMid";

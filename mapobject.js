@@ -1,7 +1,7 @@
 (function(exports)
 {
 
-  exports.mapObject = function(x, y, spriteName)
+  exports.mapObject = function(x, y, spriteName, cutsceneId = null)
 	{
     	this.x = x;
 		this.y = y;
@@ -14,20 +14,36 @@
 		this.height = 20;
 		this.depth = 20;
 		this.priority = 0;
+		this.cutsceneId = cutsceneId;
+		this.state = 0;
 
 		if (["snowportal", "grassportal", "doorlight"].includes(spriteName))
 		{
 			this.priority = -1;
 		}
 
-		this.id = x + " " + y + spriteName + Math.ceil(new Date().getTime() * (Math.random() + 0.01));
+		if (cutsceneId != null)
+		{
+			this.id = cutsceneId;
+		}
+		else
+		{
+			this.id = x + " " + y + spriteName + Math.ceil(new Date().getTime() * (Math.random() + 0.01));
+		}
   };
 	
 	exports.mapObject.prototype.initialize = function()
 	{
 		this.sprite = new Image();
 
-		this.sprite.src = "img//" + this.spriteName + ".png";
+		if (this.state == 0)
+		{
+			this.sprite.src = "img//" + this.spriteName + ".png";
+		}
+		else
+		{
+			this.sprite.src = "img//" + this.spriteName + this.state + ".png";
+		}
 	};
 	
 	exports.mapObject.prototype.render = function()
@@ -57,5 +73,14 @@
 			context.restore();
 		}
 	};
+
+	exports.mapObject.prototype.changeState = function(newState)
+	{
+		if (newState >= 0 && newState != this.state)
+		{
+			this.state = newState;
+			this.initialize();
+		}
+	}
 
 }(typeof exports === 'undefined' ? this.share = {} : exports));

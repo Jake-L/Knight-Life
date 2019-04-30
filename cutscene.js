@@ -1,4 +1,4 @@
-initializeCutscene = [];
+initializeCutscene = {};
 initializeCutscene[0] = function(cutscene)
 {
 	if (typeof(completedQuests[1000]) !== 'undefined')
@@ -178,6 +178,20 @@ initializeCutscene[8] = function(cutscene)
 	else
 	{
 		cutscene.text = "Hello friend, I'd love to stay and chat but I really must be going.";
+	}
+}
+
+initializeCutscene["chestda2"] = function(cutscene)
+{
+	if (mapObjects[cutscene.cutsceneId].state == 0)
+	{
+		cutscene.text = "You got 200 silver coins in the chest!";
+		mapObjects[cutscene.cutsceneId].changeState(1);
+		cutscene.addItem = {name: "money", quantity: 200};
+	}
+	else
+	{
+		cutscene.complete = true;
 	}
 }
 

@@ -197,8 +197,8 @@ function loadMap(mapId)
 		p.initialize();
 		view.insertStatic(p);
 		// create doors to enter log cabins
-		portalList[1] = new Portal(254, 360, 20, 20, -1, 64, 127, "Up");
-		portalList[2] = new Portal(454, 260, 20, 20, -2, 64, 127, "Up");
+		portalList[1] = new Portal(278, 309, 20, 20, -1, 64, 127, "Up");
+		portalList[2] = new Portal(486, 309, 20, 20, -2, 64, 127, "Up");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
 		// create door to enter castle
 		portalList[3] = new Portal(136, 164, 20, 20, -3, 127, 191, "Up");
@@ -240,7 +240,7 @@ function loadMap(mapId)
 	/* mapId <= 0 means private maps with no other users */
 	else if (mapId == -1)
 	{
-		portalList[0] = new Portal(64, 127, 20, 20, 0, 254, 360, "Down");
+		portalList[0] = new Portal(64, 127, 20, 20, 0, 278, 309, "Down");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
 		var e = new Entity(64, 32, "player", -1);
 		e.id = "-1p1";
@@ -259,7 +259,7 @@ function loadMap(mapId)
 
 	else if (mapId == -2)
 	{
-		portalList[0] = new Portal(64, 127, 20, 20, 0, 454, 260, "Down");
+		portalList[0] = new Portal(64, 127, 20, 20, 0, 486, 309, "Down");
 		//x, y, height, width, destination_mapId, destination_x, destination_y, direction
 		var e = new Entity(64, 32, "player", -2);
 		e.id = "-2p1";
@@ -1184,6 +1184,7 @@ function initiateConversation()
 
 	for (var i in collisionList)
 	{
+		console.log(collisionList[i]);
 		// check that the entity is not fighting the player, and that they have a conversation
 		if (collisionList[i].cutsceneId != null)// && cutscene == null) //make sure you can't be in multiple conversations
 		{
@@ -1501,7 +1502,7 @@ socket.on('mapObjects', function(a)
 
 		for (var i in a)
 		{
-			var p = new mapObject(a[i].x, a[i].y, a[i].spriteName);
+			var p = new mapObject(a[i].x, a[i].y, a[i].spriteName, a[i].cutsceneId);
 			p.initialize();
 			mapObjects[p.id] = p;
 			view.insertStatic(p);

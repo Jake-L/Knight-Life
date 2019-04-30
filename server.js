@@ -109,8 +109,8 @@ function initializeMap()
 	mapObjects[0].push(new mapObject(400,400,"rock1"));
 	mapObjects[0].push(new mapObject(100,300,"treestump"));
 	mapObjects[0].push(new mapObject(250,150,"treestump"));
-	mapObjects[0].push(new mapObject(250,350,"loghouse"));
-	mapObjects[0].push(new mapObject(450,250,"loghouse"));
+	mapObjects[0].push(new mapObject(272,308,"loghouse"));
+	mapObjects[0].push(new mapObject(480,308,"loghouse"));
 	mapObjects[0].push(new mapObject(50,400,"pinetree"));
 	mapObjects[0].push(new mapObject(75,425,"pinetree"));
 	mapObjects[0].push(new mapObject(100,400,"pinetree"));
@@ -220,6 +220,8 @@ function initializeMap()
 		mapEntities["da2"][i].entity.faction = "iceman";
 		mapEntities["da2"][i].entity.targetType = "Aggressive";
 	}
+
+	mapObjects["da2"].push(new mapObject(256,448,"chest","chestda2"));
 
 	// ALL MAPS
 	// set dimensions of map objects for each mapId
