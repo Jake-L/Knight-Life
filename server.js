@@ -223,6 +223,14 @@ function initializeMap()
 
 	mapObjects["da2"].push(new mapObject(256,448,"chest","chestda2"));
 
+	// create moving spikes obstacles
+	var p = createProjectilePath([{x:184,y:384},{x:184,y:480}], 10, 5, "spikeball", "da0");
+	projectileList["da0"].push(p);
+	var p = createProjectilePath([{x:392,y:368},{x:392,y:480}], 10, 5, "spikeball", "da1");
+	projectileList["da1"].push(p);
+	var p = createProjectilePath([{x:312,y:48},{x:312,y:160}], 10, 5, "spikeball", "da2");
+	projectileList["da2"].push(p);
+
 	// ALL MAPS
 	// set dimensions of map objects for each mapId
 	for (var mapId in mapObjects)
@@ -1032,11 +1040,13 @@ global.Projectile = function(x, y, z, x_speed, y_speed, z_speed, source, update_
 	this.update_time = update_time;
 	this.mapId = mapId;
 	this.knockback = knockback;
+	this.path = [];
+	this.destroyOnHit = true;
 
 	this.setSize = function()
 	{
 		var s = "";
-		if (this.spriteName != "Snowball" && this.spriteName != "meteor")
+		if (!["Snowball","meteor","spikeball"].includes(this.spriteName))
 		{
 			if (this.x_speed > 0)
 			{
@@ -1070,7 +1080,45 @@ global.Projectile = function(x, y, z, x_speed, y_speed, z_speed, source, update_
 			var n = Math.floor((new Date().getTime() - this.update_time)/(1000/60));
 			this.x = this.spawn_x + (n * this.x_speed);
 			this.y = this.spawn_y + (n * this.y_speed);
-			this.z = this.spawn_z + (n * this.z_speed);			
+			this.z = this.spawn_z + (n * this.z_speed);
+			
+			// check the projectile's movement along a set path
+			if (this.path.length > 0)
+			{
+				// check if it has reached an endpoint
+				if (Math.abs(this.x - this.path[0].x) <= 1 && Math.abs(this.y - this.path[0].y) <= 1)
+				{
+					// update the projectile
+					this.update_time = new Date().getTime();
+					this.spawn_x = this.path[0].x;
+					this.spawn_y = this.path[0].y;
+
+					// move the endpoint to the end of the list
+					var old_point = this.path[0];
+					this.path.splice(0,1);
+					this.path.push(old_point);
+
+					// check the next endpoint
+					var new_point = this.path[0];
+					if (new_point.x < this.x)
+					{
+						this.x_speed = -1;
+					}
+					else if (new_point.x > this.x)
+					{
+						this.x_speed = 1;
+					}
+					if (new_point.y < this.y)
+					{
+						this.y_speed = -1; 
+					}
+					else if (new_point.y > this.y)
+					{
+						this.y_speed = 1;
+					}
+					
+				}
+			}
 		}
 	};
 
@@ -1100,6 +1148,21 @@ global.Projectile = function(x, y, z, x_speed, y_speed, z_speed, source, update_
 		}
 	};
 };
+
+
+function createProjectilePath(path, damage, knockback, spriteName, mapId)
+{
+	// get the starting position from the path
+	var x = path[0].x;
+	var y = path[0].y;
+	// use constants for the source and z position
+	var z = 2;
+	var source = -1;
+	var p = new Projectile(x, y, z, 0, 0, 0, source, new Date().getTime(), damage, knockback, spriteName, mapId);
+	p.destroyOnHit = false
+	p.path = path;
+	return p;
+}
 
 function Item(name, quantity, x, y, playerid, exact)
 {
@@ -1281,7 +1344,7 @@ function checkDamage()
 						}
 					}
 
-					if (dmg)
+					if (dmg && projectileList[mapId][i].destroyOnHit)
 					{
 						projectileList[mapId].splice(i, 1);
 						i--;
@@ -1745,7 +1808,7 @@ function readLeaderboardData(username)
 // display current number of players connected
 function displayPlayerCount()
 {
-	console.log("FPS: " + updateCounter / (new Date().getTime() - updateTime));
+	console.log("FPS: " + (new Date().getTime() - updateTime) / updateCounter);
 	updateTime = new Date().getTime();
 	updateCounter = 0;
 	for (var mapId in connected)

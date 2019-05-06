@@ -1075,7 +1075,7 @@ function InitializeProjectile(p)
 	p.y = p.spawn_y;
 	p.z = p.spawn_z;
 
-	if (p.spriteName == "Snowball" || p.spriteName == "meteor")
+	if (["Snowball", "meteor", "spikeball"].includes(p.spriteName))
 	{
 		p.sprite.src = "img//" + p.spriteName + ".png";
 	}

@@ -171,7 +171,7 @@ var View = function()
 
 				context.shadowOffsetY = (3 + object.z + (n * object.z_speed)) * graphics_scaling;
 				context.shadowBlur = 15 + object.z + (n * object.z_speed);
-
+				
 				if (n >= 0)
 				{
 					context.drawImage(
