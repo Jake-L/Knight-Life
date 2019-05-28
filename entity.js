@@ -874,17 +874,17 @@ exports.Entity.prototype.createFootPrint = function()
 	effects.push(e);
 }
 
-exports.Entity.prototype.takeDamage = function(x, y, damage, x_knockback, y_knockback)
+exports.Entity.prototype.takeDamage = function(x, y, damage, knockback)
 {
 	if (this.spawn_time + 100 < new Date().getTime()) // don't take damage in the first 0.1 seconds you're alive
 	{
 		this.current_health -= damage;
 
-		if (!(x_knockback == 0 && y_knockback == 0))
+		if (!(knockback[0] == 0 && knockback[1] == 0))
 		{
 			this.knockback = true;
-			this.x_speed = x_knockback;
-			this.y_speed = y_knockback;
+			this.x_speed = knockback[0];
+			this.y_speed = knockback[1];
 		}
 
 		if (this.current_health < 0)
@@ -916,6 +916,7 @@ exports.Entity.prototype.createAttack = function(attack)
 {
 	var x = 0;
 	var y = 0;
+	var knockback = [];
 
 	// create a melee attack
 	if (attack.attack_type == 0)
@@ -924,33 +925,37 @@ exports.Entity.prototype.createAttack = function(attack)
 		{
 			x = this.x;
 			y = this.y + (this.depth / 2) + 2;
+			knockback = [0,attack.knockback];
 		}
 		else if (this.direction == "Up")
 		{
 			x = this.x;
 			y = this.y - (this.depth / 2) - 2;
+			knockback = [0,-1 * attack.knockback];
 		}
 		else if (this.direction == "Left")
 		{
 			x = this.x - (this.width/2) - 2;
 			y = this.y;
+			knockback = [-1 * attack.knockback, 0];
 		}
 		else if (this.direction == "Right")
 		{
 			x = this.x + (this.width/2) + 2;
 			y = this.y;
+			knockback = [attack.knockback, 0];
 		}
 
 		if(typeof(module) === 'undefined')
 		{
 			if (!(this.mapId < 0))
 			{
-				socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.knockback, this.mapId);
+				socket.emit('damageOut', x + (this.x_speed * 2), y + (this.y_speed * 2), new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, knockback, this.mapId);
 			}
 		}
 		else
 		{
-			damageList[this.mapId].push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.knockback, this.mapId));
+			damageList[this.mapId].push(new Damage(x + (this.x_speed * 2), y + (this.y_speed * 2), this.id, new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, knockback, this.mapId));
 		}
 	}
 
@@ -966,6 +971,7 @@ exports.Entity.prototype.createAttack = function(attack)
 			y = this.y;
 			x_speed = 0;
 			y_speed = 3;
+			knockback = [0,attack.knockback];
 		}
 		else if (this.direction == "Up")
 		{
@@ -973,6 +979,7 @@ exports.Entity.prototype.createAttack = function(attack)
 			y = this.y - (this.depth);
 			x_speed = 0;
 			y_speed = -3;
+			knockback = [0,-1 * attack.knockback];
 		}
 		else if (this.direction == "Left")
 		{
@@ -980,6 +987,7 @@ exports.Entity.prototype.createAttack = function(attack)
 			y = this.y;
 			x_speed = -3;
 			y_speed = 0;
+			knockback = [-1 * attack.knockback, 0];
 		}
 			else if (this.direction == "Right")
 		{
@@ -987,6 +995,7 @@ exports.Entity.prototype.createAttack = function(attack)
 			y = this.y;
 			x_speed = 3;
 			y_speed = 0;
+			knockback = [attack.knockback, 0];
 		}
 
 		if(typeof(module) === 'undefined')
@@ -994,13 +1003,13 @@ exports.Entity.prototype.createAttack = function(attack)
 			if (!(this.mapId < 0))
 			{
 				socket.emit('createProjectile', x + (this.x_speed * 2), y + (this.y_speed * 2), 4, x_speed, y_speed, 0,
-					 new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.knockback, attack.name, this.mapId);
+					new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, knockback, attack.name, this.mapId);
 			}
 		}
 		else
 		{
 			projectileList[this.mapId].push(new Projectile(x + (this.x_speed * 2), y + (this.y_speed * 2), 4, x_speed, y_speed, 0,
-				this.id, new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, attack.knockback, attack.name, this.mapId));
+				this.id, new Date().getTime() + (2000/60), (attack.bonus_damage + this.attack_damage) * attack.damage_factor, knockback, attack.name, this.mapId));
 		}
 	}
 	else

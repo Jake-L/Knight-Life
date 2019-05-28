@@ -1602,9 +1602,9 @@ socket.on('removePlayer', function(id)
 });
 
 // server notifies that the player has taken damage
-socket.on('damageIn', function(x, y, damage, x_knockback, y_knockback)
+socket.on('damageIn', function(x, y, damage, knockback)
 {
-	player.entity.takeDamage(x, y, damage, x_knockback, y_knockback);
+	player.entity.takeDamage(x, y, damage, knockback);
 	player.healthRegenCounter = 0;
 });
 

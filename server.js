@@ -1241,10 +1241,10 @@ function checkDamage()
 				{
 					if (damageList[mapId][i].source != connected[mapId][j].id && connected[mapId][j].targetType != "Passive" && damageList[mapId][i].collisionCheck(connected[mapId][j]))
 					{
-						var knockback = calcKnockback(damageList[mapId][i], connected[mapId][j]);
+						var knockback = damageList[mapId][i].knockback;
 
 						// tell the client that they took damage
-						io.to(connected[mapId][j].id).emit('damageIn', damageList[mapId][i].x, damageList[mapId][i].y, Math.ceil(damageList[mapId][i].damage * Math.sqrt(damageList[mapId][i].damage / connected[mapId][j].defence)), knockback[0], knockback[1]);
+						io.to(connected[mapId][j].id).emit('damageIn', damageList[mapId][i].x, damageList[mapId][i].y, Math.ceil(damageList[mapId][i].damage * Math.sqrt(damageList[mapId][i].damage / connected[mapId][j].defence)), knockback);
 
 						// track most recent attackers
 						addKillParticipation(connected[mapId][j].id, damageList[mapId][i].source, mapId);
@@ -1256,10 +1256,10 @@ function checkDamage()
 				{
 					if (damageList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].entity.targetType != "Passive"  && damageList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
 					{
-						var knockback = calcKnockback(damageList[mapId][i], mapEntities[mapId][j].entity);
+						var knockback = damageList[mapId][i].knockback;
 
 						// damage the entity
-						mapEntities[mapId][j].entity.takeDamage(damageList[mapId][i].x, damageList[mapId][i].y, Math.ceil(damageList[mapId][i].damage * Math.sqrt(damageList[mapId][i].damage / mapEntities[mapId][j].entity.defence)), knockback[0], knockback[1]);
+						mapEntities[mapId][j].entity.takeDamage(damageList[mapId][i].x, damageList[mapId][i].y, Math.ceil(damageList[mapId][i].damage * Math.sqrt(damageList[mapId][i].damage / mapEntities[mapId][j].entity.defence)), knockback);
 
 						// tell the CPU to target that entity
 						mapEntities[mapId][j].setTarget(damageList[mapId][i].source);
@@ -1303,10 +1303,10 @@ function checkDamage()
 					{
 						if (projectileList[mapId][i].source != connected[mapId][j].id && connected[mapId][j].targetType != "Passive" && projectileList[mapId][i].collisionCheck(connected[mapId][j]))
 						{
-							var knockback = calcKnockback(projectileList[mapId][i], connected[mapId][j]);
+							var knockback = projectileList[mapId][i].knockback;
 
 							// tell the client that they took damage
-							io.to(connected[mapId][j].id).emit('damageIn', projectileList[mapId][i].x, projectileList[mapId][i].y, Math.ceil(projectileList[mapId][i].damage * Math.sqrt(projectileList[mapId][i].damage / connected[mapId][j].defence)), knockback[0], knockback[1]);
+							io.to(connected[mapId][j].id).emit('damageIn', projectileList[mapId][i].x, projectileList[mapId][i].y, Math.ceil(projectileList[mapId][i].damage * Math.sqrt(projectileList[mapId][i].damage / connected[mapId][j].defence)), knockback);
 
 							// track most recent attackers
 							addKillParticipation(connected[mapId][j].id, projectileList[mapId][i].source, mapId);
@@ -1320,10 +1320,10 @@ function checkDamage()
 					{
 						if (projectileList[mapId][i].source != mapEntities[mapId][j].entity.id && mapEntities[mapId][j].entity.targetType != "Passive" && projectileList[mapId][i].collisionCheck(mapEntities[mapId][j].entity))
 						{
-							var knockback = calcKnockback(projectileList[mapId][i], mapEntities[mapId][j].entity);
+							var knockback = projectileList[mapId][i].knockback;
 
 							// damage the entity
-							mapEntities[mapId][j].entity.takeDamage(projectileList[mapId][i].x, projectileList[mapId][i].y, Math.ceil(projectileList[mapId][i].damage * Math.sqrt(projectileList[mapId][i].damage / mapEntities[mapId][j].entity.defence)), knockback[0], knockback[1]);
+							mapEntities[mapId][j].entity.takeDamage(projectileList[mapId][i].x, projectileList[mapId][i].y, Math.ceil(projectileList[mapId][i].damage * Math.sqrt(projectileList[mapId][i].damage / mapEntities[mapId][j].entity.defence)), knockback);
 
 							// tell the CPU to target that entity
 							mapEntities[mapId][j].setTarget(projectileList[mapId][i].source);
@@ -1356,27 +1356,6 @@ function checkDamage()
 
 	}
 }
-
-// calculate the knockback taken from an attack
-function calcKnockback(attack, target)
-{
-	knockback = [0, 0];
-
-	// check if the target was hit in the x direction or y direction
-	if (Math.abs(attack.x - target.x) > Math.abs(attack.y - target.y))
-	{
-		// apply knockback in the x-direction
-		knockback[0] = Math.round(attack.knockback * -1 * (attack.x - target.x) / Math.abs(attack.x - target.x));
-	}
-	else
-	{
-		// apply knockback in the y-direction
-		knockback[1] = Math.round(attack.knockback * -1 * (attack.y - target.y) / Math.abs(attack.y - target.y));
-	}
-
-	return knockback;
-}
-
 
 // retrieve data from the client
 io.on('connection', function(socket)
