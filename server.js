@@ -803,7 +803,7 @@ setInterval(function()
 		if (playerOnMap > 0)
 		{
 			// spawn falling rocks on the map
-			projectileList[2].push(new Projectile(Math.ceil(Math.random() * maps[2][0].length * gridSize) + 100, Math.ceil(Math.random() * maps[2].length * gridSize), 100, -1, 0, -1, "iceboss", new Date().getTime(), 10, "meteor", 1));
+			projectileList[2].push(new Projectile(Math.ceil(Math.random() * maps[2][0].length * gridSize) + 100, Math.ceil(Math.random() * maps[2].length * gridSize), 100, -1, 0, -1, "iceboss", new Date().getTime(), 10, [0,3], "meteor", 1));
 		}
 	}
 

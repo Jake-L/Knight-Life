@@ -128,9 +128,9 @@
     mapTheme[-3] = "track2.mp3";
     mapTheme[-4] = "track2.mp3";
     mapTheme[-5] = "track2.mp3";
-    mapTheme["da0"] = "track2.mp3";
-    mapTheme["da1"] = "track2.mp3";
-    mapTheme["da2"] = "track2.mp3";
+    mapTheme["da0"] = "dungeontheme.mp3";
+    mapTheme["da1"] = "dungeontheme.mp3";
+    mapTheme["da2"] = "dungeontheme.mp3";
 
     maps = {};
     maps[0] = new Array(64);
