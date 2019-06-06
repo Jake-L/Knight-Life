@@ -203,6 +203,7 @@ function loadMap(mapId)
 		// create door to enter castle
 		portalList[3] = new Portal(136, 164, 20, 20, -3, 127, 191, "Up");
 
+		// create flowers and bushes in random spots
 		for (var i = 0; i < 10; i++)
 		{
 			p = new mapObject(Math.floor(Math.random() * maps[0][0].length * gridSize), Math.floor(Math.random() * (maps[0][0].length * gridSize - (gridSize * 2)) + (gridSize * 2)), "bush1");
@@ -210,6 +211,17 @@ function loadMap(mapId)
 			view.insertStatic(p);
 
 			p = new mapObject(Math.floor(Math.random() * maps[0][0].length * gridSize), Math.floor(Math.random() * (maps[0][0].length * gridSize - (gridSize * 2)) + (gridSize * 2)), "flower" + (i % 2));
+			p.initialize();
+			view.insertStatic(p);
+		}
+		// create rows of trees
+		for (var i = 0; i < 32; i++)
+		{
+			p = new mapObject(i * 32 + 16, 64 * gridSize, "pinetree");
+			p.initialize();
+			view.insertStatic(p);
+
+			p = new mapObject(i * 32, 62 * gridSize, "pinetree");
 			p.initialize();
 			view.insertStatic(p);
 		}

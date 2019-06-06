@@ -239,9 +239,16 @@
     // push empty rows for the sky at the top of the map
     row = new Array(64);
     maps[0][0] = row;
-    maps[0][1] = row
+    maps[0][1] = row;
     maps[1][0] = row;
     maps[1][1] = row;
+
+    // push solid rows at the bottom of the map to cover with trees
+    row = new Array(64).fill("grassWall");
+    maps[0][60] = row;
+    maps[0][61] = row;
+    maps[0][62] = row;
+    maps[0][63] = row;
 
     //create the first dungeon
     for (var i = 0; i < 32; i++)

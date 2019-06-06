@@ -17,7 +17,7 @@ var View = function()
 	this.loadBackgroundSprite = function()
 	{
 		const backgroundNames = [
-			"grass1", "grass2", "grass1top", "snow1", "snow1top", "loghouseinside",
+			"grass1", "grass2", "grass1top", "grassWall", "snow1", "snow1top", "loghouseinside",
 			"cobblestonefloor", "stairsleft", "stairs", "stairsright", "stairsdown", 
 			"stairsdownleft", "stairsdownright", "dirtground", "dungeonstairs",
 			"rockWallTop", "rockWallLeft", "rockWallMid", "rockWallRight", "rockWallBot",
