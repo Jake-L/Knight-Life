@@ -170,6 +170,7 @@ function respawn()
 	player.inventory = oldPlayer.inventory;
 	player.entity.attacks = oldPlayer.entity.attacks;
 	player.entity.clothing = oldPlayer.entity.clothing;
+	player.playTime = oldPlayer.playTime;
 }
 
 var updateCounter = 0;
@@ -578,9 +579,9 @@ function step()
 
 	if (rcounter >= 100)
 	{
-
 		rfps = Math.round(rcounter / ((new Date().getTime() - startTime)/1000));
 		ufps = Math.round(ucounter / ((new Date().getTime() - startTime)/1000));
+		player.playTime += new Date().getTime() - startTime;
 		startTime = new Date().getTime();
 		ucounter = 0;
 		rcounter = 0;
@@ -875,6 +876,7 @@ function Player(mapId)
 	this.inventory = new Inventory();
 	this.entity.attacks = [];
 	this.entity.attacks.push(new Attack("Punch", [], this.entity.attack_speed));
+	this.playTime = 0;
 }
 
 //display the player
@@ -1715,6 +1717,7 @@ function loadPlayer(savedata)
 		player.entity.setLevel(data.lvl);
 		player.entity.xp = data.xp;
 		player.entity.current_health = data.current_health;
+		player.playTime = data.playTime;
 		for (var i in data.attacks)
 		{
 			player.entity.attacks[i] = new Attack(data.attacks[i].name, data.attacks[i].weapons, player.entity.attack_speed);
@@ -1747,6 +1750,7 @@ function loadPlayer(savedata)
 				"\"quests\": " + JSON.stringify(quests) + "," + 
 				"\"completedQuests\": " + JSON.stringify(completedQuests) + "," + 
 				"\"achievements\": " + JSON.stringify(achievements) + "," + 
+				"\"playTime\": " + player.playTime + "," +
 				"\"completedAchievements\": " + JSON.stringify(completedAchievements) + "," +
 				"\"attacks\": " + JSON.stringify(player.entity.attacks) + "," +
 				"\"clothing\": " + JSON.stringify(player.entity.clothing) + 
@@ -1787,4 +1791,5 @@ var leaderboards;
 socket.on('leaderboards', function(l)
 {
 	leaderboards = l;
+	view.updateDisplayWindow();
 });

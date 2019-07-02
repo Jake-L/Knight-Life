@@ -1708,6 +1708,7 @@ setInterval(function()
 	leaderboards["Level"] = [];
 	leaderboards["Money"] = [];
 	leaderboards["Kills"] = [];
+	leaderboards["PlayTime"] = [];
 
 	for (var i in users)
 	{		
@@ -1717,14 +1718,27 @@ setInterval(function()
 
 	// transmit the updated leaderboard to every connected user
 	setTimeout(function()
+	{
+		// format the play time counter as a readable date
+		for (var i in leaderboards["PlayTime"])
 		{
-			console.log("updating leaderboards");
-			io.emit('leaderboards',leaderboards);
-		}, 5000);
+			var rawTime = leaderboards["PlayTime"][i].counter;
+			var dateString = "";
+			if (rawTime > 3600000)
+			{
+				dateString += Math.floor(rawTime / 3600000) + " hours, ";
+			}
+			dateString += Math.floor((rawTime % 3600000) / 60000) + " minutes";
+			leaderboards["PlayTime"][i].counter = dateString;
+		}
+		console.log("updating leaderboards");
+		io.emit('leaderboards',leaderboards);
+	}, 5000);
 }, 5000);
 
 function readLeaderboardData(username)
 {
+	// read the player's save data to get leaderboard stats
 	fs.readFile('saves//' + username + '.txt', function(err, data) 
 	{
 	    if(err) 
@@ -1780,6 +1794,20 @@ function readLeaderboardData(username)
 		    	}
 		    }
 			leaderboards["Kills"].splice(sort_counter,0,{name:username, counter:userdata.achievements[0].tracker[0][0].counter})
+
+			// insert the player's total playTime into the leaderboards in sorted order
+			sort_counter = 0;
+			if (typeof(userdata.playTime) !== 'undefined')
+		    {
+				for (var i in leaderboards["PlayTime"])
+				{
+					if (leaderboards["PlayTime"][i].counter > (userdata.playTime || 0))
+					{
+						sort_counter++;
+					}
+				}
+				leaderboards["PlayTime"].splice(sort_counter,0,{name:username, counter: userdata.playTime})
+			}
 		}
 	});
 }

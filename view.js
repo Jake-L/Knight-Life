@@ -12,6 +12,7 @@ var View = function()
 	caveDarkness.src = 'img//caveDarkness.png'
 
 	this.displayWindow = null;
+	this.selectionId = null;
 
 	// cache the background sprites to improve performance
 	this.loadBackgroundSprite = function()
@@ -437,6 +438,9 @@ var View = function()
 
 	this.selectOption = function(type, id)
 	{
+		// store the id to use when refreshing the view
+		this.selectionId = id;
+
 		// remove any data already in the table
 		var table = document.getElementById("detailtable");
 		while (table.firstChild) 
@@ -551,7 +555,7 @@ var View = function()
 		}
 	}
 
-	this.renderOptions = function(type, a)
+	this.renderOptions = function(type, a, id)
 	{
 		// store the type 
 		this.displayWindow = type;
@@ -634,6 +638,12 @@ var View = function()
 				var s = a[i].name;
 			}
 
+			// check if the index is the one specified by a parameter
+			if (i == id)
+			{
+				index = i;
+			}
+			// by default set the index as the first element
 			if (index == null)
 			{
 				index = i;
@@ -760,7 +770,7 @@ var View = function()
 			}
 			else
 			{
-				this.renderOptions(this.displayWindow);
+				this.renderOptions(this.displayWindow, [], this.selectionId);
 			}
 		}
 	}
