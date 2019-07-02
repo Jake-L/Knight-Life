@@ -30,6 +30,15 @@ socket.on('loginresult', function(result, username)
 		date.setTime(date.getTime()+(2*24*60*60*1000)); // cookie lasts for 2 days
 		document.cookie = "username=" + username + "; expires="+date.toGMTString();
 		document.getElementById('loginstatus').innerHTML = "login successful!";
+		// hide the form
+		document.getElementById('loginform').classList.toggle('fade');
+		setTimeout(function(){
+			// reset the form
+			document.getElementById('loginform').style.display = 'none';
+			document.getElementById('loginform').classList.toggle('fade');
+			document.getElementById('loginstatus').innerHTML = "";
+			document.getElementById('loginpassword').value = "";
+		}, 1000);
 	}
 	else
 	{
@@ -44,11 +53,11 @@ function register()
 
 	if (username == null || username == "")
 	{
-		document.getElementById('loginstatus').innerHTML = "Please enter a username";
+		document.getElementById('registrationstatus').innerHTML = "Please enter a username";
 	}
 	else if (password == null || password == "")
 	{
-		document.getElementById('loginstatus').innerHTML = "Please enter a password";
+		document.getElementById('registrationstatus').innerHTML = "Please enter a password";
 	}
 	else
 	{
@@ -63,6 +72,15 @@ socket.on('registrationresult', function(result, username)
 	{
 		document.cookie = "username=" + username;
 		document.getElementById('registrationstatus').innerHTML = "registration successful!";
+		// hide the form
+		document.getElementById('registrationform').classList.toggle('fade');
+		setTimeout(function(){
+			// reset the form
+			document.getElementById('registrationform').style.display = 'none';
+			document.getElementById('registrationform').classList.toggle('fade');
+			document.getElementById('registrationstatus').innerHTML = "";
+			document.getElementById('registrationpassword').value = "";
+		}, 1000);
 	}
 	else
 	{

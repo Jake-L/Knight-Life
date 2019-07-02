@@ -4,7 +4,6 @@ html, body {
   flex-direction: column;
   font-weight: 300;
   line-height: 1.5;
-  overflow: hidden;
 }
 
 body {
@@ -31,7 +30,7 @@ a {
   padding: 30px;
 }
 
-/* FOOTER NAVIGATION */
+/* header */
 
 .navbar {
   background-color: #CB925F;
@@ -87,7 +86,14 @@ a {
   overflow: auto;
   text-align: center;
   width: 100%;
+  opacity: 1;
+  transition: opacity 1s;
 }
+
+.form.fade{
+  opacity: 0;
+}
+
 .formelements{
   padding: 10px;
   background-color: #FFFFFF;
