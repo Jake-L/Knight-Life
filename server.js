@@ -78,6 +78,7 @@ global.maps = require('./maps.js').maps;
 global.gridSize = require('./maps.js').gridSize;
 var sizeOf = require('image-size');
 var fs = require('fs');
+var HordeManager = require('./hordemanager.js').HordeManager;
 
 global.mapEntities = []; // all the CPUs
 global.mapObjects = []; // non-moving map objects like rocks
@@ -87,6 +88,7 @@ var killParticipation = []; // keep track of players who recently attacked an en
 var items = [];
 var updateCounter = 0;
 var updateTime = new Date().getTime();
+var hordeManagers = {};
 
 function initializeMap()
 {
@@ -100,6 +102,8 @@ function initializeMap()
 		items[mapId] = [];
 		connected[mapId] = {};
 	}
+
+	hordeManagers[3] = new HordeManager(1, -1);
 
 	// load Map 0
 	// load map objects (rocks, etc.)
@@ -407,7 +411,10 @@ var CPU = function(x, y, spriteName, id, lvl, mapId)
 	this.entity.width = w;
 	this.entity.depth = Math.ceil(h * 0.5);
 	this.entity.height = h;
-	this.entity.id = id;
+	if (id != null)
+	{
+		this.entity.id = id;
+	}
 	this.entity.setLevel(lvl);
 	killParticipation[mapId][id] = [];
 
@@ -805,6 +812,33 @@ setInterval(function()
 			// spawn falling rocks on the map
 			projectileList[2].push(new Projectile(Math.ceil(Math.random() * maps[2][0].length * gridSize) + 100, Math.ceil(Math.random() * maps[2].length * gridSize), 100, -1, 0, -1, "iceboss", new Date().getTime(), 10, [0,3], "meteor", 1));
 		}
+/*
+		for (var mapId in hordeManagers)
+		{
+			playerOnMap = 0;
+			for (var i in connected[mapId])
+			{
+				playerOnMap++;
+				break;
+			}
+			if (playerOnMap > 0)
+			{
+				var spawn = hordeManagers[mapId].CheckSpawn();
+				for (var i in spawn)
+				{
+					var e = new CPU(0,0,"iceman", null, spawn[i], mapId);
+					e.entity.faction = "iceman";
+					e.entity.targetType = "Aggressive";
+					mapEntities[mapId][e.entity.id] = e;
+				}
+			}
+			else
+			{
+				hordeManagers[mapId].Initialize();
+				mapEntities[i] = [];
+			}
+		}
+		*/
 	}
 
 	checkDamage();
@@ -819,11 +853,25 @@ setInterval(function()
 			if (mapEntities[mapId][i].entity.current_health <= 0)
 			{
 				entityDeath(mapEntities[mapId][i].entity);
-				var e = new CPU(0,0,mapEntities[mapId][i].entity.spriteName, mapEntities[mapId][i].entity.id, mapEntities[mapId][i].entity.lvl, mapId);
-				e.entity.faction = mapEntities[mapId][i].entity.faction;
-				e.entity.targetType = mapEntities[mapId][i].entity.targetType;
-				e.entity.display_name = mapEntities[mapId][i].entity.display_name;
-				mapEntities[mapId][i] = e;
+				// on most maps enemies respawn quickly after their death
+				if (mapId != 3)
+				{
+					var e = new CPU(0,0,mapEntities[mapId][i].entity.spriteName, mapEntities[mapId][i].entity.id, mapEntities[mapId][i].entity.lvl, mapId);
+					e.entity.faction = mapEntities[mapId][i].entity.faction;
+					e.entity.targetType = mapEntities[mapId][i].entity.targetType;
+					e.entity.display_name = mapEntities[mapId][i].entity.display_name;
+					mapEntities[mapId][i] = e;
+				}
+				// maps where enemies disappear permanently after their death
+				else
+				{
+					delete mapEntities[mapId][i];
+					// notify other players on the same map that the enemy was removed
+					for (var j in connected[mapId])
+					{
+						io.to(j).emit('removePlayer', i);
+					}
+				}
 			}
 		}
 	}

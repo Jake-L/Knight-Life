@@ -6,9 +6,9 @@
         for (var i = 0; i < maps[mapId].length; i++)
         {
             maps[mapId][0][i] = "rockWallMid";
-            maps[mapId][31][i] = "rockWallMid";
+            maps[mapId][maps[mapId].length - 1][i] = "rockWallMid";
             maps[mapId][i][0] = "rockWallMid";
-            maps[mapId][i][31] = "rockWallMid";
+            maps[mapId][i][maps[mapId].length - 1] = "rockWallMid";
         }
 
         // create the rock walls
@@ -16,14 +16,14 @@
         {
             // the rock wall at the top and bottom of the screen
             maps[mapId][1][i] = "rockWallBot";
-            maps[mapId][30][i] = "rockWallTop";
+            maps[mapId][maps[mapId].length - 2][i] = "rockWallTop";
         }
 
         for (var i = 2; i < maps[mapId].length - 2; i++)
         {
             // the rock wall at the left and right of the screen
             maps[mapId][i][1] = "rockWallRight";
-            maps[mapId][i][30] = "rockWallLeft";
+            maps[mapId][i][maps[mapId].length - 2] = "rockWallLeft";
         }
     
         if (options.includes(1))
@@ -123,6 +123,7 @@
     mapTheme[0] = "track2.mp3";
     mapTheme[1] = "icetheme.mp3";
     mapTheme[2] = "icetheme.mp3";
+    mapTheme[3] = "dungeontheme.mp3";
     mapTheme[-1] = "track2.mp3";
     mapTheme[-2] = "track2.mp3";
     mapTheme[-3] = "track2.mp3";
@@ -136,6 +137,7 @@
     maps[0] = new Array(64);
     maps[1] = new Array(64);
     maps[2] = new Array(8);
+    maps[3] = new Array(24);
     maps[-1] = new Array(8);
     maps[-2] = new Array(8);
     maps[-3] = new Array(12);
@@ -249,6 +251,16 @@
     maps[0][61] = row;
     maps[0][62] = row;
     maps[0][63] = row;
+
+    // create an ice cave for battling hordes of enemies
+    for (var i = 0; i < 24; i++)
+    {
+        row = new Array(24).fill("dirtground");
+        maps[3][i] = row;
+    }
+
+    // create a perimeter 
+    generateDungeon(3, []);
 
     //create the first dungeon
     for (var i = 0; i < 32; i++)
