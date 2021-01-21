@@ -20,6 +20,6 @@
   "dependencies": {
     "express": "^4.15.4",
     "image-size": "^0.6.1",
-    "socket.io": "^2.0.3"
+    "socket.io": "^2.4.0"
   }
 }
